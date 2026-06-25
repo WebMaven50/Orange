@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Orange Robot — A Modern Parable by V.J. Alden</title>
+  <meta name="description" content="A modern retelling of the story of Joseph, reimagined for an age of Bitcoin, robotics, and artificial intelligence." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── TOKENS ── */
+    :root {
+      --ink:        #0d0b09;
+      --rust:       #b5541a;
+      --rust-dim:   #7a3810;
+      --rust-glow:  #e06820;
+      --parchment:  #f0e8d8;
+      --parchment2: #c8b89a;
+      --smoke:      #1a1410;
+      --smoke2:     #241d16;
+      --smoke3:     #2e2519;
+      --ash:        #7a6e62;
+      --key-gold:   #c9a84c;
+      --white:      #f5f0e8;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--ink);
+      color: var(--parchment);
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 2rem;
+    }
+
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 80% at 50% 30%, rgba(181,84,26,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 80% 80%, rgba(201,168,76,0.06) 0%, transparent 60%),
+        linear-gradient(180deg, #0d0b09 0%, #1a1008 40%, #0d0b09 100%);
+    }
+
+    /* Animated ember particles */
+    .embers {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .ember {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      border-radius: 50%;
+      background: var(--rust-glow);
+      opacity: 0;
+      animation: float-up var(--dur, 8s) var(--delay, 0s) infinite ease-in;
+    }
+    @keyframes float-up {
+      0%   { opacity: 0; transform: translateY(0) translateX(0); }
+      10%  { opacity: 0.7; }
+      90%  { opacity: 0.2; }
+      100% { opacity: 0; transform: translateY(-80vh) translateX(var(--drift, 20px)); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 700px;
+    }
+
+    .eyebrow {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      color: var(--key-gold);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      opacity: 0.85;
+    }
+
+    .hero-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(3rem, 10vw, 6.5rem);
+      font-weight: 600;
+      line-height: 1.0;
+      color: var(--white);
+      letter-spacing: 0.02em;
+      margin-bottom: 0.4rem;
+      text-shadow: 0 0 60px rgba(181,84,26,0.4);
+    }
+
+    .hero-title span {
+      display: block;
+      font-size: clamp(1.8rem, 5vw, 3.2rem);
+      font-weight: 400;
+      color: var(--rust-glow);
+      letter-spacing: 0.08em;
+      margin-top: 0.15em;
+    }
+
+    .hero-subtitle {
+      font-family: 'EB Garamond', serif;
+      font-style: italic;
+      font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+      color: var(--parchment2);
+      margin: 1.8rem 0 2.5rem;
+      letter-spacing: 0.02em;
+    }
+
+    .hero-tagline {
+      font-family: 'Cinzel', serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.18em;
+      color: var(--key-gold);
+      opacity: 0.9;
+      margin-bottom: 3rem;
+    }
+
+    .cta-group {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary {
+      display: inline-block;
+      padding: 0.85rem 2.2rem;
+      background: var(--rust);
+      color: var(--white);
+      font-family: 'Cinzel', serif;
+      font-size: 0.82rem;
+      letter-spacing: 0.15em;
+      text-decoration: none;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 0 30px rgba(181,84,26,0.3);
+    }
+    .btn-primary:hover {
+      background: var(--rust-glow);
+      box-shadow: 0 0 50px rgba(224,104,32,0.5);
+    }
+
+    .btn-secondary {
+      display: inline-block;
+      padding: 0.85rem 2.2rem;
+      background: transparent;
+      color: var(--parchment2);
+      font-family: 'Cinzel', serif;
+      font-size: 0.82rem;
+      letter-spacing: 0.15em;
+      text-decoration: none;
+      text-transform: uppercase;
+      border: 1px solid var(--ash);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-secondary:hover {
+      border-color: var(--parchment2);
+      color: var(--white);
+    }
+
+    /* Key divider — the signature element */
+    .key-divider {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.2rem;
+      padding: 3rem 0;
+      opacity: 0.5;
+    }
+    .key-divider::before,
+    .key-divider::after {
+      content: '';
+      display: block;
+      height: 1px;
+      width: 80px;
+      background: linear-gradient(90deg, transparent, var(--key-gold));
+    }
+    .key-divider::after {
+      background: linear-gradient(90deg, var(--key-gold), transparent);
+    }
+    .key-icon {
+      font-size: 1.2rem;
+      color: var(--key-gold);
+      transform: rotate(-45deg);
+      display: inline-block;
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      padding: 5rem 1.5rem;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--rust);
+      margin-bottom: 1.2rem;
+    }
+
+    h2 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 400;
+      color: var(--white);
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.03em;
+    }
+
+    /* ── ABOUT THE BOOK ── */
+    .about {
+      background: var(--smoke2);
+    }
+
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.8fr;
+      gap: 4rem;
+      align-items: start;
+    }
+
+    .book-cover-wrap {
+      position: relative;
+    }
+
+    .book-cover-placeholder {
+      width: 100%;
+      aspect-ratio: 6/9;
+      background: linear-gradient(135deg, var(--smoke3) 0%, var(--rust-dim) 50%, var(--smoke3) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--rust-dim);
+      box-shadow: 8px 8px 40px rgba(0,0,0,0.6), -2px 0 8px rgba(181,84,26,0.2);
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .cover-title-text {
+      font-family: 'Cinzel', serif;
+      font-size: 1.1rem;
+      color: var(--white);
+      letter-spacing: 0.1em;
+      line-height: 1.3;
+      margin-bottom: 0.5rem;
+    }
+    .cover-subtitle-text {
+      font-family: 'EB Garamond', serif;
+      font-style: italic;
+      font-size: 0.85rem;
+      color: var(--parchment2);
+    }
+    .cover-author-text {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--key-gold);
+      margin-top: 1.5rem;
+    }
+
+    .book-copy p {
+      color: var(--parchment);
+      margin-bottom: 1.2rem;
+      font-size: 1.05rem;
+    }
+
+    .book-copy .lead {
+      font-size: 1.2rem;
+      font-style: italic;
+      color: var(--white);
+      margin-bottom: 1.5rem;
+    }
+
+    .epigraph {
+      border-left: 2px solid var(--rust);
+      padding: 0.8rem 1.5rem;
+      margin: 2rem 0;
+      font-style: italic;
+      color: var(--parchment2);
+      font-size: 1rem;
+    }
+    .epigraph cite {
+      display: block;
+      font-style: normal;
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      color: var(--key-gold);
+      margin-top: 0.5rem;
+    }
+
+    /* ── BITCOIN WALLET ── */
+    .wallet-section {
+      background: var(--smoke);
+      text-align: center;
+    }
+
+    .wallet-card {
+      background: var(--smoke3);
+      border: 1px solid var(--rust-dim);
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 0 60px rgba(181,84,26,0.12);
+    }
+
+    .wallet-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--rust);
+      margin-bottom: 0.8rem;
+    }
+
+    .wallet-balance {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      color: var(--key-gold);
+      margin: 0.5rem 0;
+      letter-spacing: 0.05em;
+    }
+
+    .wallet-balance-usd {
+      font-family: 'EB Garamond', serif;
+      font-size: 1rem;
+      color: var(--ash);
+      font-style: italic;
+      margin-bottom: 1.5rem;
+    }
+
+    .wallet-address {
+      font-family: 'Inter', monospace;
+      font-size: 0.72rem;
+      color: var(--ash);
+      word-break: break-all;
+      background: var(--smoke2);
+      padding: 0.6rem 0.8rem;
+      margin: 1rem 0;
+      letter-spacing: 0.05em;
+    }
+
+    .qr-placeholder {
+      width: 140px;
+      height: 140px;
+      background: var(--white);
+      margin: 1.5rem auto 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.65rem;
+      text-align: center;
+      padding: 0.5rem;
+    }
+
+    .wallet-note {
+      font-size: 0.85rem;
+      color: var(--ash);
+      font-style: italic;
+      margin-top: 1rem;
+    }
+
+    .wallet-loading {
+      color: var(--ash);
+      font-style: italic;
+      font-size: 0.9rem;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* ── STORY GAMES ── */
+    .games-section {
+      background: var(--smoke2);
+    }
+
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2.5rem;
+    }
+
+    .game-card {
+      background: var(--smoke3);
+      border: 1px solid rgba(181,84,26,0.25);
+      padding: 2rem 1.5rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+    .game-card:hover {
+      border-color: var(--rust);
+      box-shadow: 0 0 30px rgba(181,84,26,0.15);
+    }
+
+    .game-card-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .game-card h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 1rem;
+      font-weight: 400;
+      color: var(--white);
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.05em;
+    }
+
+    .game-card p {
+      font-size: 0.9rem;
+      color: var(--ash);
+      line-height: 1.5;
+    }
+
+    .game-card .coming-soon {
+      display: inline-block;
+      margin-top: 1rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--rust);
+      border: 1px solid var(--rust-dim);
+      padding: 0.2rem 0.6rem;
+    }
+
+    /* ── ABOUT THE AUTHOR ── */
+    .author-section {
+      background: var(--smoke);
+    }
+
+    .author-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 3rem;
+      align-items: center;
+    }
+
+    .author-initial {
+      width: 100%;
+      aspect-ratio: 1;
+      background: var(--smoke3);
+      border: 1px solid var(--rust-dim);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Cinzel', serif;
+      font-size: 5rem;
+      color: var(--rust);
+      max-width: 180px;
+    }
+
+    .author-text h2 {
+      margin-bottom: 0.5rem;
+    }
+
+    .author-text p {
+      color: var(--parchment);
+      margin-bottom: 1rem;
+      font-size: 1.02rem;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--ink);
+      border-top: 1px solid var(--smoke3);
+      padding: 2.5rem 1.5rem;
+      text-align: center;
+    }
+
+    footer p {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      color: var(--ash);
+    }
+
+    footer .footer-tagline {
+      font-family: 'EB Garamond', serif;
+      font-style: italic;
+      font-size: 1rem;
+      color: var(--rust);
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(13,11,9,0.95) 0%, transparent 100%);
+      backdrop-filter: blur(4px);
+    }
+
+    .nav-logo {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      color: var(--key-gold);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--ash);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--white); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 680px) {
+      .about-grid { grid-template-columns: 1fr; gap: 2rem; }
+      .author-grid { grid-template-columns: 1fr; }
+      .author-initial { max-width: 100px; font-size: 3.5rem; }
+      .nav-links { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .ember { animation: none; }
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="#" class="nav-logo">The Orange Robot</a>
+    <ul class="nav-links">
+      <li><a href="#book">The Book</a></li>
+      <li><a href="#wallet">Support</a></li>
+      <li><a href="#games">Games</a></li>
+      <li><a href="#author">Author</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="embers" id="embers"></div>
+    <div class="hero-content">
+      <p class="eyebrow">V.J. Alden &nbsp;·&nbsp; A Modern Parable</p>
+      <h1 class="hero-title">
+        The Orange<span>Robot</span>
+      </h1>
+      <p class="hero-subtitle">A boy who could see what others couldn't.<br>Brothers who couldn't forgive what they saw.</p>
+      <p class="hero-tagline">Some keys unlock more than machines.</p>
+      <div class="cta-group">
+        <a href="https://www.amazon.com" class="btn-primary" target="_blank" rel="noopener">Order on Amazon</a>
+        <a href="#book" class="btn-secondary">Learn More</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT THE BOOK -->
+  <section class="about" id="book">
+    <div class="container">
+      <div class="about-grid">
+        <div class="book-cover-wrap">
+          <img src="bookcover.png" alt="The Orange Robot by V.J. Alden" style="width:100%;display:block;box-shadow:8px 8px 40px rgba(0,0,0,0.6);" />
+        </div>
+        <div class="book-copy">
+          <p class="section-label">The Story</p>
+          <p class="lead">Some keys unlock more than machines.</p>
+          <div class="epigraph">
+            "They said to one another, 'Here comes this dreamer.'"
+            <cite>— Genesis 37:19</cite>
+          </div>
+          <p>Joey Harlan was always the gifted one — the boy who could take apart any machine and see the patterns no one else could. The dreamer. To his father, that gift was a blessing. To his half-brothers, it was one more reason to resent the favorite son.</p>
+          <p>When a devastating betrayal tears him from everything he knows, Joey is cast out with almost nothing: a battered orange wind-up robot, and a secret hidden inside it that he's only beginning to understand.</p>
+          <p>What follows is a twenty-year odyssey of exile and reinvention — from the mud of Ohio construction sites to the glass towers of a new technological age, wrestling with forgiveness, faith, and a revolutionary form of money that just might free ordinary people from the systems built to control them.</p>
+          <p><em>The Orange Robot</em> is a modern retelling of the biblical story of Joseph, reimagined for an age of artificial intelligence, robotics, and Bitcoin.</p>
+          <br>
+          <a href="https://www.amazon.com" class="btn-primary" target="_blank" rel="noopener">Get the Book</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="key-divider"><span class="key-icon">🗝</span></div>
+
+  <!-- STORY GAMES -->
+  <section class="games-section" id="games">
+    <div class="container">
+      <p class="section-label">The World</p>
+      <h2>Enter the Story</h2>
+      <p style="color:var(--ash); max-width:560px; font-size:0.95rem;">
+        The Orange Robot hides its secrets in plain sight. These games are built for readers who want to go deeper — or who haven't read the book yet and want a taste of its world.
+      </p>
+      <div style="display:flex;justify-content:center;margin-top:1rem">
+        <a href="games/index.html" style="display:block;max-width:420px;width:100%;background:var(--smoke3);border:1px solid rgba(181,84,26,0.4);padding:2.5rem 2rem;text-decoration:none;color:inherit;text-align:center;transition:border-color 0.2s,box-shadow 0.2s" onmouseover="this.style.borderColor='var(--rust)';this.style.boxShadow='0 0 40px rgba(181,84,26,0.2)'" onmouseout="this.style.borderColor='rgba(181,84,26,0.4)';this.style.boxShadow='none'">
+          <div style="font-size:2.5rem;margin-bottom:1rem">🗝</div>
+          <div style="font-family:'Cinzel',serif;font-size:1.2rem;color:var(--white);letter-spacing:0.05em;margin-bottom:0.5rem">Explore the Vault</div>
+          <div style="font-size:0.9rem;color:var(--ash);margin-bottom:1.5rem;font-style:italic">Games, secrets, and hidden scenes</div>
+          <span style="font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;background:var(--rust);color:var(--white);padding:0.5rem 1.5rem">Enter →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <div class="key-divider"><span class="key-icon">🗝</span></div>
+
+  <!-- AUTHOR -->
+  <section class="author-section" id="author">
+    <div class="container">
+      <div class="author-grid">
+        <div class="author-initial">V</div>
+        <div class="author-text">
+          <p class="section-label">The Author</p>
+          <h2>V.J. Alden</h2>
+          <p>V.J. Alden is a writer and Los Angeles native who has been journaling since the age of eleven. <em>The Orange Robot</em> is his debut novel, drawn from a lifelong love of the story of Joseph and from his recent understanding of Bitcoin's potential to reshape financial systems.</p>
+          <p>He writes at the intersection of faith, economics, and human resilience.</p>
+          <p style="margin-top:1.2rem">
+            <a href="mailto:contact@theorangerobot.com" style="font-family:'Cinzel',serif;font-size:0.78rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--key-gold);text-decoration:none;border:1px solid var(--rust);padding:0.5rem 1.2rem;display:inline-block;transition:background 0.2s" onmouseover="this.style.background='rgba(181,84,26,0.15)'" onmouseout="this.style.background='transparent'">✉ Contact the Author</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <div class="key-divider"><span class="key-icon">🗝</span></div>
+
+  <!-- BITCOIN WALLET -->
+  <section class="wallet-section" id="wallet">
+    <div class="container">
+      <p class="section-label" style="text-align:center">The Key</p>
+      <h2 style="text-align:center">Support the Author Directly</h2>
+      <p style="text-align:center; color:var(--ash); max-width:520px; margin:0 auto 2.5rem; font-size:0.95rem;">
+        If this book meant something to you, you can send Bitcoin directly — no middleman, no platform cut. The balance below updates in real time, a living record of readers who chose to connect.
+      </p>
+      <div class="wallet-card">
+        <p class="wallet-label">Total received</p>
+        <div class="wallet-balance" id="btc-balance">
+          <span class="wallet-loading">Loading…</span>
+        </div>
+        <div class="wallet-balance-usd" id="btc-usd"></div>
+        <div class="qr-placeholder" id="qr-code">
+          QR Code<br>(add wallet address)
+        </div>
+        <div class="wallet-address" id="wallet-address">
+          Add your Bitcoin wallet address here
+        </div>
+        <p class="wallet-note">1 satoshi or 1 Bitcoin — every transaction is part of the story.</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- FOOTER -->
+  <footer>
+    <p class="footer-tagline">Some keys unlock more than machines.</p>
+    <p>© 2026 V.J. Alden &nbsp;·&nbsp; Published independently &nbsp;·&nbsp; TheOrangeRobot.com</p>
+  </footer>
+
+  <script>
+    // ── Ember particles ──
+    const emberContainer = document.getElementById('embers');
+    for (let i = 0; i < 28; i++) {
+      const e = document.createElement('div');
+      e.className = 'ember';
+      e.style.cssText = `
+        left: ${Math.random() * 100}%;
+        bottom: ${Math.random() * 30}%;
+        --dur: ${6 + Math.random() * 10}s;
+        --delay: ${Math.random() * 8}s;
+        --drift: ${(Math.random() - 0.5) * 80}px;
+        width: ${1 + Math.random() * 2}px;
+        height: ${1 + Math.random() * 2}px;
+        opacity: 0;
+      `;
+      emberContainer.appendChild(e);
+    }
+
+    // ── Bitcoin wallet balance ──
+    const WALLET_ADDRESS = 'bc1qfm09kkgz8qkmek7eqrjrwudrn4apjd9q34xnwn';
+
+    async function loadWalletBalance() {
+      const balEl = document.getElementById('btc-balance');
+      const usdEl = document.getElementById('btc-usd');
+      const addrEl = document.getElementById('wallet-address');
+      const qrEl = document.getElementById('qr-code');
+
+      if (!WALLET_ADDRESS) {
+        balEl.innerHTML = '<span style="font-size:1rem;color:var(--ash);font-family:\'EB Garamond\',serif;font-style:italic">Wallet address coming soon</span>';
+        return;
+      }
+
+      addrEl.textContent = WALLET_ADDRESS;
+
+      // QR code - static image
+      qrEl.innerHTML = '<img src="btc-wallet-qr.png" alt="Bitcoin wallet QR code" style="width:140px;height:140px;display:block;" />';
+
+      try {
+        // Fetch balance from mempool.space (public API, no key)
+        const res = await fetch(`https://mempool.space/api/address/${WALLET_ADDRESS}`);
+        const data = await res.json();
+        const totalSats = data.chain_stats.funded_txo_sum;
+        const btc = (totalSats / 1e8).toFixed(8);
+
+        // Fetch BTC price
+        const priceRes = await fetch('https://mempool.space/api/v1/prices');
+        const priceData = await priceRes.json();
+        const usdPrice = priceData.USD;
+        const usdVal = (parseFloat(btc) * usdPrice).toLocaleString('en-US', {style:'currency', currency:'USD'});
+
+        balEl.textContent = `${btc} BTC`;
+        usdEl.textContent = `≈ ${usdVal} USD`;
+      } catch (err) {
+        balEl.innerHTML = '<span style="font-size:1rem;color:var(--ash)">Balance unavailable</span>';
+      }
+    }
+
+    loadWalletBalance();
+    // Refresh every 5 minutes
+    setInterval(loadWalletBalance, 5 * 60 * 1000);
+  </script>
+
+</body>
+</html>
