@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Joseph Parallel — The Orange Robot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --ink:#0d0b09; --rust:#b5541a; --rust-glow:#e06820;
+      --parchment:#f0e8d8; --parchment2:#c8b89a;
+      --smoke:#1a1410; --smoke2:#241d16; --smoke3:#2e2519;
+      --ash:#7a6e62; --key-gold:#c9a84c; --white:#f5f0e8;
+      --green:#4caf7d; --red:#c0392b; --gold-coin:#e6b83a;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--ink);color:var(--parchment);font-family:'EB Garamond',serif;font-size:18px;min-height:100vh}
+    nav{padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--smoke3)}
+    .nav-logo{font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.2em;color:var(--key-gold);text-decoration:none}
+    .nav-back{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--ash);text-decoration:none}
+    .nav-back:hover{color:var(--white)}
+    .sats-bar{background:var(--smoke2);border-bottom:1px solid var(--smoke3);padding:0.6rem 2rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+    .sats-item{display:flex;align-items:center;gap:0.5rem}
+    .sats-item span{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--key-gold);letter-spacing:0.1em}
+    .sats-item label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.15em;text-transform:uppercase}
+    .gold-item span{color:var(--gold-coin)}
+    .container{max-width:820px;margin:0 auto;padding:2rem 1.5rem}
+    .eyebrow{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.25em;color:var(--rust);text-transform:uppercase;margin-bottom:0.8rem}
+    h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,5vw,2.4rem);font-weight:400;color:var(--white);margin-bottom:0.5rem}
+    .lede{font-style:italic;color:var(--parchment2);margin-bottom:0.5rem;font-size:1.05rem}
+    .instructions{font-size:0.9rem;color:var(--ash);margin-bottom:2rem}
+
+    /* MATCH PAIRS GAME */
+    .phase{display:none}
+    .phase.active{display:block}
+
+    /* Phase 1: Match cards */
+    .match-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:0.5rem}
+    .match-score{font-family:'Cinzel',serif;font-size:0.8rem;color:var(--key-gold);letter-spacing:0.1em}
+    .columns{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+    .col-label{font-family:'Cinzel',serif;font-size:0.68rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--rust);margin-bottom:0.6rem;text-align:center}
+    .match-card{
+      background:var(--smoke2);border:1px solid var(--smoke3);padding:0.8rem 1rem;
+      cursor:pointer;font-size:0.92rem;line-height:1.4;color:var(--parchment2);
+      transition:border-color 0.15s,background 0.15s;margin-bottom:0.5rem;
+      text-align:center;user-select:none;
+    }
+    .match-card:hover:not(.matched):not(.used){border-color:var(--rust);background:rgba(181,84,26,0.08);color:var(--white)}
+    .match-card.selected{border-color:var(--key-gold);background:rgba(201,168,76,0.12);color:var(--white)}
+    .match-card.matched{border-color:var(--green);background:rgba(76,175,125,0.1);color:var(--ash);cursor:default}
+    .match-card.wrong{border-color:var(--red);animation:shake 0.4s ease}
+    .match-card.used{opacity:0.3;cursor:default}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+    .feedback-bar{min-height:1.8rem;text-align:center;font-style:italic;color:var(--parchment2);font-size:0.9rem;margin-bottom:1rem}
+    .feedback-bar.correct{color:var(--green)}
+    .feedback-bar.wrong{color:var(--red)}
+
+    /* Gold coin animation */
+    .coin-burst{position:fixed;pointer-events:none;z-index:999;font-size:1.8rem;animation:coin-fly 1s ease-out forwards}
+    @keyframes coin-fly{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-80px) scale(1.4)}}
+
+    /* Phase 2: Convert coins */
+    .convert-card{background:var(--smoke2);border:1px solid var(--smoke3);max-width:480px;margin:0 auto;padding:2rem;text-align:center}
+    .coin-display{font-size:3.5rem;margin:1rem 0}
+    .coin-count{font-family:'Cinzel',serif;font-size:1.8rem;color:var(--gold-coin);margin-bottom:0.5rem}
+    .convert-rate{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--ash);letter-spacing:0.1em;margin-bottom:1.5rem}
+    .sat-preview{font-family:'Cinzel',serif;font-size:1.2rem;color:var(--key-gold);margin-bottom:1.5rem}
+    .btn-convert{font-family:'Cinzel',serif;font-size:0.82rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.85rem 2.2rem;background:var(--rust);color:var(--white);border:none;cursor:pointer;transition:background 0.2s}
+    .btn-convert:hover{background:var(--rust-glow)}
+
+    /* Results */
+    .results-card{background:var(--smoke2);border:1px solid var(--smoke3);max-width:480px;margin:0 auto;padding:2rem;text-align:center;display:none}
+    .results-big{font-family:'Cinzel',serif;font-size:3rem;color:var(--key-gold);margin:0.5rem 0}
+    .results-big span{font-size:0.9rem;display:block;color:var(--ash);letter-spacing:0.2em}
+    .btn-hub{display:inline-block;margin-top:1.5rem;text-decoration:none;font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.7rem 1.8rem;background:var(--smoke3);color:var(--parchment2)}
+    .btn-hub:hover{color:var(--white)}
+    .btn-play-again{display:inline-block;margin-top:0.8rem;font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;padding:0.6rem 1.4rem;background:var(--rust);color:var(--white);border:none;cursor:pointer;margin-left:0.8rem}
+  </style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">The Vault</a>
+  <a href="index.html" class="nav-back">← Back to Hub</a>
+</nav>
+<div class="sats-bar">
+  <div class="sats-item"><label>Total Sats:</label><span id="hub-sats">0 ⚡</span></div>
+  <div class="sats-item gold-item"><label>Gold Coins:</label><span id="gold-display">0 🪙</span></div>
+</div>
+
+<div class="container">
+  <p class="eyebrow">The Orange Robot · The Joseph Parallel</p>
+  <h1>The Joseph Parallel</h1>
+  <p class="lede">Every scene in the novel has a shadow — a verse in Genesis it was built from.</p>
+  <p class="instructions">Match each scene from <em>The Orange Robot</em> to its Genesis source. Each correct match earns a gold coin. When you're done, convert your coins to satoshis.</p>
+
+  <!-- PHASE 1: MATCHING -->
+  <div class="phase active" id="phase-match">
+    <div class="match-header">
+      <span class="match-score">Matched: <span id="match-count">0</span> / <span id="match-total">0</span></span>
+      <span class="match-score">🪙 Gold Coins: <span id="coins-count">0</span></span>
+    </div>
+    <div class="feedback-bar" id="feedback"></div>
+    <div class="columns">
+      <div>
+        <div class="col-label">The Orange Robot</div>
+        <div id="novel-col"></div>
+      </div>
+      <div>
+        <div class="col-label">Genesis</div>
+        <div id="genesis-col"></div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:1rem">
+      <button class="btn-convert" id="phase1-done" style="display:none" onclick="goPhase2()">Convert Coins →</button>
+    </div>
+  </div>
+
+  <!-- PHASE 2: CONVERT -->
+  <div class="phase" id="phase-convert">
+    <div class="convert-card">
+      <p class="eyebrow">Exchange</p>
+      <div class="coin-display">🪙</div>
+      <div class="coin-count" id="final-coins">0 Gold Coins</div>
+      <div class="convert-rate">Exchange rate: 1 gold coin = 20 satoshis</div>
+      <div class="sat-preview">= <span id="sat-preview">0</span> ⚡ satoshis</div>
+      <button class="btn-convert" id="convert-btn" onclick="convertCoins()">Convert to Satoshis ⚡</button>
+    </div>
+    <div class="results-card" id="results-card">
+      <p class="eyebrow">Conversion Complete</p>
+      <div class="results-big" id="results-sats"><span>SATOSHIS MINED</span></div>
+      <p style="font-style:italic;color:var(--parchment2);margin:1rem 0">What was written in Genesis is written again in steel, code, and Bitcoin.</p>
+      <div>
+        <a href="index.html" class="btn-hub">← Back to Vault</a>
+        <button class="btn-play-again" onclick="restartGame()">Play Again</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="wallet.js"></script>
+<script>
+var goldCoins = 0;
+
+var PAIRS = [
+  {
+    novel:   "Frank gives Joey the orange robot for Christmas — a gift that sets the dreamer apart from his brothers.",
+    genesis: "Genesis 37:3 — Jacob loved Joseph more than his other sons and gave him a coat of many colors.",
+    hint:    "The favored gift that marks the chosen son."
+  },
+  {
+    novel:   "The five half-brothers, led by Mike, plot against Joey in the parking lot and leave him with nothing.",
+    genesis: "Genesis 37:18-24 — Joseph's brothers see him coming, strip him of his robe, and throw him into a pit.",
+    hint:    "The betrayal that begins the exile."
+  },
+  {
+    novel:   "Earl takes Joey under his wing at the construction site, teaches him the trade, and gives him real responsibility.",
+    genesis: "Genesis 39:2-4 — Potiphar sees that the Lord is with Joseph and puts him in charge of his household.",
+    hint:    "The mentor who sees what others don't."
+  },
+  {
+    novel:   "Joey's early Bitcoin mining, done in secret, accumulates quietly while no one knows what it will become.",
+    genesis: "Genesis 39:21-23 — Even in prison, the Lord is with Joseph and causes him to prosper.",
+    hint:    "Favor grows in obscurity."
+  },
+  {
+    novel:   "Leo finds the Apex job listing online and shows his brothers — unknowingly summoning the man they wronged.",
+    genesis: "Genesis 42:1-2 — Jacob hears there is grain in Egypt and sends his sons to buy food there.",
+    hint:    "Need drives the guilty toward the one they wronged."
+  },
+  {
+    novel:   "Joey sees his brothers in the lobby but doesn't reveal himself — he watches them first.",
+    genesis: "Genesis 42:7-8 — Joseph recognizes his brothers but acts like a stranger, speaking harshly to them.",
+    hint:    "Recognition without revelation."
+  },
+  {
+    novel:   "Frank whispers 'My dreamer. You built your tower' as he holds Joey in the conference room.",
+    genesis: "Genesis 46:29-30 — Jacob sees Joseph alive and says he can now die in peace, for he has seen his face.",
+    hint:    "The father who feared he would never see his son again."
+  },
+  {
+    novel:   "Joey's Genesis 50 monologue: 'What you meant for harm was turned to good.'",
+    genesis: "Genesis 50:19-21 — Joseph tells his brothers: you intended harm but God intended good, to save many lives.",
+    hint:    "The theological spine of both stories."
+  },
+  {
+    novel:   "Joey builds a 21-story tower in Columbus with every fourth floor stepping in — a monument in steel and glass.",
+    genesis: "Genesis 41:41 — Pharaoh puts Joseph in charge of all Egypt: 'Only with respect to the throne will I be greater.'",
+    hint:    "From exile to the highest place."
+  },
+  {
+    novel:   "The key is split between the robot's body and its brass handle — kept separate, the way his father taught him.",
+    genesis: "Genesis 37:19 — 'Here comes this dreamer.' The coat is the sign; the key is the inheritance.",
+    hint:    "The object that carries everything forward."
+  }
+];
+
+// Shuffle helper
+function shuffle(arr) {
+  var a = arr.slice();
+  for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+  return a;
+}
+
+var novelOrder, genesisOrder;
+var selectedNovel = null, selectedGenesis = null;
+var matched = [];
+
+function updateHubDisplay() {
+  document.getElementById('hub-sats').textContent = TOR.fmt(TOR.getSats()) + ' ⚡';
+  document.getElementById('gold-display').textContent = goldCoins + ' 🪙';
+  document.getElementById('coins-count').textContent = goldCoins;
+}
+
+function initGame() {
+  goldCoins = 0;
+  matched = [];
+  selectedNovel = null;
+  selectedGenesis = null;
+  novelOrder   = shuffle(PAIRS.map(function(p,i){ return i; }));
+  genesisOrder = shuffle(PAIRS.map(function(p,i){ return i; }));
+  document.getElementById('match-total').textContent = PAIRS.length;
+  document.getElementById('match-count').textContent = 0;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback-bar';
+  renderCards();
+  updateHubDisplay();
+}
+
+function renderCards() {
+  var nc = document.getElementById('novel-col');
+  var gc = document.getElementById('genesis-col');
+  nc.innerHTML = ''; gc.innerHTML = '';
+
+  novelOrder.forEach(function(idx) {
+    var div = document.createElement('div');
+    div.className = 'match-card' + (matched.includes(idx) ? ' matched' : '');
+    div.dataset.idx = idx;
+    div.dataset.side = 'novel';
+    div.textContent = PAIRS[idx].novel;
+    div.onclick = function() { selectCard(this); };
+    nc.appendChild(div);
+  });
+
+  genesisOrder.forEach(function(idx) {
+    var div = document.createElement('div');
+    div.className = 'match-card' + (matched.includes(idx) ? ' matched' : '');
+    div.dataset.idx = idx;
+    div.dataset.side = 'genesis';
+    div.textContent = PAIRS[idx].genesis;
+    div.onclick = function() { selectCard(this); };
+    gc.appendChild(div);
+  });
+}
+
+function selectCard(el) {
+  if(el.classList.contains('matched')) return;
+  var side = el.dataset.side;
+  var idx  = parseInt(el.dataset.idx);
+
+  // Clear previous wrong state
+  document.querySelectorAll('.match-card.wrong').forEach(function(c){ c.classList.remove('wrong'); });
+
+  if(side === 'novel') {
+    document.querySelectorAll('[data-side=novel]').forEach(function(c){ c.classList.remove('selected'); });
+    selectedNovel = idx;
+    el.classList.add('selected');
+  } else {
+    document.querySelectorAll('[data-side=genesis]').forEach(function(c){ c.classList.remove('selected'); });
+    selectedGenesis = idx;
+    el.classList.add('selected');
+  }
+
+  if(selectedNovel !== null && selectedGenesis !== null) {
+    checkMatch();
+  }
+}
+
+function checkMatch() {
+  var nIdx = selectedNovel, gIdx = selectedGenesis;
+  selectedNovel = null; selectedGenesis = null;
+
+  var fb = document.getElementById('feedback');
+
+  if(nIdx === gIdx) {
+    // Correct!
+    matched.push(nIdx);
+    goldCoins++;
+    document.querySelectorAll('.match-card.selected').forEach(function(c){ c.classList.remove('selected'); c.classList.add('matched'); });
+    fb.textContent = '✓ ' + PAIRS[nIdx].hint;
+    fb.className = 'feedback-bar correct';
+    document.getElementById('match-count').textContent = matched.length;
+
+    // Coin burst
+    var x = window.innerWidth/2, y = window.innerHeight/2;
+    for(var i=0;i<3;i++){
+      (function(delay){
+        setTimeout(function(){
+          var coin = document.createElement('div');
+          coin.className = 'coin-burst';
+          coin.textContent = '🪙';
+          coin.style.left = (x + (Math.random()-0.5)*120) + 'px';
+          coin.style.top  = (y + (Math.random()-0.5)*80) + 'px';
+          document.body.appendChild(coin);
+          setTimeout(function(){ coin.remove(); }, 1000);
+        }, delay);
+      })(i * 150);
+    }
+
+    updateHubDisplay();
+
+    if(matched.length === PAIRS.length) {
+      fb.textContent = '✓ All matched! Convert your gold coins to satoshis.';
+      document.getElementById('phase1-done').style.display = 'inline-block';
+    }
+  } else {
+    // Wrong
+    document.querySelectorAll('.match-card.selected').forEach(function(c){ c.classList.remove('selected'); c.classList.add('wrong'); });
+    fb.textContent = '✗ Not quite — look for the thematic echo.';
+    fb.className = 'feedback-bar wrong';
+    setTimeout(function(){
+      document.querySelectorAll('.match-card.wrong').forEach(function(c){ c.classList.remove('wrong'); });
+    }, 800);
+  }
+}
+
+function goPhase2() {
+  document.getElementById('phase-match').classList.remove('active');
+  document.getElementById('phase-convert').classList.add('active');
+  document.getElementById('final-coins').textContent = goldCoins + ' Gold Coins';
+  var sats = goldCoins * 20;
+  document.getElementById('sat-preview').textContent = TOR.fmt(sats);
+  updateHubDisplay();
+}
+
+function convertCoins() {
+  var sats = goldCoins * 20;
+  TOR.earn(sats, 'Joseph Parallel — ' + goldCoins + ' coins converted');
+  TOR.markDone('joseph');
+  TOR.toast(sats);
+
+  document.getElementById('convert-btn').style.display = 'none';
+  var rc = document.getElementById('results-card');
+  rc.style.display = 'block';
+  rc.querySelector('.results-big').innerHTML = TOR.fmt(sats) + '<span>SATOSHIS MINED</span>';
+  document.getElementById('hub-sats').textContent = TOR.fmt(TOR.getSats()) + ' ⚡';
+}
+
+function restartGame() {
+  document.getElementById('phase-convert').classList.remove('active');
+  document.getElementById('phase-match').classList.add('active');
+  document.getElementById('results-card').style.display = 'none';
+  document.getElementById('phase1-done').style.display = 'none';
+  document.getElementById('convert-btn').style.display = 'inline-block';
+  initGame();
+}
+
+updateHubDisplay();
+initGame();
+</script>
+</body>
+</html>

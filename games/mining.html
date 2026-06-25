@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Mining Sim — The Orange Robot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:#0d0b09; --rust:#b5541a; --rust-glow:#e06820;
+      --parchment:#f0e8d8; --parchment2:#c8b89a;
+      --smoke:#1a1410; --smoke2:#241d16; --smoke3:#2e2519;
+      --ash:#7a6e62; --key-gold:#c9a84c; --white:#f5f0e8;
+      --green:#54F092; --green-dim:#1f8a4d; --term:#070B07;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--ink);color:var(--parchment);font-family:'EB Garamond',serif;min-height:100vh}
+    nav{padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--smoke3)}
+    .nav-logo{font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.2em;color:var(--key-gold);text-decoration:none}
+    .nav-back{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--ash);text-decoration:none}
+    .nav-back:hover{color:var(--white)}
+    .sats-bar{background:var(--smoke2);border-bottom:1px solid var(--smoke3);padding:0.6rem 2rem;display:flex;align-items:center;gap:0.6rem}
+    .sats-bar span{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--key-gold);letter-spacing:0.1em}
+    .sats-bar label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.15em;text-transform:uppercase}
+    .container{max-width:700px;margin:0 auto;padding:2rem 1.5rem}
+    .eyebrow{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.25em;color:var(--rust);text-transform:uppercase;margin-bottom:0.8rem}
+    h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,5vw,2.4rem);font-weight:400;color:var(--white);margin-bottom:0.5rem}
+    .lede{font-style:italic;color:var(--parchment2);margin-bottom:2rem;font-size:1.05rem}
+    /* CRT terminal */
+    .crt{width:100%;height:clamp(180px,36vw,280px);background:var(--term);border-radius:11px;
+      border:1px solid #14361f;box-shadow:0 0 0 3px #0c130c,0 14px 34px #000a,inset 0 0 36px #0f3;
+      padding:9px 11px;overflow:hidden;position:relative;
+      font-family:'IBM Plex Mono',monospace;color:var(--green);
+      font-size:clamp(9.5px,2.4vw,12px);line-height:1.4;margin-bottom:1.5rem}
+    .crt::after{content:"";position:absolute;inset:0;pointer-events:none;
+      background:repeating-linear-gradient(0deg,transparent 0,transparent 3px,rgba(0,0,0,.13) 3px,rgba(0,0,0,.13) 4px);
+      border-radius:11px}
+    .crt::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:11px;
+      background:radial-gradient(ellipse at 50% 40%,transparent 55%,rgba(0,0,0,.55))}
+    #feed{white-space:pre-wrap;word-break:break-all}
+    /* stats */
+    .stats-row{display:flex;gap:2rem;justify-content:center;margin-bottom:1.5rem;flex-wrap:wrap}
+    .stat-box{text-align:center;background:var(--smoke2);border:1px solid var(--smoke3);padding:0.8rem 1.5rem}
+    .stat-val{font-family:'Cinzel',serif;font-size:1.6rem;color:var(--key-gold);display:block}
+    .stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:var(--ash);letter-spacing:0.15em;text-transform:uppercase}
+    /* buttons */
+    .btn-row{display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+    .btn{font-family:'Cinzel',serif;font-size:0.78rem;letter-spacing:0.12em;text-transform:uppercase;
+      padding:0.75rem 1.8rem;border:none;cursor:pointer;color:var(--white);transition:background 0.2s}
+    .btn-mine{background:var(--rust)}
+    .btn-mine:hover:not(:disabled){background:var(--rust-glow)}
+    .btn-boost{background:#3c4252}
+    .btn-boost:hover:not(:disabled){background:#5a6273}
+    .btn-done{background:var(--green-dim);display:none}
+    .btn-done:hover{background:#27b86b}
+    .btn:disabled{opacity:0.4;cursor:not-allowed}
+    .reward-note{font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--ash);text-align:center;letter-spacing:0.1em}
+    a.btn-hub{display:inline-block;text-decoration:none;background:var(--smoke3);color:var(--parchment2);font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.6rem 1.4rem;margin-top:1rem}
+    a.btn-hub:hover{color:var(--white)}
+  </style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">The Vault</a>
+  <a href="index.html" class="nav-back">← Back to Hub</a>
+</nav>
+<div class="sats-bar">
+  <label>Total Sats:</label>
+  <span id="hub-sats">0 ⚡</span>
+</div>
+<div class="container">
+  <p class="eyebrow">The Orange Robot · Game 3</p>
+  <h1>The Mining Sim</h1>
+  <p class="lede">2009. A terminal. A block reward of 50 BTC. Nobody knows what it's worth yet. Start mining.</p>
+
+  <div class="crt"><pre id="feed">initializing wallet…
+connecting to peers… 1 node online
+ready. press "Start Mining".</pre></div>
+
+  <div class="stats-row">
+    <div class="stat-box">
+      <span class="stat-val" id="blocks">0</span>
+      <span class="stat-lbl">Blocks Found</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-val" id="btc">0</span>
+      <span class="stat-lbl">BTC Mined</span>
+    </div>
+    <div class="stat-box">
+      <span class="stat-val" id="sats-earned">0</span>
+      <span class="stat-lbl">⚡ Sats Earned</span>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn btn-mine" id="mineBtn">Start Mining</button>
+    <button class="btn btn-boost" id="boostBtn" disabled>Overclock (hold)</button>
+    <button class="btn btn-done" id="doneBtn">Claim Reward →</button>
+  </div>
+  <p class="reward-note">Earn ⚡10 sats per block mined · Max ⚡200 sats per session</p>
+  <div style="text-align:center;margin-top:0.8rem"><button class="btn" id="shutdownBtn" style="display:none;background:#2a3042;font-size:0.72rem;padding:0.5rem 1.2rem" onclick="shutdownMiner()">⏻ Shut Down Miner</button></div>
+  <div style="text-align:center"><a href="index.html" class="btn-hub">← Back to Vault</a></div>
+</div>
+
+<script src="wallet.js"></script>
+<script>
+  var SOUND = (function(){
+    var ctx=null, master=null, on=true, noiseBuf=null, hum=null, climb=null;
+    function init(){
+      if(ctx) return true;
+      try{
+        var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
+        ctx=new AC(); master=ctx.createGain(); master.gain.value=on?0.85:0.0001; master.connect(ctx.destination);
+        var n=Math.floor(ctx.sampleRate*1.2); noiseBuf=ctx.createBuffer(1,n,ctx.sampleRate);
+        var d=noiseBuf.getChannelData(0); for(var i=0;i<n;i++) d[i]=Math.random()*2-1;
+        return true;
+      }catch(e){ return false; }
+    }
+    function t(){ return ctx?ctx.currentTime:0; }
+    function tone(freq,type,g,a,dec,when,glide){
+      if(!ctx) return; var s=when||t();
+      var o=ctx.createOscillator(), gn=ctx.createGain();
+      o.type=type||'sine'; o.frequency.setValueAtTime(Math.max(1,freq),s);
+      if(glide) o.frequency.exponentialRampToValueAtTime(Math.max(1,glide),s+a+dec);
+      gn.gain.setValueAtTime(0.0001,s);
+      gn.gain.exponentialRampToValueAtTime(Math.max(0.0001,g),s+a);
+      gn.gain.exponentialRampToValueAtTime(0.0001,s+a+dec);
+      o.connect(gn); gn.connect(master); o.start(s); o.stop(s+a+dec+0.05);
+    }
+    function noise(g,a,dec,ft,ff,when,glide){
+      if(!ctx) return; var s=when||t();
+      var src=ctx.createBufferSource(); src.buffer=noiseBuf;
+      var f=ctx.createBiquadFilter(); f.type=ft||'bandpass'; f.Q.value=5;
+      f.frequency.setValueAtTime(ff||1000,s);
+      if(glide) f.frequency.exponentialRampToValueAtTime(Math.max(50,glide),s+a+dec);
+      var gn=ctx.createGain(); gn.gain.setValueAtTime(0.0001,s);
+      gn.gain.exponentialRampToValueAtTime(Math.max(0.0001,g),s+a);
+      gn.gain.exponentialRampToValueAtTime(0.0001,s+a+dec);
+      src.connect(f); f.connect(gn); gn.connect(master); src.start(s); src.stop(s+a+dec+0.05);
+    }
+    return {
+      resume:function(){ if(!init())return; if(ctx.state==='suspended') ctx.resume(); },
+      setOn:function(v){ on=v; if(master) master.gain.setTargetAtTime(on?0.85:0.0001,t(),0.02); },
+      isOn:function(){ return on; },
+      click:function(){ tone(440,'square',0.05,0.004,0.05); },
+      wind:function(charge){ var f=560+charge*8; noise(0.13,0.004,0.07,'bandpass',f); tone(f*1.6,'square',0.05,0.003,0.05); },
+      step:function(speed,alt){ var b=(alt?235:300)*(0.6+speed*0.5); tone(b,'triangle',0.02+0.06*speed,0.004,0.08); noise(0.01+0.05*speed,0.003,0.05,'lowpass',850); },
+      springDown:function(){ tone(440,'sawtooth',0.10,0.02,0.55,t(),95); noise(0.07,0.01,0.45,'lowpass',650); },
+      unwrap:function(){ noise(0.13,0.02,0.28,'highpass',2400); tone(720,'triangle',0.05,0.02,0.22); },
+      creak:function(){ tone(190,'sawtooth',0.07,0.55,0.6,t(),120); noise(0.04,0.05,0.5,'bandpass',500); },
+      coin:function(streak){ var b=900+Math.min(streak||1,14)*16; tone(b,'square',0.11,0.005,0.09); tone(b*1.5,'square',0.10,0.005,0.17,t()+0.075); },
+      hash:function(){ noise(0.012,0.002,0.03,'highpass',5200); },
+      humStart:function(){ if(!ctx||hum) return;
+        var g=ctx.createGain(); g.gain.value=0.0001; g.connect(master);
+        var o1=ctx.createOscillator(); o1.type='sine'; o1.frequency.value=68;
+        var o2=ctx.createOscillator(); o2.type='triangle'; o2.frequency.value=68.7;
+        var nz=ctx.createBufferSource(); nz.buffer=noiseBuf; nz.loop=true;
+        var nf=ctx.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=300;
+        var ng=ctx.createGain(); ng.gain.value=0.05;
+        var lfo=ctx.createOscillator(); lfo.frequency.value=0.28; var lg=ctx.createGain(); lg.gain.value=70;
+        lfo.connect(lg); lg.connect(nf.frequency);
+        o1.connect(g); o2.connect(g); nz.connect(nf); nf.connect(ng); ng.connect(g);
+        o1.start(); o2.start(); nz.start(); lfo.start();
+        g.gain.setTargetAtTime(0.09,t(),0.7); hum={g:g,nodes:[o1,o2,nz,lfo]};
+      },
+      humStop:function(){ if(!hum) return; var h=hum; hum=null;
+        try{ h.g.gain.setTargetAtTime(0.0001,t(),0.3); }catch(e){}
+        setTimeout(function(){ h.nodes.forEach(function(n){ try{n.stop();}catch(e){} }); },700);
+      },
+      climbStart:function(){ if(!ctx||climb) return;
+        var o=ctx.createOscillator(); o.type='sine'; o.frequency.value=120;
+        var g=ctx.createGain(); g.gain.value=0.0001; o.connect(g); g.connect(master);
+        o.start(); g.gain.setTargetAtTime(0.05,t(),0.2); climb={o:o,g:g}; },
+      climbSet:function(p){ if(!climb) return; climb.o.frequency.setTargetAtTime(120*Math.pow(2,p*3.6),t(),0.08); },
+      climbStop:function(){ if(!climb) return; var c=climb; climb=null; try{ c.g.gain.setTargetAtTime(0.0001,t(),0.2);}catch(e){} setTimeout(function(){ try{c.o.stop();}catch(e){} },400); },
+      chord:function(){ [392,494,587,784,988].forEach(function(f,i){ tone(f,'triangle',0.10,0.02,1.3,t()+i*0.06); }); }
+    };
+  })();
+
+
+var REDUCE = false;
+var state = {};
+var feed = document.getElementById('feed');
+var blocksEl = document.getElementById('blocks');
+var btcEl = document.getElementById('btc');
+var satsEl = document.getElementById('sats-earned');
+var mineBtn = document.getElementById('mineBtn');
+var boostBtn = document.getElementById('boostBtn');
+var doneBtn = document.getElementById('doneBtn');
+var hubSats = document.getElementById('hub-sats');
+
+var running = false, blocks = 0, timer = null, hsh = null, boosting = false;
+var sessionSats = 0;
+var MAX_SESSION_SATS = 200;
+
+function updateHubSats() { hubSats.textContent = TOR.fmt(TOR.getSats()) + ' ⚡'; }
+updateHubSats();
+
+function hex(n){ var s=''; for(var i=0;i<n;i++) s+='0123456789abcdef'[Math.floor(Math.random()*16)]; return s; }
+function line(html){
+  feed.innerHTML += '\n' + html;
+  var lines = feed.innerHTML.split('\n');
+  if(lines.length > 40) feed.innerHTML = lines.slice(-40).join('\n');
+  feed.scrollTop = feed.scrollHeight;
+  if(Math.random()<0.5) SOUND.hash();
+}
+function tickHash(){
+  feed.innerHTML = feed.innerHTML.replace(/\nhashing 0x[0-9a-f]*…$/,'');
+  line('hashing 0x' + hex(boosting ? 20 : 12) + '…');
+}
+function found(){
+  blocks++;
+  var btc = blocks * 50;
+  blocksEl.textContent = blocks;
+  btcEl.textContent = btc.toLocaleString();
+
+  if (sessionSats < MAX_SESSION_SATS) {
+    var reward = 10;
+    sessionSats += reward;
+    var total = TOR.earn(reward, 'Mining Sim — block #' + blocks);
+    satsEl.textContent = sessionSats;
+    TOR.toast(reward);
+    updateHubSats();
+    if (sessionSats >= MAX_SESSION_SATS) {
+      line('<b>★ Max session reward reached — ' + MAX_SESSION_SATS + ' sats claimed</b>');
+    }
+  }
+
+  SOUND.coin(blocks);
+  line('<b>★ block #' + blocks + ' found — reward 50.00 BTC</b>');
+
+  if (blocks >= 1 && doneBtn.style.display === 'none') {
+    doneBtn.style.display = 'inline-block';
+  }
+}
+function schedule(){
+  if(!running) return;
+  var base = boosting ? 600 : 2500;
+  timer = setTimeout(function(){ found(); schedule(); }, base + Math.random() * base * 0.4);
+}
+
+mineBtn.onclick = function(){
+  if(running) return;
+  running = true;
+  mineBtn.textContent = 'Mining…';
+  mineBtn.disabled = true;
+  boostBtn.disabled = false;
+  document.getElementById('shutdownBtn').style.display = 'inline-block';
+  SOUND.resume(); SOUND.humStart();
+  line('mining started · block reward 50 BTC · difficulty 1');
+  hsh = setInterval(tickHash, 140);
+  schedule();
+};
+
+function setBoost(v){ SOUND.resume();
+  boosting = v;
+  boostBtn.textContent = v ? 'Overclocking…' : 'Overclock (hold)';
+  if(hsh){ clearInterval(hsh); hsh = setInterval(tickHash, v ? 60 : 140); }
+}
+boostBtn.onmousedown = function(){ setBoost(true); };
+boostBtn.onmouseup = boostBtn.onmouseleave = function(){ setBoost(false); };
+boostBtn.ontouchstart = function(e){ e.preventDefault(); setBoost(true); };
+boostBtn.ontouchend = function(){ setBoost(false); };
+
+function shutdownMiner() {
+  running = false;
+  clearTimeout(timer); clearInterval(hsh);
+  SOUND.humStop();
+  line('⏻ miner shutdown · session ended');
+  document.getElementById('shutdownBtn').style.display = 'none';
+  boostBtn.disabled = true;
+  TOR.markDone('mining');
+  setTimeout(function(){ window.location.href = 'index.html'; }, 1200);
+}
+
+doneBtn.onclick = function(){
+  running = false;
+  clearTimeout(timer); clearInterval(hsh);
+  TOR.markDone('mining');
+  line('session ended · ' + sessionSats + ' sats earned');
+  doneBtn.textContent = 'Claimed ✓';
+  doneBtn.disabled = true;
+  setTimeout(function(){ window.location.href = 'index.html'; }, 800);
+};
+</script>
+</body>
+</html>

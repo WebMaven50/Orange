@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Easter Egg Hunt — The Orange Robot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0d0b09;
+      --rust: #b5541a;
+      --rust-glow: #e06820;
+      --parchment: #f0e8d8;
+      --parchment2: #c8b89a;
+      --smoke: #1a1410;
+      --smoke2: #241d16;
+      --smoke3: #2e2519;
+      --ash: #7a6e62;
+      --key-gold: #c9a84c;
+      --white: #f5f0e8;
+      --green: #4caf7d;
+      --red: #c0392b;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--ink);
+      color: var(--parchment);
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    nav {
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--smoke3);
+    }
+    .nav-logo {
+      font-family: 'Cinzel', serif;
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      color: var(--key-gold);
+      text-decoration: none;
+    }
+    .nav-back {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      color: var(--ash);
+      text-decoration: none;
+    }
+    .nav-back:hover { color: var(--white); }
+
+    .hero {
+      text-align: center;
+      padding: 3rem 1.5rem 2rem;
+      border-bottom: 1px solid var(--smoke3);
+    }
+    .eyebrow {
+      font-family: 'Cinzel', serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.25em;
+      color: var(--rust);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      color: var(--white);
+      font-weight: 400;
+      margin-bottom: 0.5rem;
+    }
+    .hero-sub {
+      font-style: italic;
+      color: var(--parchment2);
+      font-size: 1rem;
+      max-width: 520px;
+      margin: 0 auto 1.5rem;
+    }
+
+    /* STATS BAR */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 2.5rem;
+      padding: 1.2rem 1.5rem;
+      background: var(--smoke2);
+      border-bottom: 1px solid var(--smoke3);
+      flex-wrap: wrap;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--ash);
+      text-transform: uppercase;
+      display: block;
+    }
+    .stat-value {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      color: var(--key-gold);
+      display: block;
+    }
+    .stat-value.sats { color: var(--key-gold); }
+    .stat-value.correct { color: var(--green); }
+
+    /* HALVING INDICATOR */
+    .halving-bar {
+      background: var(--smoke2);
+      padding: 0.6rem 1.5rem;
+      text-align: center;
+      border-bottom: 1px solid var(--smoke3);
+    }
+    .halving-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.18em;
+      color: var(--rust);
+    }
+    .halving-blocks {
+      display: flex;
+      justify-content: center;
+      gap: 4px;
+      margin-top: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .block {
+      width: 18px;
+      height: 18px;
+      border: 1px solid var(--smoke3);
+      background: var(--smoke3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-family: 'Inter', sans-serif;
+    }
+    .block.answered { background: var(--rust-glow); border-color: var(--rust-glow); }
+    .block.current { border-color: var(--key-gold); }
+    .block.halving-point { border-color: var(--key-gold); }
+
+    /* QUIZ AREA */
+    .quiz-container {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .question-card {
+      background: var(--smoke2);
+      border: 1px solid var(--smoke3);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .question-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+    }
+    .q-number {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      color: var(--rust);
+    }
+    .q-reward {
+      font-family: 'Cinzel', serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--key-gold);
+    }
+
+    .question-text {
+      font-size: 1.15rem;
+      color: var(--white);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .option-btn {
+      background: var(--smoke3);
+      border: 1px solid rgba(181,84,26,0.2);
+      color: var(--parchment);
+      padding: 0.8rem 1.2rem;
+      text-align: left;
+      cursor: pointer;
+      font-family: 'EB Garamond', serif;
+      font-size: 1rem;
+      transition: border-color 0.15s, background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--rust);
+      background: rgba(181,84,26,0.1);
+    }
+    .option-btn.correct {
+      border-color: var(--green);
+      background: rgba(76,175,125,0.12);
+      color: var(--white);
+    }
+    .option-btn.wrong {
+      border-color: var(--red);
+      background: rgba(192,57,43,0.1);
+      color: var(--ash);
+    }
+    .option-letter {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      color: var(--rust);
+      min-width: 1.2rem;
+    }
+
+    .feedback {
+      margin-top: 1.2rem;
+      padding: 1rem 1.2rem;
+      background: var(--smoke3);
+      border-left: 3px solid var(--rust);
+      font-size: 0.95rem;
+      color: var(--parchment2);
+      font-style: italic;
+      display: none;
+    }
+    .feedback.correct { border-left-color: var(--green); }
+    .feedback.wrong { border-left-color: var(--red); }
+    .feedback .reward-earned {
+      display: block;
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      color: var(--key-gold);
+      font-style: normal;
+      margin-top: 0.5rem;
+      letter-spacing: 0.1em;
+    }
+
+    .next-btn {
+      display: none;
+      margin-top: 1.2rem;
+      padding: 0.7rem 2rem;
+      background: var(--rust);
+      color: var(--white);
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .next-btn:hover { background: var(--rust-glow); }
+
+    /* UNLOCK PANEL */
+    .unlocks-panel {
+      background: var(--smoke2);
+      border: 1px solid var(--smoke3);
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .unlocks-title {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      color: var(--rust);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .unlock-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--smoke3);
+    }
+    .unlock-item:last-child { border-bottom: none; }
+    .unlock-status {
+      font-size: 1.2rem;
+      min-width: 1.5rem;
+      text-align: center;
+    }
+    .unlock-info { flex: 1; }
+    .unlock-name {
+      font-family: 'Cinzel', serif;
+      font-size: 0.82rem;
+      color: var(--white);
+    }
+    .unlock-name.locked { color: var(--ash); }
+    .unlock-threshold {
+      font-size: 0.78rem;
+      color: var(--ash);
+      font-style: italic;
+    }
+    .unlock-btn {
+      padding: 0.35rem 0.9rem;
+      background: var(--rust);
+      color: var(--white);
+      font-family: 'Cinzel', serif;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+    .unlock-btn:hover { background: var(--rust-glow); }
+
+    /* BONUS SCENE MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--smoke2);
+      border: 1px solid var(--rust-dim, #7a3810);
+      max-width: 640px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 2.5rem 2rem;
+      position: relative;
+    }
+    .modal-label {
+      font-family: 'Cinzel', serif;
+      font-size: 0.68rem;
+      letter-spacing: 0.25em;
+      color: var(--rust);
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    .modal-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      color: var(--white);
+      font-weight: 400;
+      margin-bottom: 1.5rem;
+    }
+    .modal-body {
+      font-size: 1rem;
+      color: var(--parchment);
+      line-height: 1.8;
+    }
+    .modal-body p { margin-bottom: 1rem; }
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1.2rem;
+      background: none;
+      border: none;
+      color: var(--ash);
+      font-size: 1.4rem;
+      cursor: pointer;
+      font-family: 'Cinzel', serif;
+    }
+    .modal-close:hover { color: var(--white); }
+
+    /* RESULTS SCREEN */
+    .results-screen {
+      display: none;
+      text-align: center;
+      padding: 3rem 1.5rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .results-screen.show { display: block; }
+    .results-title {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      color: var(--white);
+      margin-bottom: 0.5rem;
+    }
+    .results-sats {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      color: var(--key-gold);
+      margin: 1rem 0;
+    }
+    .results-sats span { font-size: 1rem; display: block; color: var(--ash); letter-spacing: 0.2em; }
+    .results-rank {
+      font-style: italic;
+      color: var(--parchment2);
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+    .results-share {
+      font-family: 'Cinzel', serif;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--ash);
+      margin-top: 2rem;
+    }
+    .btn-restart {
+      display: inline-block;
+      padding: 0.8rem 2rem;
+      background: var(--rust);
+      color: var(--white);
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      margin-top: 1.5rem;
+    }
+    .btn-restart:hover { background: var(--rust-glow); }
+
+    @media (max-width: 520px) {
+      .stats-bar { gap: 1.2rem; }
+      .question-card { padding: 1.2rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">The Orange Robot</a>
+  <a href="index.html" class="nav-back">← Back to Hub</a>
+</nav>
+
+<div class="hero">
+  <p class="eyebrow">Interactive Experience</p>
+  <h1>Easter Egg Hunt</h1>
+  <p class="hero-sub">How well did you read between the lines? Answer 21 questions, mine your satoshis, unlock hidden scenes.</p>
+</div>
+
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-label">Question</span>
+    <span class="stat-value" id="q-counter">1 / 21</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Satoshis Mined</span>
+    <span class="stat-value sats" id="sats-display">0 ⚡</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Correct</span>
+    <span class="stat-value correct" id="correct-display">0</span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Current Reward</span>
+    <span class="stat-value" id="reward-display">100 sats</span>
+  </div>
+</div>
+
+<div class="halving-bar">
+  <div class="halving-label">⛏ PROOF OF WORK — HALVING EVERY 4 BLOCKS</div>
+  <div class="halving-blocks" id="halving-blocks"></div>
+</div>
+
+<div class="quiz-container">
+
+  <!-- UNLOCKS PANEL -->
+  <div class="unlocks-panel">
+    <div class="unlocks-title">⚙ Unlock Vault</div>
+    <div class="unlock-item" id="unlock-1">
+      <div class="unlock-status">🔒</div>
+      <div class="unlock-info">
+        <div class="unlock-name locked">The Estate Sale</div>
+        <div class="unlock-threshold">Unlock at 200 sats</div>
+      </div>
+    </div>
+    <div class="unlock-item" id="unlock-2">
+      <div class="unlock-status">🔒</div>
+      <div class="unlock-info">
+        <div class="unlock-name locked">Scene 2: The First Block</div>
+        <div class="unlock-threshold">Unlock at 350 sats — Coming Soon</div>
+      </div>
+    </div>
+    <div class="unlock-item" id="unlock-3">
+      <div class="unlock-status">🔒</div>
+      <div class="unlock-info">
+        <div class="unlock-name locked">Scene 3: The Forgetting</div>
+        <div class="unlock-threshold">Unlock at 500 sats — Coming Soon</div>
+      </div>
+    </div>
+    <div class="unlock-item" id="unlock-4">
+      <div class="unlock-status">🔒</div>
+      <div class="unlock-info">
+        <div class="unlock-name locked">Scene 4: Before the Dream</div>
+        <div class="unlock-threshold">Unlock at 650 sats — Coming Soon</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUESTION CARD -->
+  <div class="question-card" id="question-card">
+    <div class="question-meta">
+      <span class="q-number" id="q-label">Question 1 of 21</span>
+      <span class="q-reward" id="q-reward-label">⚡ 100 sats</span>
+    </div>
+    <div class="question-text" id="question-text"></div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="next-btn">Next Question →</button>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="results-screen" id="results-screen">
+    <p class="eyebrow">Hunt Complete</p>
+    <div class="results-title" id="results-title"></div>
+    <div class="results-sats" id="results-sats">
+      <span>SATOSHIS MINED</span>
+    </div>
+    <div class="results-rank" id="results-rank"></div>
+    <div id="results-unlocks"></div>
+    <button class="btn-restart" onclick="restartGame()">Mine Again</button>
+    <p class="results-share">Share your score: #TheOrangeRobot #BitcoinEasterEgg</p>
+  </div>
+
+</div>
+
+<!-- BONUS SCENE MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <p class="modal-label" id="modal-label">Bonus Scene</p>
+    <h2 class="modal-title" id="modal-title"></h2>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script src="wallet.js"></script>
+<script>
+// ── QUESTIONS ──
+const questions = [
+  {
+    q: "The epigraph of The Orange Robot quotes Genesis 37:19. What does it say?",
+    options: [
+      "'For I know the plans I have for you'",
+      "'They said to one another, Here comes this dreamer'",
+      "'What you meant for evil, God meant for good'",
+      "'In the beginning was the word'"
+    ],
+    answer: 1,
+    explain: "Genesis 37:19 — the moment Joseph's brothers spot him coming and decide his fate. The dreamer motif runs like a thread through the entire novel."
+  },
+  {
+    q: "What illness does Frank Harlan suffer from, described in the very first chapter?",
+    options: ["Heart disease", "COPD", "Alzheimer's disease", "Parkinson's disease"],
+    answer: 1,
+    explain: "COPD — Frank's labored breathing and trembling hands are introduced in Chapter 1, a ticking clock that shadows every page."
+  },
+  {
+    q: "What protected phrase does Frank say to Joey that echoes through the entire novel?",
+    options: [
+      "'The key unlocks more than machines'",
+      "'You're a dreamer, Joey'",
+      "'Build your tower, son'",
+      "'We're done with the past'"
+    ],
+    answer: 1,
+    explain: "'You're a dreamer, Joey' — spoken first as a blessing, heard again at the parking lot knife scene, again as a letter, and finally as a whisper at the reunion. Same words, different weight each time."
+  },
+  {
+    q: "Where does Joey scratch the first half of his Bitcoin private key?",
+    options: [
+      "On the inside cover of a ledger book",
+      "Into the metal inside the orange robot's body",
+      "On the back of a business card",
+      "Into the wooden frame of Earl's level"
+    ],
+    answer: 1,
+    explain: "Inside the robot's body — the wallet address and first half of the private key, scratched by hand as an eighteen-year-old in an Ohio office trailer."
+  },
+  {
+    q: "Where does Joey scratch the second half of his Bitcoin private key?",
+    options: [
+      "Into the sole of his boot",
+      "Into the brass wind-up key handle",
+      "On the back of his social security card",
+      "On the inside of his hard hat"
+    ],
+    answer: 1,
+    explain: "Into the brass cloverleaf handle of the wind-up key — the two halves separated, exactly as Frank always insisted a key should be kept."
+  },
+  {
+    q: "How many stories tall is the Apex tower, and what does that number echo?",
+    options: [
+      "37 stories — the number of chapters in the book",
+      "21 stories — Bitcoin's 21 million coin supply cap",
+      "50 stories — the last chapter of Joseph's story in Genesis",
+      "10 stories — the Ten Commandments"
+    ],
+    answer: 1,
+    explain: "21 stories — a monument to Bitcoin's scarcity built into steel and glass. The building is the math made physical."
+  },
+  {
+    q: "In the Apex tower model, what happens every fourth floor?",
+    options: [
+      "The floor plan doubles in size",
+      "The offices are reserved for founding partners",
+      "The floor plan halves — like Bitcoin's halving cycle",
+      "A mechanical room is placed there"
+    ],
+    answer: 2,
+    explain: "Every fourth floor the building steps in and halves — mirroring Bitcoin's halving cycle, where new supply is cut in half roughly every four years."
+  },
+  {
+    q: "How does Joey explain the tower's design to Emmy?",
+    options: [
+      "'It's an engineering constraint — the foundation can only support so much weight'",
+      "'Four floors, four years. It steps in, holds less, becomes more concentrated the higher it goes. The building is the math'",
+      "'I wanted it to look like it had been carried a long way'",
+      "'Every floor represents a year of exile — twenty-one years from betrayal to return'"
+    ],
+    answer: 1,
+    explain: "'The building is the math' — Joey's explanation to Emmy is the clearest statement of the Bitcoin-as-architecture metaphor at the heart of the novel."
+  },
+  {
+    q: "What is the Bitcoin price shown at the very end of the Epilogue?",
+    options: [
+      "1 Bitcoin = $2,800,000",
+      "1 Bitcoin = $185,000",
+      "1 Bitcoin = 1 Bitcoin",
+      "1 Bitcoin = $72,100"
+    ],
+    answer: 2,
+    explain: "'1 Bitcoin = 1 Bitcoin' — the final dateline abandons dollar pricing entirely. By 2035 the comparison no longer makes sense. Bitcoin has become its own unit of account."
+  },
+  {
+    q: "What is the name of the fictional law that forces companies to maintain a minimum percentage of human workers?",
+    options: [
+      "The Labor Preservation Act",
+      "The Humanity Act",
+      "The Workforce Protection Mandate",
+      "The Harlan Doctrine"
+    ],
+    answer: 1,
+    explain: "The Humanity Act mandates a 30% human workforce minimum — the economic pressure that makes Apex's construction robotics both revolutionary and politically dangerous."
+  },
+  {
+    q: "What is the name of Joey's construction robotics company?",
+    options: ["Harlan Robotics", "Apex Construction Technologies", "ForgeWalker", "Rebar Technologies"],
+    answer: 1,
+    explain: "Apex Construction Technologies — built from nothing during Joey's exile, named for the highest point, the peak. The word APEX appears in polished letters above the entrance of the 21-story tower."
+  },
+  {
+    q: "What company does Joey work at before founding Apex?",
+    options: ["Harlan Construction", "ForgeWalker", "Rebar Technologies", "Mason Industrial"],
+    answer: 2,
+    explain: "Rebar Technologies — where Joey spends fourteen months learning robotics before going out on his own. Lee Chen, Rebar's Director of Innovation, eventually joins Apex."
+  },
+  {
+    q: "What does Joey say when Jason asks who is funding Apex's big expansion?",
+    options: [
+      "'A silent partner. Prefers anonymity.'",
+      "'I've got a rich uncle. Name's Satoshi. Eccentric guy. Likes to stay out of the spotlight.'",
+      "'Let's just say I've been saving for a while.'",
+      "'You don't want to know. Trust me.'"
+    ],
+    answer: 1,
+    explain: "'My uncle Satoshi' — Joey's deadpan joke about Satoshi Nakamoto, Bitcoin's pseudonymous creator. Nick immediately catches it. Jason has no idea what they're talking about."
+  },
+  {
+    q: "What does the eight-foot metal robot in the Apex lobby look like?",
+    options: [
+      "A sleek humanoid figure in chrome and white",
+      "A worn orange toy robot, scaled to the size of a man, with APEX on its chest",
+      "An industrial arm welded to a pedestal",
+      "A replica of the Terminator endoskeleton"
+    ],
+    answer: 1,
+    explain: "Orange with blue accents, deliberately worn — as if it had been carried a long way. Curtis sees it and immediately says it reminds him of the little wind-up robot Frank gave Joey for Christmas."
+  },
+  {
+    q: "What does the novel's final Bitcoin price dateline say — and what does it mean?",
+    options: [
+      "$5,000,000 — Bitcoin has become the world's reserve currency",
+      "UNKNOWN — the blockchain was destroyed",
+      "1 Bitcoin = 1 Bitcoin — Bitcoin has become its own unit of account",
+      "$0 — the bubble finally burst"
+    ],
+    answer: 2,
+    explain: "'1 Bitcoin = 1 Bitcoin' — by 2035 comparing Bitcoin to dollars no longer makes sense. It's a quiet, profound statement that the transformation Joey bet his life on has completed."
+  },
+  {
+    q: "How many half-brothers betray Joey?",
+    options: ["Three", "Four", "Five", "Ten"],
+    answer: 2,
+    explain: "Five half-brothers — Mike, Dale, Curtis, Kevin, and Leo. Condensed from Joseph's ten older brothers in Genesis, keeping the family dynamic without requiring a cast of dozens."
+  },
+  {
+    q: "What is the name of Joey's wife, who is head of product design at Apex?",
+    options: ["Sarah Harlan", "Emmy Nicholas", "Rachel Keller", "Diana Chen"],
+    answer: 1,
+    explain: "Emmy Nicholas — a parallel to the biblical Rachel, the woman Joseph loved and waited for."
+  },
+  {
+    q: "The novel has 37 numbered chapters. What does that structure deliberately mirror?",
+    options: [
+      "The 37 years of Joey's exile",
+      "The chapters of Genesis from 37 to 50, where Joseph's story is told",
+      "The 37 employees of Harlan Construction",
+      "The 37 halvings projected before Bitcoin's supply is exhausted"
+    ],
+    answer: 1,
+    explain: "Genesis 37 through 50 — the Joseph narrative. Every chapter of The Orange Robot maps to that arc. The structure IS the retelling."
+  },
+  {
+    q: "What does Frank whisper to Joey at their reunion near the end of the novel?",
+    options: [
+      "'I never stopped believing you'",
+      "'My dreamer. You built my tower.'",
+      "'I should have defended you'",
+      "'Forgive them. They didn't know what they were doing.'"
+    ],
+    answer: 1,
+    explain: "'My dreamer. You built your tower.' — the blessing Frank gave Joey at the beginning, returned at the end. Your tower, not his. The dream was always Joey's to build."
+  },
+  {
+    q: "What is the relationship between Brad Bigelow's ForgeWalker and Joey's Apex?",
+    options: [
+      "ForgeWalker is Apex's chief competitor",
+      "ForgeWalker supplies the robots; Apex provides the construction expertise and software integration",
+      "Apex acquired ForgeWalker in a hostile takeover",
+      "ForgeWalker is a subsidiary of Harlan Construction"
+    ],
+    answer: 1,
+    explain: "Partners — ForgeWalker supplies and continuously refines the robots, Apex brings the construction expertise and software integration. Brad Bigelow and Joey build something neither could alone."
+  },
+  {
+    q: "In Joey's Genesis 50 monologue, what does he say about what his brothers meant for harm?",
+    options: [
+      "'I have not forgotten, and I have not forgiven'",
+      "'What you meant for harm was turned to good — I see that now'",
+      "'You owe me nothing. I owe you nothing.'",
+      "'God will judge between us'"
+    ],
+    answer: 1,
+    explain: "Genesis 50:20 — 'You intended to harm me, but God intended it for good.' The theological spine of the entire novel, spoken at last in Joey's own voice at the climax."
+  }
+];
+
+// ── BONUS SCENES ──
+const bonusScenes = {
+  1: {
+    label: "Bonus Scene — Unlocked",
+    title: "The Estate Sale",
+    body: `<p><em>A few weeks before Christmas, 2003</em></p>
+
+<p>The estate sale was in a brick ranch on the old side of town, the kind of house where the furniture hadn't moved in forty years. Hand-lettered signs in the yard. Folding tables in every room, a man's whole life broken down into priced pieces — dishes, fishing rods, a recliner with masking tape on the arm that read <em>$40</em>.</p>
+
+<p>Frank hadn't come for anything. He'd seen the sign on his way back from a job site and pulled in the way men his age sometimes do, drawn to other men's tools and other men's leftover years.</p>
+
+<p>The garage was where the real life of the house had been. Pegboard walls. A workbench worn smooth. And on a card table by the door, a shallow box lid full of keys — dozens of them, old keys, keys on rings, keys on loops of string, keys that had outlived whatever they once opened. A piece of cardboard propped against it read <em>$1 each</em>.</p>
+
+<p>Frank ran his fingers through them out of habit. House keys, a padlock key, a flat little luggage key. And down near the bottom, a small brass wind-up key, worn smooth, the kind you'd turn to bring something to life. He picked it up, turned it over once. No tag. Nothing to tell him what it belonged to. He set it back in the lid and went on into the house.</p>
+
+<p>The robot was on a card table in the living room. Orange pressed tin, maybe eight inches tall, the paint worn at the joints. <em>$20</em> on a piece of masking tape on its chest. He picked it up. Nothing happened.</p>
+
+<p>A woman came in from the kitchen, white-haired, moving carefully. She introduced herself as Fran.</p>
+
+<p>"That was Hal's," she said. "My husband's. He brought it back from Japan — he was Air Force, stationed there in the fifties." She looked at the robot in Frank's hands. "He loved those things. I never could get it to work, though. Can't find the key."</p>
+
+<p>"I think I saw a key," Frank said.</p>
+
+<p>He went back to the garage. Found the brass wind-up key in the box lid where he'd left it, right where he'd set it down. He carried it back to the living room, fitted it into the slot on the robot's back, and wound it slowly. One rotation. Two.</p>
+
+<p>The robot walked.</p>
+
+<p>Six small steps across the card table, arms swinging, head turning side to side, eyes lighting up orange. It reached the edge and Frank caught it before it fell.</p>
+
+<p>Fran put her hand over her mouth.</p>
+
+<p>"Well," Frank said. "There you go." He set the robot down and looked at her. "One working vintage robot. That's twenty dollars. And a dollar for the key."</p>
+
+<p>Fran looked at it a long moment. Then she nodded.</p>
+
+<p>"Very good," she said. "Twenty-one dollars it is."</p>
+
+<p>Frank paid her in cash. He wrapped the robot in a dish towel from one of the folding tables and carried it to his truck. He put the key in his shirt pocket, separate, the way he'd always kept important things.</p>
+
+<p>He didn't know yet what he was carrying. He just knew the boy would love it.</p>`
+  }
+};
+
+// ── GAME STATE ──
+let currentQ = 0;
+let totalSats = 0;
+let correctCount = 0;
+let answered = false;
+
+function getReward(qIndex) {
+  // Halving every 4 questions
+  if (qIndex < 4)  return 100;
+  if (qIndex < 8)  return 50;
+  if (qIndex < 12) return 25;
+  if (qIndex < 16) return 12.5;
+  return 6.25;
+}
+
+function buildHalvingBlocks() {
+  const container = document.getElementById('halving-blocks');
+  container.innerHTML = '';
+  for (let i = 0; i < 21; i++) {
+    const b = document.createElement('div');
+    b.className = 'block' + (i === currentQ ? ' current' : '') + (i < currentQ ? ' answered' : '') + ((i === 3 || i === 7 || i === 11 || i === 15) ? ' halving-point' : '');
+    b.textContent = i + 1;
+    container.appendChild(b);
+  }
+}
+
+function updateStats() {
+  document.getElementById('q-counter').textContent = `${currentQ + 1} / 21`;
+  document.getElementById('sats-display').textContent = `${totalSats} ⚡`;
+  document.getElementById('correct-display').textContent = correctCount;
+  const reward = getReward(currentQ);
+  document.getElementById('reward-display').textContent = `${reward} sats`;
+  document.getElementById('q-label').textContent = `Question ${currentQ + 1} of 21`;
+  document.getElementById('q-reward-label').textContent = `⚡ ${reward} sats`;
+  buildHalvingBlocks();
+  checkUnlocks();
+}
+
+// unlock UI handled inside updateStats
+
+function openScene(id) {
+  const scene = bonusScenes[id];
+  if (!scene) return;
+  document.getElementById('modal-label').textContent = scene.label;
+  document.getElementById('modal-title').textContent = scene.title;
+  document.getElementById('modal-body').innerHTML = scene.body;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function loadQuestion() {
+  answered = false;
+  const q = questions[currentQ];
+  document.getElementById('question-text').textContent = q.q;
+  const opts = document.getElementById('options');
+  opts.innerHTML = '';
+  const letters = ['A', 'B', 'C', 'D'];
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-letter">${letters[i]}</span>${opt}`;
+    btn.onclick = () => selectAnswer(i);
+    opts.appendChild(btn);
+  });
+  document.getElementById('feedback').style.display = 'none';
+  document.getElementById('next-btn').style.display = 'none';
+  updateStats();
+}
+
+function selectAnswer(chosen) {
+  if (answered) return;
+  answered = true;
+  const q = questions[currentQ];
+  const btns = document.querySelectorAll('.option-btn');
+  const feedback = document.getElementById('feedback');
+  const reward = getReward(currentQ);
+  const isCorrect = chosen === q.answer;
+
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === q.answer) btn.classList.add('correct');
+    else if (i === chosen && !isCorrect) btn.classList.add('wrong');
+  });
+
+  if (isCorrect) {
+    correctCount++;
+    totalSats += reward;
+    TOR.earn(reward, 'Easter Egg Hunt — Q' + (currentQ+1));
+    TOR.toast(reward);
+    feedback.className = 'feedback correct';
+    feedback.className = 'feedback correct'; feedback.innerHTML = '✓ Correct. ' + q.explain + '<span class="reward-earned">+' + reward + ' satoshis mined ⚡</span>';
+  } else {
+    feedback.className = 'feedback wrong';
+    feedback.className = 'feedback wrong'; feedback.innerHTML = '✗ Not quite. ' + q.explain + '<span class="reward-earned">0 satoshis this block</span>';
+  }
+
+  feedback.style.display = 'block';
+  document.getElementById('next-btn').style.display = 'inline-block';
+  updateStats();
+}
+
+function nextQuestion() {
+  currentQ++;
+  if (currentQ >= questions.length) {
+    showResults();
+  } else {
+    loadQuestion();
+  }
+}
+
+function showResults() {
+  TOR.markDone('easteregg');
+  document.getElementById('question-card').style.display = 'none';
+  const rs = document.getElementById('results-screen');
+  rs.classList.add('show');
+
+  let rank, title;
+  if (totalSats >= 650)      { rank = "Satoshi Nakamoto himself would nod."; title = "Genesis Keeper"; }
+  else if (totalSats >= 500) { rank = "You read every line. Twice."; title = "Cold Storage Scholar"; }
+  else if (totalSats >= 350) { rank = "The dreamer sees clearly."; title = "The Dreamer"; }
+  else if (totalSats >= 200) { rank = "More than most. Keep digging."; title = "Block Explorer"; }
+  else                        { rank = "The Easter eggs are still out there."; title = "New Hodler"; }
+
+  document.getElementById('results-title').textContent = title;
+  document.getElementById('results-sats').innerHTML = `${totalSats}<span>SATOSHIS MINED</span>`;
+  document.getElementById('results-rank').textContent = rank;
+
+  // Show unlocked scenes
+  let html = '';
+  if (totalSats >= 200) {
+    html += `<p style="margin-top:1.5rem"><button class="unlock-btn" onclick="openScene(1)" style="padding:0.5rem 1.2rem;font-size:0.8rem">Read: The Estate Sale →</button></p>`;
+  }
+  document.getElementById('results-unlocks').innerHTML = html;
+  checkUnlocks();
+}
+
+function restartGame() {
+  currentQ = 0; totalSats = 0; correctCount = 0; answered = false;
+  document.getElementById('question-card').style.display = 'block';
+  document.getElementById('results-screen').classList.remove('show');
+  // Reset unlocks panel
+  const u1 = document.getElementById('unlock-1');
+  u1.querySelector('.unlock-status').textContent = '🔒';
+  u1.querySelector('.unlock-name').classList.add('locked');
+  u1.querySelector('.unlock-name').textContent = 'The Estate Sale';
+  const btn = u1.querySelector('.unlock-btn');
+  if (btn) btn.remove();
+  loadQuestion();
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('next-btn').addEventListener('click', nextQuestion);
+  loadQuestion();
+});
+</script>
+</body>
+</html>

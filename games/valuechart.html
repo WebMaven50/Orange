@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Value Chart — The Orange Robot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --orange:#E8722C;--orange-dk:#BD551A;--brass:#CBA24C;
+      --paper:#F1E9D8;--paper-2:#E6D9BF;--ink:#2A2118;--ink-soft:#6A5C46;
+      --gold:#ECB53F;
+      --serif:'Fraunces',Georgia,'Times New Roman',serif;
+      --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+      --sans:'Space Grotesk',system-ui,-apple-system,Segoe UI,sans-serif;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%}
+    body{background:radial-gradient(120% 120% at 50% 0%,#20283a 0%,#161a22 55%,#0e1016 100%);
+      color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+    .topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid #ffffff11}
+    .topbar a{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#7b8190;text-decoration:none}
+    .topbar a:hover{color:var(--gold)}
+    .sats-pill{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--gold);background:#1a1f2a;border:1px solid #2c3242;padding:4px 10px;border-radius:999px}
+    .stage{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 48px);padding:16px}
+    .card{width:min(700px,98vw);background:var(--paper);border-radius:14px;
+      padding:clamp(14px,3.5vw,26px) clamp(12px,4vw,28px);
+      box-shadow:0 14px 40px rgba(0,0,0,.5),inset 0 1px 0 #fff8;
+      border:1px solid #d8c9a8;text-align:center;
+      background-image:radial-gradient(rgba(120,90,40,.05) 1px,transparent 1px);background-size:5px 5px}
+    h2{font-family:var(--serif);font-weight:600;font-size:clamp(17px,5.5vw,30px);line-height:1.05;margin:0 0 10px}
+    .eyebrow{font-family:var(--mono);font-size:clamp(9px,2.4vw,11px);letter-spacing:.18em;text-transform:uppercase;color:var(--orange-dk);margin:0 0 7px}
+    p.note{font-size:clamp(12px,3.2vw,14.5px);line-height:1.55;color:var(--ink-soft);margin:6px 0 12px;min-height:42px}
+    .chartwrap{width:100%;margin:8px 0}
+    .readout{display:flex;align-items:baseline;gap:8px;margin-bottom:6px;flex-wrap:wrap;justify-content:center}
+    .yr{font-family:var(--mono);font-size:clamp(22px,6vw,36px);font-weight:600;color:var(--ink);letter-spacing:-.02em}
+    .pr{font-family:var(--mono);font-size:clamp(11px,3vw,15px);color:var(--orange-dk);font-weight:600}
+    .st{font-family:var(--mono);font-size:clamp(9px,2.4vw,12px);color:var(--ink-soft)}
+    canvas{display:block;width:100%;height:auto;border-radius:6px;background:#111820}
+    .btn{font-family:var(--sans);font-weight:600;font-size:clamp(13px,3.8vw,15px);
+      cursor:pointer;border:none;border-radius:10px;
+      padding:clamp(10px,2.5vw,13px) clamp(14px,4vw,20px);color:#fff;
+      background:linear-gradient(180deg,var(--orange),var(--orange-dk));
+      box-shadow:0 5px 0 #8c3f12,0 8px 14px rgba(0,0,0,.28);
+      transition:transform .06s,box-shadow .06s;letter-spacing:.01em;margin-top:10px}
+    .btn:active{transform:translateY(4px);box-shadow:0 1px 0 #8c3f12}
+    .btn.ghost{background:linear-gradient(180deg,#5a6273,#3c4252);box-shadow:0 5px 0 #262b36}
+    .btn:disabled{filter:grayscale(.6) brightness(.85);cursor:default}
+    .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html">← The Vault</a>
+  <span class="sats-pill" id="hub-sats">0 ⚡</span>
+</div>
+<div class="stage">
+  <div class="card">
+    <p class="eyebrow">What it became</p>
+    <h2>The Value Over The Years</h2>
+    <div class="chartwrap">
+      <div class="readout">
+        <div class="yr" id="vYear">2009</div>
+        <div>
+          <div class="pr" id="vPrice">1 BTC = $0</div>
+          <div class="st" id="vStash">your stash = $0</div>
+        </div>
+      </div>
+      <canvas id="cvChart" width="680" height="260" aria-label="Bitcoin value over time"></canvas>
+    </div>
+    <p class="note" id="valText">Watch the line climb.</p>
+    <div class="row">
+      <button class="btn" id="valBtn">Run the years</button>
+      <button class="btn ghost" id="valNext" style="display:none" onclick="claimAndContinue()">Finish →</button>
+    </div>
+  </div>
+</div>
+<script src="wallet.js"></script>
+<script>
+var REDUCE = false;
+var state = { raf: null, stashBTC: 50 };
+document.getElementById('hub-sats').textContent = TOR.fmt(TOR.getSats()) + ' ⚡';
+  var SOUND = (function(){
+    var ctx=null, master=null, on=true, noiseBuf=null, hum=null, climb=null;
+    function init(){
+      if(ctx) return true;
+      try{
+        var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
+        ctx=new AC(); master=ctx.createGain(); master.gain.value=on?0.85:0.0001; master.connect(ctx.destination);
+        var n=Math.floor(ctx.sampleRate*1.2); noiseBuf=ctx.createBuffer(1,n,ctx.sampleRate);
+        var d=noiseBuf.getChannelData(0); for(var i=0;i<n;i++) d[i]=Math.random()*2-1;
+        return true;
+      }catch(e){ return false; }
+    }
+    function t(){ return ctx?ctx.currentTime:0; }
+    function tone(freq,type,g,a,dec,when,glide){
+      if(!ctx) return; var s=when||t();
+      var o=ctx.createOscillator(), gn=ctx.createGain();
+      o.type=type||'sine'; o.frequency.setValueAtTime(Math.max(1,freq),s);
+      if(glide) o.frequency.exponentialRampToValueAtTime(Math.max(1,glide),s+a+dec);
+      gn.gain.setValueAtTime(0.0001,s);
+      gn.gain.exponentialRampToValueAtTime(Math.max(0.0001,g),s+a);
+      gn.gain.exponentialRampToValueAtTime(0.0001,s+a+dec);
+      o.connect(gn); gn.connect(master); o.start(s); o.stop(s+a+dec+0.05);
+    }
+    function noise(g,a,dec,ft,ff,when,glide){
+      if(!ctx) return; var s=when||t();
+      var src=ctx.createBufferSource(); src.buffer=noiseBuf;
+      var f=ctx.createBiquadFilter(); f.type=ft||'bandpass'; f.Q.value=5;
+      f.frequency.setValueAtTime(ff||1000,s);
+      if(glide) f.frequency.exponentialRampToValueAtTime(Math.max(50,glide),s+a+dec);
+      var gn=ctx.createGain(); gn.gain.setValueAtTime(0.0001,s);
+      gn.gain.exponentialRampToValueAtTime(Math.max(0.0001,g),s+a);
+      gn.gain.exponentialRampToValueAtTime(0.0001,s+a+dec);
+      src.connect(f); f.connect(gn); gn.connect(master); src.start(s); src.stop(s+a+dec+0.05);
+    }
+    return {
+      resume:function(){ if(!init())return; if(ctx.state==='suspended') ctx.resume(); },
+      setOn:function(v){ on=v; if(master) master.gain.setTargetAtTime(on?0.85:0.0001,t(),0.02); },
+      isOn:function(){ return on; },
+      click:function(){ tone(440,'square',0.05,0.004,0.05); },
+      wind:function(charge){ var f=560+charge*8; noise(0.13,0.004,0.07,'bandpass',f); tone(f*1.6,'square',0.05,0.003,0.05); },
+      step:function(speed,alt){ var b=(alt?235:300)*(0.6+speed*0.5); tone(b,'triangle',0.02+0.06*speed,0.004,0.08); noise(0.01+0.05*speed,0.003,0.05,'lowpass',850); },
+      springDown:function(){ tone(440,'sawtooth',0.10,0.02,0.55,t(),95); noise(0.07,0.01,0.45,'lowpass',650); },
+      unwrap:function(){ noise(0.13,0.02,0.28,'highpass',2400); tone(720,'triangle',0.05,0.02,0.22); },
+      creak:function(){ tone(190,'sawtooth',0.07,0.55,0.6,t(),120); noise(0.04,0.05,0.5,'bandpass',500); },
+      coin:function(streak){ var b=900+Math.min(streak||1,14)*16; tone(b,'square',0.11,0.005,0.09); tone(b*1.5,'square',0.10,0.005,0.17,t()+0.075); },
+      hash:function(){ noise(0.012,0.002,0.03,'highpass',5200); },
+      humStart:function(){ if(!ctx||hum) return;
+        var g=ctx.createGain(); g.gain.value=0.0001; g.connect(master);
+        var o1=ctx.createOscillator(); o1.type='sine'; o1.frequency.value=68;
+        var o2=ctx.createOscillator(); o2.type='triangle'; o2.frequency.value=68.7;
+        var nz=ctx.createBufferSource(); nz.buffer=noiseBuf; nz.loop=true;
+        var nf=ctx.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=300;
+        var ng=ctx.createGain(); ng.gain.value=0.05;
+        var lfo=ctx.createOscillator(); lfo.frequency.value=0.28; var lg=ctx.createGain(); lg.gain.value=70;
+        lfo.connect(lg); lg.connect(nf.frequency);
+        o1.connect(g); o2.connect(g); nz.connect(nf); nf.connect(ng); ng.connect(g);
+        o1.start(); o2.start(); nz.start(); lfo.start();
+        g.gain.setTargetAtTime(0.09,t(),0.7); hum={g:g,nodes:[o1,o2,nz,lfo]};
+      },
+      humStop:function(){ if(!hum) return; var h=hum; hum=null;
+        try{ h.g.gain.setTargetAtTime(0.0001,t(),0.3); }catch(e){}
+        setTimeout(function(){ h.nodes.forEach(function(n){ try{n.stop();}catch(e){} }); },700);
+      },
+      climbStart:function(){ if(!ctx||climb) return;
+        var o=ctx.createOscillator(); o.type='sine'; o.frequency.value=120;
+        var g=ctx.createGain(); g.gain.value=0.0001; o.connect(g); g.connect(master);
+        o.start(); g.gain.setTargetAtTime(0.05,t(),0.2); climb={o:o,g:g}; },
+      climbSet:function(p){ if(!climb) return; climb.o.frequency.setTargetAtTime(120*Math.pow(2,p*3.6),t(),0.08); },
+      climbStop:function(){ if(!climb) return; var c=climb; climb=null; try{ c.g.gain.setTargetAtTime(0.0001,t(),0.2);}catch(e){} setTimeout(function(){ try{c.o.stop();}catch(e){} },400); },
+      chord:function(){ [392,494,587,784,988].forEach(function(f,i){ tone(f,'triangle',0.10,0.02,1.3,t()+i*0.06); }); }
+    };
+  })();
+
+var PRICES = [
+  {y:2009,p:0},{y:2013,p:130},{y:2014,p:320},
+  {y:2023,p:44186},{y:2024,p:72100},{y:2027,p:185000},{y:2034,p:2800000}
+];
+function priceAt(year){
+  if(year<=PRICES[0].y) return 0;
+  for(var i=1;i<PRICES.length;i++){ if(year<=PRICES[i].y){
+    var a=PRICES[i-1],b=PRICES[i]; var f=(year-a.y)/(b.y-a.y);
+    var la=Math.log10(Math.max(1,a.p)),lb=Math.log10(Math.max(1,b.p));
+    if(a.p<=0){ return f<.15?0:Math.pow(10,lb*(f)); }
+    return Math.pow(10,la+(lb-la)*f);
+  }}
+  return PRICES[PRICES.length-1].p;
+}
+function money(v){
+  if(v>=1e9) return '$'+Math.round(v/1e9).toLocaleString()+' Billion';
+  if(v>=1e6) return '$'+Math.round(v/1e6).toLocaleString()+' Million';
+  if(v>=1e3) return '$'+Math.round(v).toLocaleString();
+  return '$'+Math.round(v).toLocaleString();
+}
+
+var c = document.getElementById('cvChart');
+var x = c.getContext('2d');
+var yEl = document.getElementById('vYear');
+var pEl = document.getElementById('vPrice');
+var sEl = document.getElementById('vStash');
+var btn = document.getElementById('valBtn');
+var nxt = document.getElementById('valNext');
+var txt = document.getElementById('valText');
+
+var Y0=2009,Y1=2034,W=c.width,H=c.height,padL=54,padR=16,padT=14,padB=28;
+var maxL=Math.log10(2800000);
+function X(yr){ return padL+(yr-Y0)/(Y1-Y0)*(W-padL-padR); }
+function Yv(v){ var l=v<=1?0:Math.log10(v); return H-padB-(l/maxL)*(H-padT-padB); }
+function grid(){
+  x.clearRect(0,0,W,H);
+  x.strokeStyle='rgba(255,255,255,.08)'; x.lineWidth=1;
+  x.fillStyle='#7f8aa0'; x.font='11px IBM Plex Mono';
+  [1,100,10000,1000000].forEach(function(v){ var yy=Yv(v); x.beginPath(); x.moveTo(padL,yy); x.lineTo(W-padR,yy); x.stroke(); x.fillText(money(v),6,yy+3); });
+  [2009,2014,2020,2027,2034].forEach(function(yr){ x.fillText(yr,X(yr)-12,H-8); });
+}
+function plotTo(year){
+  x.strokeStyle='#ECB53F'; x.lineWidth=3; x.lineJoin='round'; x.beginPath();
+  var started=false;
+  for(var yr=Y0;yr<=year+0.001;yr+=0.25){
+    var v=priceAt(yr); var px=X(yr),py=Yv(v);
+    if(!started){x.moveTo(px,py);started=true;}else x.lineTo(px,py);
+  }
+  x.stroke();
+  var v=priceAt(year),gx=X(year),gy=Yv(v);
+  x.fillStyle='#fff'; x.beginPath(); x.arc(gx,gy,5,0,7); x.fill();
+  x.strokeStyle='rgba(236,181,63,.5)'; x.lineWidth=2; x.beginPath(); x.arc(gx,gy,10,0,7); x.stroke();
+}
+grid();
+
+var claimed = false;
+btn.onclick = function(){
+  btn.disabled = true;
+  SOUND.resume(); SOUND.climbStart();
+  var dur = REDUCE?200:5200, t0=performance.now();
+  function loop(t){
+    var k=Math.min(1,(t-t0)/dur); var year=Y0+(Y1-Y0)*k;
+    grid(); plotTo(year); SOUND.climbSet(k);
+    var pr=priceAt(year),stash=pr*state.stashBTC;
+    yEl.textContent=Math.round(year);
+    pEl.textContent='1 BTC = '+(pr<1?'$0':money(pr));
+    sEl.textContent='your stash ('+state.stashBTC+' BTC) = '+(stash<1?'$0':money(stash));
+    if(k<1){ state.raf=requestAnimationFrame(loop); }
+    else {
+      SOUND.climbStop(); SOUND.chord();
+      var fin=2800000*state.stashBTC;
+      txt.innerHTML='Mined for nothing in 2009 — worth <b>'+money(fin)+'</b> by 2034. One dollar today; priceless tomorrow.';
+      nxt.style.display='inline-block';
+      if(!claimed){
+        claimed=true;
+        var earned=TOR.earn(100,'Value Chart — watched through to 2034');
+        TOR.toast(100);
+        TOR.markDone('valuechart');
+        document.getElementById('hub-sats').textContent=TOR.fmt(earned)+' ⚡';
+      }
+    }
+  }
+  state.raf=requestAnimationFrame(loop);
+};
+
+function claimAndContinue(){
+  if(state.raf) cancelAnimationFrame(state.raf);
+  SOUND.climbStop();
+  window.location.href='index.html';
+}
+</script>
+</body>
+</html>
