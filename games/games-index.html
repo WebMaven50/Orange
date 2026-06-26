@@ -327,7 +327,7 @@ function render() {
         <div class="unlock-title ${unlocked ? '' : 'locked-title'}">${gate.title}</div>
         <div class="unlock-req">${unlocked ? 'Unlocked' : 'Requires ' + gate.sats + ' sats'} ${!gate.available && !unlocked ? '· Coming soon' : ''}</div>
       </div>
-      ${unlocked && gate.available ? `<button class="btn-read" onclick="openScene('${gate.id}')">Read</button>` : ''}
+      ${unlocked && gate.available && SCENE_PAGES[gate.id] ? `<a class="btn-read" href="${SCENE_PAGES[gate.id]}">Read</a>` : ''}
     `;
     grid.appendChild(row);
   });
