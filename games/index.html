@@ -106,17 +106,6 @@
     }
     .btn-read:hover { background: var(--rust-glow); }
 
-    /* MODAL */
-    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 200; align-items: center; justify-content: center; padding: 1.5rem; }
-    .modal-overlay.open { display: flex; }
-    .modal { background: var(--smoke2); border: 1px solid var(--rust); max-width: 640px; width: 100%; max-height: 82vh; overflow-y: auto; padding: 2.5rem 2rem; position: relative; }
-    .modal-label { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: var(--rust); text-transform: uppercase; margin-bottom: 0.5rem; }
-    .modal-title { font-family: 'Cinzel', serif; font-size: 1.4rem; color: var(--white); font-weight: 400; margin-bottom: 1.5rem; }
-    .modal-body  { font-size: 1rem; color: var(--parchment); line-height: 1.85; }
-    .modal-body p { margin-bottom: 1rem; }
-    .modal-close { position: absolute; top: 1rem; right: 1.2rem; background: none; border: none; color: var(--ash); font-size: 1.4rem; cursor: pointer; font-family: 'Cinzel', serif; }
-    .modal-close:hover { color: var(--white); }
-
     /* WIPE CONFIRM */
     .wipe-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 300; align-items: center; justify-content: center; padding: 1.5rem; }
     .wipe-overlay.open { display: flex; }
@@ -257,16 +246,6 @@
 
 </main>
 
-<!-- SCENE MODAL -->
-<div class="modal-overlay" id="modal-overlay">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <p class="modal-label" id="modal-label">Bonus Scene</p>
-    <h2 class="modal-title" id="modal-title"></h2>
-    <div class="modal-body" id="modal-body"></div>
-  </div>
-</div>
-
 <!-- WIPE CONFIRM -->
 <div class="wipe-overlay" id="wipe-overlay">
   <div class="wipe-card">
@@ -279,63 +258,37 @@
 
 <script src="wallet.js"></script>
 <script>
-// ── BONUS SCENES ──
-const SCENES = {
-  'estate-sale': {
-    label: 'Bonus Scene — Unlocked at 200 sats',
-    title: 'The Estate Sale',
-    body: `<p><em>A few weeks before Christmas, 2003</em></p>
-<p>The estate sale was in a brick ranch on the old side of town, the kind of house where the furniture hadn't moved in forty years. Hand-lettered signs in the yard. Folding tables in every room, a man's whole life broken down into priced pieces — dishes, fishing rods, a recliner with masking tape on the arm that read <em>$40</em>.</p>
-<p>Frank hadn't come for anything. He'd seen the sign on his way back from a job site and pulled in the way men his age sometimes do, drawn to other men's tools and other men's leftover years.</p>
-<p>The garage was where the real life of the house had been. Pegboard walls. A workbench worn smooth. And on a card table by the door, a shallow box lid full of keys — dozens of them, old keys, keys on rings, keys on loops of string, keys that had outlived whatever they once opened. A piece of cardboard propped against it read <em>$1 each</em>.</p>
-<p>Frank ran his fingers through them out of habit. House keys, a padlock key, a flat little luggage key. And down near the bottom, a small brass wind-up key, worn smooth, the kind you'd turn to bring something to life. He picked it up, turned it over once. No tag. Nothing to tell him what it belonged to. He set it back in the lid and went on into the house.</p>
-<p>The robot was on a card table in the living room. Orange pressed tin, maybe eight inches tall, the paint worn at the joints. <em>$20</em> on a piece of masking tape on its chest. He picked it up. Nothing happened.</p>
-<p>A woman came in from the kitchen, white-haired, moving carefully. She introduced herself as Fran.</p>
-<p>"That was Hal's," she said. "My husband's. He brought it back from Japan — he was Air Force, stationed there in the fifties." She looked at the robot in Frank's hands. "He loved those things. I never could get it to work, though. Can't find the key."</p>
-<p>"I think I saw a key," Frank said.</p>
-<p>He went back to the garage. Found the brass wind-up key in the box lid where he'd left it, right where he'd set it down. He carried it back to the living room, fitted it into the slot on the robot's back, and wound it slowly. One rotation. Two.</p>
-<p>The robot walked.</p>
-<p>Six small steps across the card table, arms swinging, head turning side to side, eyes lighting up orange. It reached the edge and Frank caught it before it fell.</p>
-<p>Fran put her hand over her mouth.</p>
-<p>"Well," Frank said. "There you go." He set the robot down and looked at her. "One working vintage robot. That's twenty dollars. And a dollar for the key."</p>
-<p>Fran looked at it for a long moment. At the robot. At the key in Frank's hand. Then she nodded.</p>
-<p>"Very good," she said. "Twenty-one dollars it is."</p>
-<p>Frank paid her in cash. He wrapped the robot in a dish towel from one of the folding tables and carried it to his truck. He put the key in his shirt pocket, separate, the way he'd always kept important things.</p>
-<p>He didn't know yet what he was carrying. He just knew the boy would love it.</p>`
-  }
+// ── BONUS SCENE PAGE LINKS ──
+const SCENE_PAGES = {
+  'estate-sale': 'bonus-estate-sale.html',
+  'early-bird':  'bonus-early-bird.html'
 };
 
 // ── RENDER ──
 function render() {
   const sats = TOR.getSats();
 
-  // Sats display
   document.getElementById('total-sats').textContent = TOR.fmt(sats);
 
-  // Progress bar (cap at max gate)
   const maxGate = TOR.UNLOCK_GATES[TOR.UNLOCK_GATES.length - 1].sats;
   const pct = Math.min(100, (sats / maxGate) * 100);
   document.getElementById('progress-fill').style.width = pct + '%';
 
-  // Next unlock label
   const next = TOR.UNLOCK_GATES.find(g => sats < g.sats);
   document.getElementById('next-unlock-label').textContent = next
     ? 'Next unlock at ' + next.sats + ' sats'
     : 'All scenes unlocked!';
 
-  // Pips
   TOR.UNLOCK_GATES.forEach(function(g) {
     const pip = document.getElementById('pip-' + g.sats);
     if (pip && sats >= g.sats) pip.classList.add('reached');
   });
 
-  // Game cards — mark done
   ['easteregg','gift','mining','coldstorage','valuechart','joseph'].forEach(function(id) {
     const card = document.getElementById('card-' + id);
     if (card && TOR.isDone(id)) card.classList.add('done');
   });
 
-  // Unlock vault
   const grid = document.getElementById('unlock-grid');
   grid.innerHTML = '';
   TOR.UNLOCK_GATES.forEach(function(gate) {
@@ -348,12 +301,11 @@ function render() {
         <div class="unlock-title ${unlocked ? '' : 'locked-title'}">${gate.title}</div>
         <div class="unlock-req">${unlocked ? 'Unlocked' : 'Requires ' + gate.sats + ' sats'} ${!gate.available && !unlocked ? '· Coming soon' : ''}</div>
       </div>
-      ${unlocked && gate.available ? `<button class="btn-read" onclick="openScene('${gate.id}')">Read</button>` : ''}
+      ${unlocked && gate.available && SCENE_PAGES[gate.id] ? `<a class="btn-read" href="${SCENE_PAGES[gate.id]}">Read</a>` : ''}
     `;
     grid.appendChild(row);
   });
 
-  // Activity log
   const log = TOR.getLog();
   const logEl = document.getElementById('log-list');
   if (log.length === 0) {
@@ -361,21 +313,11 @@ function render() {
   } else {
     logEl.innerHTML = log.slice(0, 12).map(function(e) {
       const d = new Date(e.ts);
-      const t = d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
       return `<div class="log-row"><span class="log-label">${e.label}</span><span class="log-amount">+${TOR.fmt(e.amount)} ⚡ · ${TOR.fmt(e.total)} total</span></div>`;
     }).join('');
   }
 }
 
-function openScene(id) {
-  const s = SCENES[id];
-  if (!s) return;
-  document.getElementById('modal-label').textContent = s.label;
-  document.getElementById('modal-title').textContent = s.title;
-  document.getElementById('modal-body').innerHTML  = s.body;
-  document.getElementById('modal-overlay').classList.add('open');
-}
-function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
 function showWipe()   { document.getElementById('wipe-overlay').classList.add('open'); }
 function hideWipe()   { document.getElementById('wipe-overlay').classList.remove('open'); }
 function confirmWipe() {
@@ -384,7 +326,6 @@ function confirmWipe() {
   render();
 }
 
-// Listen for storage changes (when returning from a game)
 window.addEventListener('storage', render);
 window.addEventListener('focus',   render);
 
