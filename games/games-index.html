@@ -327,7 +327,7 @@ function render() {
         <div class="unlock-title ${unlocked ? '' : 'locked-title'}">${gate.title}</div>
         <div class="unlock-req">${unlocked ? 'Unlocked' : 'Requires ' + gate.sats + ' sats'} ${!gate.available && !unlocked ? '· Coming soon' : ''}</div>
       </div>
-      ${unlocked && gate.available && SCENE_PAGES[gate.id] ? `<a class="btn-read" href="${SCENE_PAGES[gate.id]}">Read</a>` : ''}
+      ${unlocked && gate.available && SCENE_PAGES[gate.id] ? `<a class="btn-read" href="${SCENE_PAGES[gate.id]}" style="font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;padding:0.35rem 0.9rem;background:#8b2500;color:#fff;border:none;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block;">Read</a>` : ''}
     `;
     grid.appendChild(row);
   });
