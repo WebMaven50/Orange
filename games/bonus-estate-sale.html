@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Estate Sale — Hidden Scene</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #2a2016;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 3rem 1.5rem 5rem;
+      font-family: 'EB Garamond', Georgia, serif;
+    }
+
+    /* Unlock badge */
+    .unlock-badge {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #c9a84c;
+      border: 1px solid #c9a84c44;
+      padding: 0.3rem 1rem;
+      margin-bottom: 2.5rem;
+      background: #c9a84c0d;
+    }
+
+    /* Book page */
+    .page {
+      background: #f5f0e8;
+      color: #1a1410;
+      width: 100%;
+      max-width: 620px;
+      padding: 4rem 4.5rem;
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.15),
+        0 8px 24px rgba(0,0,0,0.35),
+        0 20px 60px rgba(0,0,0,0.25);
+      position: relative;
+    }
+
+    /* Subtle page texture via gradient */
+    .page::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(160deg, rgba(255,255,255,0.18) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .scene-label {
+      font-family: 'Courier New', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #8a7055;
+      margin-bottom: 0.5rem;
+    }
+
+    .scene-rule {
+      border: none;
+      border-top: 1px solid #c8b89a;
+      margin-bottom: 2rem;
+    }
+
+    h1 {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 1.9rem;
+      font-weight: 500;
+      color: #1a1410;
+      letter-spacing: 0.02em;
+      margin-bottom: 2rem;
+      line-height: 1.2;
+    }
+
+    .prose p {
+      font-size: 1.05rem;
+      line-height: 1.85;
+      color: #1a1410;
+      margin-bottom: 1.1rem;
+      text-align: justify;
+      hyphens: auto;
+    }
+
+    .prose p:first-child::first-letter {
+      font-size: 3.2rem;
+      line-height: 0.8;
+      float: left;
+      margin-right: 0.08em;
+      margin-top: 0.12em;
+      color: #5c3d1e;
+      font-weight: 500;
+    }
+
+    .prose em { font-style: italic; }
+
+    .scene-end {
+      text-align: center;
+      margin-top: 2.5rem;
+      color: #8a7055;
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+    }
+
+    .bottom-rule {
+      border: none;
+      border-top: 1px solid #c8b89a;
+      margin-top: 2rem;
+      margin-bottom: 1.2rem;
+    }
+
+    /* Back link */
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 2.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #c9a84c;
+      text-decoration: none;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .back-link:hover { opacity: 1; }
+
+    @media (max-width: 600px) {
+      .page { padding: 2.5rem 1.8rem; }
+      h1 { font-size: 1.5rem; }
+      .prose p { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="unlock-badge">⚡ Bonus Scene — Unlocked at 200 Sats</div>
+
+  <div class="page">
+    <p class="scene-label">Hidden Scene · The Orange Robot</p>
+    <hr class="scene-rule">
+    <h1>The Estate Sale</h1>
+
+    <div class="prose">
+      <p><em>A few weeks before Christmas, 2003</em></p>
+
+      <p>The estate sale was in a brick ranch on the old side of town, the kind of house where the furniture hadn't moved in forty years. Hand-lettered signs in the yard. Folding tables in every room, a man's whole life broken down into priced pieces — dishes, fishing rods, a recliner with masking tape on the arm that read <em>$40</em>.</p>
+
+      <p>Frank hadn't come for anything. He'd seen the sign on his way back from a job site and pulled in the way men his age sometimes do, drawn to other men's tools and other men's leftover years.</p>
+
+      <p>The garage was where the real life of the house had been. Pegboard walls. A workbench worn smooth. And on a card table by the door, a shallow box lid full of keys — dozens of them, old keys, keys on rings, keys on loops of string, keys that had outlived whatever they once opened. A piece of cardboard propped against it read <em>$1 each</em>.</p>
+
+      <p>Frank ran his fingers through them out of habit. House keys, a padlock key, a flat little luggage key. And down near the bottom, a small brass wind-up key, worn smooth, the kind you'd turn to bring something to life. He picked it up, turned it over once. No tag. Nothing to tell him what it belonged to. He set it back in the lid and went on into the house.</p>
+
+      <p>The robot was on a card table in the living room. Orange pressed tin, maybe eight inches tall, the paint worn at the joints. <em>$20</em> on a piece of masking tape on its chest. He picked it up. Nothing happened.</p>
+
+      <p>A woman came in from the kitchen, white-haired, moving carefully. She introduced herself as Fran.</p>
+
+      <p>"That was Hal's," she said. "My husband's. He brought it back from Japan — he was Air Force, stationed there in the fifties." She looked at the robot in Frank's hands. "He loved those things. I never could get it to work, though. Can't find the key."</p>
+
+      <p>"I think I saw a key," Frank said.</p>
+
+      <p>He went back to the garage. Found the brass wind-up key in the box lid where he'd left it, right where he'd set it down. He carried it back to the living room, fitted it into the slot on the robot's back, and wound it slowly. One rotation. Two.</p>
+
+      <p>The robot walked.</p>
+
+      <p>Six small steps across the card table, arms swinging, head turning side to side, eyes lighting up orange. It reached the edge and Frank caught it before it fell.</p>
+
+      <p>Fran put her hand over her mouth.</p>
+
+      <p>"Well," Frank said. "There you go." He set the robot down and looked at her. "One working vintage robot. That's twenty dollars. And a dollar for the key."</p>
+
+      <p>Fran looked at it for a long moment. At the robot. At the key in Frank's hand. Then she nodded.</p>
+
+      <p>"Very good," she said. "Twenty-one dollars it is."</p>
+
+      <p>Frank paid her in cash. He wrapped the robot in a dish towel from one of the folding tables and carried it to his truck. He put the key in his shirt pocket, separate, the way he'd always kept important things.</p>
+
+      <p>He didn't know yet what he was carrying. He just knew the boy would love it.</p>
+    </div>
+
+    <hr class="bottom-rule">
+    <p class="scene-end">✦ &nbsp; &nbsp; ✦ &nbsp; &nbsp; ✦</p>
+  </div>
+
+  <a href="index.html" class="back-link">← Return to the Vault</a>
+
+</body>
+</html>
