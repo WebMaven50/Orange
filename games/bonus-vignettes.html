@@ -10,7 +10,7 @@
     html { background: #2a2016; }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background-color: #2a2016;
+      background-color: #2a2016 !important;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
@@ -30,10 +30,10 @@
       background: rgba(201,168,76,0.05);
     }
     .page {
-      background-color: #f5f0e8;
-      color: #1a1410;
+      background-color: #f5f0e8 !important;
+      color: #1a1410 !important;
       width: 100%;
-      max-width: 680px;
+      max-width: 660px;
       padding: 4rem 4.5rem;
       box-shadow: 0 4px 8px rgba(0,0,0,0.2), 0 12px 32px rgba(0,0,0,0.4);
     }
@@ -42,7 +42,7 @@
       font-size: 0.6rem;
       letter-spacing: 0.25em;
       text-transform: uppercase;
-      color: #8a7055;
+      color: #8a7055 !important;
       margin-bottom: 0.5rem;
     }
     hr { border: none; border-top: 1px solid #c8b89a; margin-bottom: 2rem; }
@@ -50,14 +50,14 @@
       font-family: 'EB Garamond', Georgia, serif;
       font-size: 1.9rem;
       font-weight: 500;
-      color: #1a1410;
+      color: #1a1410 !important;
       margin-bottom: 0.5rem;
       line-height: 1.2;
     }
-    .gallery-intro {
+    .intro {
       font-size: 0.95rem;
-      color: #8a7055;
       font-style: italic;
+      color: #8a7055;
       margin-bottom: 3rem;
       line-height: 1.6;
     }
@@ -68,28 +68,17 @@
       width: 100%;
       display: block;
       box-shadow: 0 2px 16px rgba(0,0,0,0.22);
-      margin-bottom: 0.9rem;
+      margin-bottom: 0.75rem;
     }
     .vignette-caption {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      border-top: 1px solid #c8b89a;
-      padding-top: 0.6rem;
-    }
-    .vignette-title {
-      font-family: 'EB Garamond', Georgia, serif;
-      font-size: 1.05rem;
-      font-weight: 500;
-      color: #1a1410;
-      font-style: italic;
-    }
-    .vignette-chapter {
       font-family: 'Courier New', monospace;
-      font-size: 0.6rem;
+      font-size: 0.62rem;
       letter-spacing: 0.2em;
       text-transform: uppercase;
       color: #8a7055;
+      text-align: center;
+      padding-top: 0.5rem;
+      border-top: 1px solid #c8b89a;
     }
     .end { text-align: center; color: #8a7055; margin-top: 1rem; letter-spacing: 0.15em; }
     .back {
@@ -110,41 +99,29 @@
   </style>
 </head>
 <body>
-  <div class="badge">⚡ Flash Vignettes — Unlocked at 1,400 Sats</div>
+  <div class="badge">⚡ Bonus Gallery — Unlocked at 1,400 Sats</div>
   <div class="page">
-    <p class="scene-label">Hidden Gallery · The Orange Robot</p>
+    <p class="scene-label">Flash Vignettes · The Orange Robot</p>
     <hr>
-    <h1>Flash Vignettes</h1>
-    <p class="gallery-intro">Moments from the novel. No captions needed. You were there.</p>
+    <h1>Moments from the Story</h1>
+    <p class="intro">Key scenes from the novel, rendered in graphic novel style. Some you've lived through. Some you may have forgotten. All of them still burning.</p>
 
     <div class="vignette">
-      <img src="flyingsquirrel.PNG" alt="The Flying Squirrel">
-      <div class="vignette-caption">
-        <span class="vignette-title">The Flying Squirrel</span>
-        <span class="vignette-chapter">Chapter 3</span>
-      </div>
+      <img src="squirrel.PNG" alt="The Flying Squirrel">
+      <div class="vignette-caption">The Flying Squirrel &nbsp;·&nbsp; Chapter 3</div>
     </div>
 
     <div class="vignette">
-      <img src="jackhammer.PNG" alt="The Foundation">
-      <div class="vignette-caption">
-        <span class="vignette-title">The Foundation</span>
-        <span class="vignette-chapter">Chapter 15</span>
-      </div>
+      <img src="jackhammer.PNG" alt="Mike at the Foundation">
+      <div class="vignette-caption">The Foundation &nbsp;·&nbsp; Chapter 15</div>
     </div>
 
-    <!-- Additional vignettes can be added below as images are created -->
-    <!--
     <div class="vignette">
-      <img src="picnicbasket.PNG" alt="The Knock">
-      <div class="vignette-caption">
-        <span class="vignette-title">The Knock</span>
-        <span class="vignette-chapter">Chapter 29</span>
-      </div>
+      <img src="picnic.PNG" alt="Emmy and the Picnic Basket">
+      <div class="vignette-caption">The Picnic &nbsp;·&nbsp; Coming Soon</div>
     </div>
-    -->
 
-    <hr style="margin-top:1rem;">
+    <hr style="margin-top:2rem;">
     <p class="end">✦ &nbsp; ✦ &nbsp; ✦</p>
   </div>
   <a href="index.html" class="back">← Return to the Vault</a>
