@@ -331,6 +331,14 @@ function confirmWipe() {
 window.addEventListener('storage', render);
 window.addEventListener('focus',   render);
 
+// ── Hidden debug: Option+Shift+B adds 2000 sats ──
+window.addEventListener('keydown', function(e) {
+  if (e.altKey && e.shiftKey && e.key === 'B') {
+    TOR.earn(2000, 'Debug boost');
+    render();
+  }
+});
+
 render();
 </script>
 </body>
