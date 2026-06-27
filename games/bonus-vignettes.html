@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flash Vignettes — Hidden Gallery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+  <style>
+    html { background: #2a2016; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #2a2016;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem 5rem;
+      font-family: 'EB Garamond', Georgia, 'Times New Roman', serif;
+    }
+    .badge {
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: #c9a84c;
+      border: 1px solid rgba(201,168,76,0.3);
+      padding: 0.3rem 1rem;
+      margin-bottom: 2.5rem;
+      background: rgba(201,168,76,0.05);
+    }
+    .page {
+      background-color: #f5f0e8;
+      color: #1a1410;
+      width: 100%;
+      max-width: 680px;
+      padding: 4rem 4.5rem;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2), 0 12px 32px rgba(0,0,0,0.4);
+    }
+    .scene-label {
+      font-family: 'Courier New', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: #8a7055;
+      margin-bottom: 0.5rem;
+    }
+    hr { border: none; border-top: 1px solid #c8b89a; margin-bottom: 2rem; }
+    h1 {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 1.9rem;
+      font-weight: 500;
+      color: #1a1410;
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+    .gallery-intro {
+      font-size: 0.95rem;
+      color: #8a7055;
+      font-style: italic;
+      margin-bottom: 3rem;
+      line-height: 1.6;
+    }
+    .vignette {
+      margin-bottom: 3.5rem;
+    }
+    .vignette img {
+      width: 100%;
+      display: block;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.22);
+      margin-bottom: 0.9rem;
+    }
+    .vignette-caption {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      border-top: 1px solid #c8b89a;
+      padding-top: 0.6rem;
+    }
+    .vignette-title {
+      font-family: 'EB Garamond', Georgia, serif;
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: #1a1410;
+      font-style: italic;
+    }
+    .vignette-chapter {
+      font-family: 'Courier New', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #8a7055;
+    }
+    .end { text-align: center; color: #8a7055; margin-top: 1rem; letter-spacing: 0.15em; }
+    .back {
+      display: block;
+      text-align: center;
+      margin-top: 2.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #c9a84c;
+      text-decoration: none;
+    }
+    @media (max-width: 600px) {
+      .page { padding: 2.5rem 1.5rem; }
+      h1 { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="badge">⚡ Flash Vignettes — Unlocked at 1,400 Sats</div>
+  <div class="page">
+    <p class="scene-label">Hidden Gallery · The Orange Robot</p>
+    <hr>
+    <h1>Flash Vignettes</h1>
+    <p class="gallery-intro">Moments from the novel. No captions needed. You were there.</p>
+
+    <div class="vignette">
+      <img src="flyingsquirrel.PNG" alt="The Flying Squirrel">
+      <div class="vignette-caption">
+        <span class="vignette-title">The Flying Squirrel</span>
+        <span class="vignette-chapter">Chapter 3</span>
+      </div>
+    </div>
+
+    <div class="vignette">
+      <img src="jackhammer.PNG" alt="The Foundation">
+      <div class="vignette-caption">
+        <span class="vignette-title">The Foundation</span>
+        <span class="vignette-chapter">Chapter 15</span>
+      </div>
+    </div>
+
+    <!-- Additional vignettes can be added below as images are created -->
+    <!--
+    <div class="vignette">
+      <img src="picnicbasket.PNG" alt="The Knock">
+      <div class="vignette-caption">
+        <span class="vignette-title">The Knock</span>
+        <span class="vignette-chapter">Chapter 29</span>
+      </div>
+    </div>
+    -->
+
+    <hr style="margin-top:1rem;">
+    <p class="end">✦ &nbsp; ✦ &nbsp; ✦</p>
+  </div>
+  <a href="index.html" class="back">← Return to the Vault</a>
+</body>
+</html>

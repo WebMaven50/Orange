@@ -43,7 +43,7 @@ const TOR = (function() {
     { sats: 200,  id: 'estate-sale',   title: 'The Estate Sale',    available: true  },
     { sats: 500,  id: 'early-bird',    title: 'Early Bird',         available: true  },
     { sats: 900,  id: 'wedding',       title: 'The Celebration',    available: true  },
-    { sats: 1400, id: 'scene-4',       title: 'Scene 4',            available: false },
+    { sats: 1400, id: 'vignettes',     title: 'Flash Vignettes',    available: true  },
   ];
 
   function checkUnlocks(totalSats) {
