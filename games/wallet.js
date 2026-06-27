@@ -40,10 +40,10 @@ const TOR = (function() {
 
   // Unlock thresholds → bonus scene ids
   const UNLOCK_GATES = [
-    { sats: 200,  id: 'estate-sale',   title: 'The Estate Sale',        available: true  },
-    { sats: 500,  id: 'early-bird',    title: 'Early Bird',               available: true  },
-    { sats: 900,  id: 'forgetting',    title: 'Scene 3: The Forgetting',  available: false },
-    { sats: 1400, id: 'before-dream',  title: 'Scene 4: Before The Dream', available: false },
+    { sats: 200,  id: 'estate-sale',   title: 'The Estate Sale',    available: true  },
+    { sats: 500,  id: 'early-bird',    title: 'Early Bird',         available: true  },
+    { sats: 900,  id: 'wedding',       title: 'The Celebration',    available: true  },
+    { sats: 1400, id: 'scene-4',       title: 'Scene 4',            available: false },
   ];
 
   function checkUnlocks(totalSats) {
