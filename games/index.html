@@ -65,6 +65,27 @@
     main { max-width: 900px; margin: 0 auto; padding: 2.5rem 1.5rem; }
     .section-label { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--rust); margin-bottom: 1rem; }
 
+    /* LIVE MARKET CHART */
+    .live-section { margin-bottom: 2.5rem; }
+    .live-card {
+      background: var(--smoke2); border: 1px solid rgba(201,168,76,0.25);
+      padding: 1.6rem 1.6rem 1.2rem;
+    }
+    .live-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1.1rem; }
+    .live-badge { display: inline-flex; align-items: center; gap: 0.4rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--green); }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: live-pulse 1.8s ease-in-out infinite; }
+    @keyframes live-pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(76,175,125,0.5);} 50%{opacity:0.5;box-shadow:0 0 0 5px rgba(76,175,125,0);} }
+    .live-price-row { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+    .live-price { font-family: 'Cinzel', serif; font-size: 2rem; color: var(--key-gold); }
+    .live-change { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; letter-spacing: 0.05em; }
+    .live-change.up { color: var(--green); }
+    .live-change.down { color: var(--red); }
+    .live-window-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ash); text-align: right; }
+    .live-updated { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--ash); margin-top: 0.15rem; }
+    .live-chart-wrap { width: 100%; height: 160px; position: relative; }
+    .live-chart-wrap canvas { width: 100%; height: 100%; display: block; }
+    .live-error { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--ash); font-style: italic; padding: 1.5rem 0; text-align: center; }
+
     /* GAME GRID */
     .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.2rem; margin-bottom: 3rem; }
     .game-card {
@@ -177,6 +198,27 @@
 
 <main>
 
+  <!-- LIVE MARKET -->
+  <div class="live-section">
+    <p class="section-label">Live Market</p>
+    <div class="live-card">
+      <div class="live-head">
+        <div>
+          <span class="live-badge"><span class="live-dot"></span>LIVE · 1 BTC / USD</span>
+          <div class="live-price-row">
+            <span class="live-price" id="live-price">—</span>
+            <span class="live-change" id="live-change"></span>
+          </div>
+          <div class="live-updated" id="live-updated">Connecting…</div>
+        </div>
+        <div class="live-window-label">Last 30 Days</div>
+      </div>
+      <div class="live-chart-wrap">
+        <canvas id="live-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
   <!-- GAMES -->
   <p class="section-label">The Games</p>
   <div class="games-grid">
@@ -278,6 +320,151 @@
 </div>
 
 <script src="wallet.js"></script>
+<script>
+// ── LIVE BITCOIN CHART (mempool.space, no API key required) ──
+(function() {
+  var HISTORY_URL = 'https://mempool.space/api/v1/historical-price?currency=USD';
+  var CURRENT_URL  = 'https://mempool.space/api/v1/prices';
+  var WINDOW_DAYS  = 30;
+  var POLL_MS      = 60000;
+
+  var points = [];      // [{t: unixSeconds, p: price}, ...] oldest -> newest
+  var basePrice = null; // price at start of the displayed window, for % change
+  var failCount = 0;
+
+  function setError(msg) {
+    var wrap = document.querySelector('.live-chart-wrap');
+    if (wrap) wrap.innerHTML = '<div class="live-error">' + msg + '</div>';
+  }
+
+  function fmtUSD(n) {
+    return '$' + Math.round(n).toLocaleString('en-US');
+  }
+
+  function updatePriceUI(current) {
+    document.getElementById('live-price').textContent = fmtUSD(current);
+    var changeEl = document.getElementById('live-change');
+    if (basePrice) {
+      var pct = ((current - basePrice) / basePrice) * 100;
+      var sign = pct >= 0 ? '+' : '';
+      changeEl.textContent = sign + pct.toFixed(2) + '% · 30d';
+      changeEl.className = 'live-change ' + (pct >= 0 ? 'up' : 'down');
+    }
+    var now = new Date();
+    document.getElementById('live-updated').textContent =
+      'Updated ' + now.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  }
+
+  function drawChart() {
+    var canvas = document.getElementById('live-chart');
+    if (!canvas || points.length < 2) return;
+    var wrap = canvas.parentElement;
+    var W = wrap.clientWidth, H = wrap.clientHeight;
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+
+    var prices = points.map(function(pt){ return pt.p; });
+    var min = Math.min.apply(null, prices);
+    var max = Math.max.apply(null, prices);
+    var pad = (max - min) * 0.12 || max * 0.05;
+    min -= pad; max += pad;
+
+    var padTop = 8, padBottom = 8;
+    function x(i) { return (i / (points.length - 1)) * W; }
+    function y(p) { return padTop + (1 - (p - min) / (max - min)) * (H - padTop - padBottom); }
+
+    var rising = prices[prices.length - 1] >= prices[0];
+    var lineColor = rising ? '#4caf7d' : '#c0392b';
+
+    // gradient fill under the line
+    var grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, rising ? 'rgba(76,175,125,0.28)' : 'rgba(192,57,43,0.24)');
+    grad.addColorStop(1, 'rgba(76,175,125,0)');
+
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(prices[0]));
+    for (var i = 1; i < prices.length; i++) ctx.lineTo(x(i), y(prices[i]));
+    ctx.lineTo(x(prices.length - 1), H);
+    ctx.lineTo(x(0), H);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(prices[0]));
+    for (var j = 1; j < prices.length; j++) ctx.lineTo(x(j), y(prices[j]));
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    // live dot at the end
+    var lastX = x(prices.length - 1), lastY = y(prices[prices.length - 1]);
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = lineColor;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 7, 0, Math.PI * 2);
+    ctx.strokeStyle = lineColor;
+    ctx.globalAlpha = 0.35;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function loadHistory() {
+    fetch(HISTORY_URL).then(function(r) {
+      if (!r.ok) throw new Error('history fetch failed');
+      return r.json();
+    }).then(function(data) {
+      var all = (data && data.prices) || [];
+      var cutoff = Math.floor(Date.now() / 1000) - WINDOW_DAYS * 86400;
+      var windowed = all.filter(function(p) { return p.time >= cutoff && p.USD > 0; });
+      if (windowed.length < 2) windowed = all.slice(-WINDOW_DAYS); // fallback if API returns sparse data
+      points = windowed.map(function(p) { return { t: p.time, p: p.USD }; })
+                        .sort(function(a,b){ return a.t - b.t; });
+      basePrice = points.length ? points[0].p : null;
+      drawChart();
+      pollCurrent();
+    }).catch(function() {
+      // Chart backdrop failed — still try to show a live price number
+      pollCurrent();
+    });
+  }
+
+  function pollCurrent() {
+    fetch(CURRENT_URL).then(function(r) {
+      if (!r.ok) throw new Error('price fetch failed');
+      return r.json();
+    }).then(function(data) {
+      failCount = 0;
+      var price = data.USD;
+      var now = Math.floor(Date.now() / 1000);
+      if (points.length) {
+        points.push({ t: now, p: price });
+      } else {
+        points = [{ t: now - 1, p: price }, { t: now, p: price }];
+        basePrice = price;
+      }
+      updatePriceUI(price);
+      drawChart();
+    }).catch(function() {
+      failCount++;
+      if (failCount >= 3 && points.length === 0) {
+        setError('Live price unavailable right now — check back soon.');
+      }
+    });
+  }
+
+  window.addEventListener('resize', drawChart);
+  loadHistory();
+  setInterval(pollCurrent, POLL_MS);
+})();
+</script>
 <script>
 // ── BONUS SCENE PAGE LINKS ──
 const SCENE_PAGES = {
