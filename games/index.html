@@ -81,6 +81,14 @@
     .live-change.up { color: var(--green); }
     .live-change.down { color: var(--red); }
     .live-window-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ash); text-align: right; }
+    .live-range-picker { display: flex; gap: 0.35rem; }
+    .live-range-btn {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.08em;
+      color: var(--ash); background: transparent; border: 1px solid var(--smoke3);
+      padding: 0.28rem 0.6rem; cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .live-range-btn:hover { color: var(--white); border-color: var(--ash); }
+    .live-range-btn.active { color: var(--ink); background: var(--key-gold); border-color: var(--key-gold); }
     .live-updated { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--ash); margin-top: 0.15rem; }
     .live-chart-wrap { width: 100%; height: 160px; position: relative; }
     .live-chart-wrap canvas { width: 100%; height: 100%; display: block; }
@@ -211,7 +219,13 @@
           </div>
           <div class="live-updated" id="live-updated">Connecting…</div>
         </div>
-        <div class="live-window-label">Last 30 Days</div>
+        <div class="live-range-picker" id="live-range-picker">
+          <button class="live-range-btn" data-days="7">7D</button>
+          <button class="live-range-btn active" data-days="30">30D</button>
+          <button class="live-range-btn" data-days="90">90D</button>
+          <button class="live-range-btn" data-days="365">1Y</button>
+          <button class="live-range-btn" data-days="0">All</button>
+        </div>
       </div>
       <div class="live-chart-wrap">
         <canvas id="live-chart"></canvas>
@@ -323,14 +337,36 @@
 <script>
 // ── LIVE BITCOIN CHART (mempool.space, no API key required) ──
 (function() {
-  var HISTORY_URL = 'https://mempool.space/api/v1/historical-price?currency=USD';
-  var CURRENT_URL  = 'https://mempool.space/api/v1/prices';
-  var WINDOW_DAYS  = 30;
-  var POLL_MS      = 60000;
+  var HISTORY_URL   = 'https://mempool.space/api/v1/historical-price?currency=USD';
+  var CURRENT_URL    = 'https://mempool.space/api/v1/prices';
+  var POLL_MS         = 60000;
+  var RANGE_KEY       = 'tor_chart_range';
+  var DEFAULT_DAYS   = 30;
 
-  var points = [];      // [{t: unixSeconds, p: price}, ...] oldest -> newest
-  var basePrice = null; // price at start of the displayed window, for % change
-  var failCount = 0;
+  var allHistory = [];  // full dataset ever fetched, oldest -> newest, [{t,p}, ...]
+  var points     = [];  // currently displayed window, derived from allHistory
+  var basePrice  = null;
+  var windowDays = DEFAULT_DAYS;
+  var failCount  = 0;
+
+  function loadSavedRange() {
+    try {
+      var saved = parseInt(localStorage.getItem(RANGE_KEY), 10);
+      if (!isNaN(saved)) windowDays = saved; // 0 == "All"
+    } catch (e) { /* localStorage unavailable — fine, use default */ }
+  }
+
+  function saveRange(days) {
+    try { localStorage.setItem(RANGE_KEY, String(days)); } catch (e) {}
+  }
+
+  function rangeLabel(days) {
+    if (days === 7) return '7d';
+    if (days === 30) return '30d';
+    if (days === 90) return '90d';
+    if (days === 365) return '1y';
+    return 'all-time';
+  }
 
   function setError(msg) {
     var wrap = document.querySelector('.live-chart-wrap');
@@ -347,12 +383,26 @@
     if (basePrice) {
       var pct = ((current - basePrice) / basePrice) * 100;
       var sign = pct >= 0 ? '+' : '';
-      changeEl.textContent = sign + pct.toFixed(2) + '% · 30d';
+      changeEl.textContent = sign + pct.toFixed(2) + '% · ' + rangeLabel(windowDays);
       changeEl.className = 'live-change ' + (pct >= 0 ? 'up' : 'down');
     }
     var now = new Date();
     document.getElementById('live-updated').textContent =
       'Updated ' + now.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  }
+
+  function applyWindow() {
+    if (!allHistory.length) { points = []; return; }
+    var windowed;
+    if (windowDays === 0) {
+      windowed = allHistory.slice(); // "All"
+    } else {
+      var cutoff = Math.floor(Date.now() / 1000) - windowDays * 86400;
+      windowed = allHistory.filter(function(pt) { return pt.t >= cutoff; });
+      if (windowed.length < 2) windowed = allHistory.slice(-Math.max(windowDays, 2));
+    }
+    points = windowed;
+    basePrice = points.length ? points[0].p : null;
   }
 
   function drawChart() {
@@ -379,7 +429,6 @@
     var rising = prices[prices.length - 1] >= prices[0];
     var lineColor = rising ? '#4caf7d' : '#c0392b';
 
-    // gradient fill under the line
     var grad = ctx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, rising ? 'rgba(76,175,125,0.28)' : 'rgba(192,57,43,0.24)');
     grad.addColorStop(1, 'rgba(76,175,125,0)');
@@ -401,7 +450,6 @@
     ctx.lineJoin = 'round';
     ctx.stroke();
 
-    // live dot at the end
     var lastX = x(prices.length - 1), lastY = y(prices[prices.length - 1]);
     ctx.beginPath();
     ctx.arc(lastX, lastY, 3.5, 0, Math.PI * 2);
@@ -416,22 +464,43 @@
     ctx.globalAlpha = 1;
   }
 
+  function refreshDisplay() {
+    applyWindow();
+    if (points.length) updatePriceUI(points[points.length - 1].p);
+    drawChart();
+  }
+
+  function setActiveButton() {
+    var btns = document.querySelectorAll('.live-range-btn');
+    for (var i = 0; i < btns.length; i++) {
+      var d = parseInt(btns[i].getAttribute('data-days'), 10);
+      btns[i].className = 'live-range-btn' + (d === windowDays ? ' active' : '');
+    }
+  }
+
+  function onRangeClick(e) {
+    var btn = e.target.closest ? e.target.closest('.live-range-btn') : e.target;
+    if (!btn || !btn.getAttribute) return;
+    var days = parseInt(btn.getAttribute('data-days'), 10);
+    if (isNaN(days) || days === windowDays) return;
+    windowDays = days;
+    saveRange(days);
+    setActiveButton();
+    refreshDisplay();
+  }
+
   function loadHistory() {
     fetch(HISTORY_URL).then(function(r) {
       if (!r.ok) throw new Error('history fetch failed');
       return r.json();
     }).then(function(data) {
-      var all = (data && data.prices) || [];
-      var cutoff = Math.floor(Date.now() / 1000) - WINDOW_DAYS * 86400;
-      var windowed = all.filter(function(p) { return p.time >= cutoff && p.USD > 0; });
-      if (windowed.length < 2) windowed = all.slice(-WINDOW_DAYS); // fallback if API returns sparse data
-      points = windowed.map(function(p) { return { t: p.time, p: p.USD }; })
-                        .sort(function(a,b){ return a.t - b.t; });
-      basePrice = points.length ? points[0].p : null;
-      drawChart();
+      var raw = (data && data.prices) || [];
+      allHistory = raw.filter(function(p) { return p.USD > 0; })
+                       .map(function(p) { return { t: p.time, p: p.USD }; })
+                       .sort(function(a, b) { return a.t - b.t; });
+      refreshDisplay();
       pollCurrent();
     }).catch(function() {
-      // Chart backdrop failed — still try to show a live price number
       pollCurrent();
     });
   }
@@ -444,14 +513,12 @@
       failCount = 0;
       var price = data.USD;
       var now = Math.floor(Date.now() / 1000);
-      if (points.length) {
-        points.push({ t: now, p: price });
+      if (allHistory.length) {
+        allHistory.push({ t: now, p: price });
       } else {
-        points = [{ t: now - 1, p: price }, { t: now, p: price }];
-        basePrice = price;
+        allHistory = [{ t: now - 1, p: price }, { t: now, p: price }];
       }
-      updatePriceUI(price);
-      drawChart();
+      refreshDisplay();
     }).catch(function() {
       failCount++;
       if (failCount >= 3 && points.length === 0) {
@@ -461,6 +528,10 @@
   }
 
   window.addEventListener('resize', drawChart);
+  loadSavedRange();
+  setActiveButton();
+  var picker = document.getElementById('live-range-picker');
+  if (picker) picker.addEventListener('click', onRangeClick);
   loadHistory();
   setInterval(pollCurrent, POLL_MS);
 })();
