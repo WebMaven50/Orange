@@ -62,6 +62,7 @@
   <div class="card">
     <p class="eyebrow">What it became</p>
     <h2>The Value Over The Years</h2>
+    <p style="font-size:12px;color:#7f8aa0;margin:-8px 0 10px;line-height:1.5">Solid line: real Bitcoin price history, 2009–2025. Dashed line beyond today: speculative, part of the story — not a forecast.</p>
     <div class="chartwrap">
       <div class="readout">
         <div class="yr" id="vYear">2009</div>
@@ -157,9 +158,34 @@ document.getElementById('hub-sats').textContent = TOR.fmt(TOR.getSats()) + ' ⚡
     };
   })();
 
+// Real historical BTC price milestones (rounded, approximate year-end/peak closes), 2009–2025.
+// Beyond SPLIT_YEAR, figures are the story's own speculation — not a forecast.
+var SPLIT_YEAR = 2025.5;
 var PRICES = [
-  {y:2009,p:0},{y:2013,p:130},{y:2014,p:320},
-  {y:2023,p:44186},{y:2024,p:72100},{y:2027,p:185000},{y:2034,p:2800000}
+  {y:2009.0,  p:0},
+  {y:2011.1,  p:1},        // first crossed $1, Feb 2011
+  {y:2011.9,  p:5},        // 2011 mini-bubble crash
+  {y:2013.0,  p:13},       // flat 2012, ~$13 close
+  {y:2013.85, p:1150},     // Nov 2013 spike
+  {y:2014.05, p:754},      // 2013 close after pullback
+  {y:2014.95, p:315},      // Mt. Gox collapse bear market
+  {y:2017.0,  p:960},
+  {y:2017.95, p:14156},    // Dec 2017 close (intra-year peak ~$19,783)
+  {y:2018.95, p:3200},     // 2018 bear market bottom
+  {y:2019.95, p:7200},
+  {y:2020.95, p:29000},
+  {y:2021.3,  p:64000},    // April 2021 peak
+  {y:2021.45, p:29000},    // May 2021 crash (China mining ban)
+  {y:2021.85, p:69000},    // Nov 2021 all-time high
+  {y:2021.95, p:46200},    // 2021 close
+  {y:2022.95, p:16500},    // FTX-collapse bottom
+  {y:2023.95, p:42000},
+  {y:2024.2,  p:73737},    // March 2024 ATH, post spot-ETF approval
+  {y:2024.95, p:106000},   // Dec 2024 close, post-halving rally
+  {y:2025.5,  p:124000},   // 2025 all-time high (real data ends here)
+  // — everything below is the story imagining forward, not real data —
+  {y:2027,    p:185000},
+  {y:2034,    p:2800000}
 ];
 function priceAt(year){
   if(year<=PRICES[0].y) return 0;
@@ -196,16 +222,40 @@ function grid(){
   x.strokeStyle='rgba(255,255,255,.08)'; x.lineWidth=1;
   x.fillStyle='#7f8aa0'; x.font='11px IBM Plex Mono';
   [1,100,10000,1000000].forEach(function(v){ var yy=Yv(v); x.beginPath(); x.moveTo(padL,yy); x.lineTo(W-padR,yy); x.stroke(); x.fillText(money(v),6,yy+3); });
-  [2009,2014,2020,2027,2034].forEach(function(yr){ x.fillText(yr,X(yr)-12,H-8); });
+  [2009,2013,2017,2021,2025,2034].forEach(function(yr){ x.fillText(yr,X(yr)-12,H-8); });
+
+  // Divider marking the end of real historical data
+  var sx = X(SPLIT_YEAR);
+  x.save();
+  x.strokeStyle='rgba(255,255,255,.25)'; x.lineWidth=1; x.setLineDash([3,3]);
+  x.beginPath(); x.moveTo(sx,padT); x.lineTo(sx,H-padB); x.stroke();
+  x.restore();
+  x.fillStyle='#7f8aa0'; x.font='10px IBM Plex Mono';
+  x.fillText('real data ends',sx-38,padT+10);
+  x.fillText('story speculation →',sx+4,padT+10);
 }
 function plotTo(year){
+  // Real, solid segment
   x.strokeStyle='#ECB53F'; x.lineWidth=3; x.lineJoin='round'; x.beginPath();
   var started=false;
-  for(var yr=Y0;yr<=year+0.001;yr+=0.25){
+  for(var yr=Y0;yr<=Math.min(year,SPLIT_YEAR)+0.001;yr+=0.1){
     var v=priceAt(yr); var px=X(yr),py=Yv(v);
     if(!started){x.moveTo(px,py);started=true;}else x.lineTo(px,py);
   }
   x.stroke();
+  // Speculative, dashed segment
+  if(year>SPLIT_YEAR){
+    x.save();
+    x.strokeStyle='rgba(236,181,63,.55)'; x.lineWidth=3; x.lineJoin='round'; x.setLineDash([6,5]);
+    x.beginPath();
+    var started2=false;
+    for(var yr2=SPLIT_YEAR;yr2<=year+0.001;yr2+=0.25){
+      var v2=priceAt(yr2); var px2=X(yr2),py2=Yv(v2);
+      if(!started2){x.moveTo(px2,py2);started2=true;}else x.lineTo(px2,py2);
+    }
+    x.stroke();
+    x.restore();
+  }
   var v=priceAt(year),gx=X(year),gy=Yv(v);
   x.fillStyle='#fff'; x.beginPath(); x.arc(gx,gy,5,0,7); x.fill();
   x.strokeStyle='rgba(236,181,63,.5)'; x.lineWidth=2; x.beginPath(); x.arc(gx,gy,10,0,7); x.stroke();
@@ -228,7 +278,7 @@ btn.onclick = function(){
     else {
       SOUND.climbStop(); SOUND.chord();
       var fin=2800000*state.stashBTC;
-      txt.innerHTML='Mined for nothing in 2009 — worth <b>'+money(fin)+'</b> by 2034. One dollar today; priceless tomorrow.';
+      txt.innerHTML='Mined for nothing in 2009 — through real, brutal crashes and recoveries, worth real money by 2025. What the story imagines after that (<b>'+money(fin)+'</b> by 2034) is fiction, not a forecast.';
       nxt.style.display='inline-block';
       if(!claimed){
         claimed=true;
