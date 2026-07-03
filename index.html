@@ -878,6 +878,7 @@
           <span class="wallet-loading">Loading…</span>
         </div>
         <div class="wallet-balance-usd" id="btc-usd"></div>
+        <button type="button" id="btc-refresh" onclick="loadWalletBalance()" style="background:none;border:1px solid var(--smoke3);color:var(--ash);font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.4rem 1rem;margin-top:0.75rem;cursor:pointer;border-radius:2px;">↻ Refresh Balance</button>
         <div class="qr-placeholder" id="qr-code">
           QR Code<br>(add wallet address)
         </div>
@@ -958,8 +959,6 @@
     }
 
     loadWalletBalance();
-    // Refresh every 5 minutes
-    setInterval(loadWalletBalance, 5 * 60 * 1000);
   </script>
 
 </body>
