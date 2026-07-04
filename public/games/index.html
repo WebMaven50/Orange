@@ -167,6 +167,19 @@
     .log-empty  { font-style: italic; color: var(--ash); font-size: 0.9rem; }
 
     @media (max-width: 560px) { .wallet-banner { flex-direction: column; align-items: flex-start; } .sats-number { font-size: 1.6rem; } }
+
+    /* MASTER VAULT LEADERBOARD */
+    .vault-lb-section { margin-bottom: 2.5rem; }
+    .vault-lb-card { background: var(--smoke2); border: 1px solid rgba(201,168,76,0.25); padding: 1.4rem 1.6rem; }
+    .vault-lb-header { font-family:'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--key-gold); text-align:center; margin-bottom: 1rem; }
+    .vault-lb-row, .vault-lb-head-row { display:grid; grid-template-columns: 40px 1fr 120px; gap: 0.8rem; align-items:center; padding: 0.5rem 0.2rem; }
+    .vault-lb-head-row { font-family:'IBM Plex Mono', monospace; font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase; color: var(--ash); border-bottom: 1px solid var(--smoke3); padding-bottom: 0.6rem; margin-bottom: 0.2rem; }
+    .vault-lb-row { border-bottom: 1px solid var(--smoke3); font-family: 'EB Garamond', serif; font-size: 1.05rem; }
+    .vault-lb-row:last-child { border-bottom:none; }
+    .vault-lb-row.top3 { color: var(--key-gold); }
+    .vault-lb-rank { text-align:center; font-family:'Cinzel', serif; }
+    .vault-lb-sats { font-family:'IBM Plex Mono', monospace; text-align:right; font-size: 0.9rem; }
+    .vault-lb-empty { text-align:center; font-style:italic; color: var(--ash); padding: 1rem 0; }
   </style>
 </head>
 <body>
@@ -233,6 +246,15 @@
       <div class="live-chart-wrap">
         <canvas id="live-chart"></canvas>
       </div>
+    </div>
+  </div>
+
+  <!-- MASTER VAULT LEADERBOARD -->
+  <div class="vault-lb-section">
+    <p class="section-label">The Vault Leaderboard</p>
+    <div class="vault-lb-card">
+      <div class="vault-lb-header">🏆 Top Sat Miners — Across All Games</div>
+      <div id="vault-lb-container"><div class="vault-lb-empty">Loading…</div></div>
     </div>
   </div>
 
@@ -353,6 +375,7 @@
 </div>
 
 <script src="wallet.js"></script>
+<script src="leaderboard.js"></script>
 <script>
 // ── LIVE BITCOIN CHART (mempool.space, no API key required) ──
 (function() {
@@ -635,6 +658,38 @@ function confirmWipe() {
   hideWipe();
   render();
 }
+
+// ── MASTER VAULT LEADERBOARD ──
+async function renderVaultLeaderboard() {
+  const container = document.getElementById('vault-lb-container');
+  if (typeof LB === 'undefined') {
+    container.innerHTML = '<div class="vault-lb-empty">Leaderboard script not loaded.</div>';
+    return;
+  }
+  const entries = await LB.fetchTop('vault', 10);
+  if (entries === null) {
+    container.innerHTML = '<div class="vault-lb-empty">Leaderboard unavailable right now.</div>';
+    return;
+  }
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="vault-lb-empty">No sat miners yet — play a game and save your score!</div>';
+    return;
+  }
+  const rows = entries.map(function(e, i) {
+    const rank = i + 1;
+    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+    return `<div class="vault-lb-row${rank <= 3 ? ' top3' : ''}">
+      <span class="vault-lb-rank">${medal}</span>
+      <span>${e.initials}</span>
+      <span class="vault-lb-sats">${LB.fmtSats(e.sats)} ⚡</span>
+    </div>`;
+  }).join('');
+  container.innerHTML = `
+    <div class="vault-lb-head-row"><span>#</span><span>Name</span><span style="text-align:right;">Total Sats</span></div>
+    ${rows}
+  `;
+}
+renderVaultLeaderboard();
 
 // Listen for storage changes (when returning from a game)
 window.addEventListener('storage', render);

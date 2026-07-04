@@ -241,6 +241,35 @@
     -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
     background:var(--orange); cursor:pointer; border:2px solid #1a1204;
   }
+
+  .sats-earned{
+    font-family:'JetBrains Mono', monospace;
+    font-size:13px; color:var(--gold); font-weight:700;
+    background: rgba(247,147,26,0.12); border:1px solid var(--gold);
+    border-radius:8px; padding:5px 12px;
+  }
+  .lb-widget{
+    width:100%; max-width:300px;
+    background: var(--panel2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:10px 12px;
+    font-family:'JetBrains Mono', monospace;
+  }
+  .lb-widget-title{
+    font-size:11px; letter-spacing:2px; font-weight:800;
+    color:var(--orange); text-align:center; margin-bottom:8px;
+  }
+  .lb-header, .lb-row{
+    display:grid; grid-template-columns: 22px 1fr 60px 60px;
+    gap:6px; font-size:11px; padding:3px 2px; align-items:center;
+  }
+  .lb-header{ color:var(--text-dim); font-size:9.5px; letter-spacing:1px; }
+  .lb-row{ color:var(--text); }
+  .lb-row.lb-top3{ color:var(--gold); font-weight:700; }
+  .lb-rank{ text-align:center; }
+  .lb-score, .lb-sats{ text-align:right; }
+  .lb-empty{ text-align:center; font-size:11px; color:var(--text-dim); padding:6px 0; }
 </style>
 </head>
 <body>
@@ -342,6 +371,12 @@
       <div class="box"><div class="l">Best Equity</div><div class="v" id="statBest">$0</div></div>
       <div class="box"><div class="l">Return</div><div class="v" id="statReturn">0%</div></div>
     </div>
+    <div class="sats-earned" id="satsEarned">+0 SATS ⚡</div>
+    <div class="lb-widget">
+      <div class="lb-widget-title">🏆 TOP TRADERS</div>
+      <div id="lbContainer"><div class="lb-empty">Loading…</div></div>
+    </div>
+    <button class="ghost-btn" id="saveScoreBtn" style="border-color:var(--orange);color:var(--orange);">SAVE MY SCORE</button>
     <button class="primary-btn" id="playAgainBtn">PLAY AGAIN</button>
   </div>
 
@@ -360,7 +395,8 @@
   </div>
 
 </div>
-
+<script src="wallet.js"></script>
+<script src="leaderboard.js"></script>
 <script>
 /* ================= HISTORICAL DATA ================= */
 const BTC_START_DATE = "2010-07-18";
@@ -875,6 +911,43 @@ function endGame(won){
   const ret = ((eq-START_CASH)/START_CASH)*100;
   $('statReturn').textContent = (ret>=0?'+':'')+ret.toFixed(1)+'%';
   showOverlay(endOverlay);
+
+  // ---- Sats: 1 sat per dollar of profit above the $100k starting stake ----
+  const satsEarned = Math.max(0, Math.round(eq - START_CASH));
+  if (typeof TOR !== 'undefined' && satsEarned > 0) {
+    TOR.earn(satsEarned, 'Orange Robot Trader');
+  }
+  const satsEl = $('satsEarned');
+  satsEl.textContent = '+' + satsEarned + ' SATS ⚡';
+
+  // ---- Leaderboard: show current top traders, offer to save this run ----
+  const lbContainer = $('lbContainer');
+  const saveScoreBtn = $('saveScoreBtn');
+  let alreadySaved = false;
+  async function refreshBoard(){
+    if (typeof LB === 'undefined') return;
+    const entries = await LB.fetchTop('trader', 5);
+    LB.renderBoard(lbContainer, entries, { scoreLabel: 'EQUITY' });
+  }
+  refreshBoard();
+
+  saveScoreBtn.disabled = false;
+  saveScoreBtn.textContent = 'SAVE MY SCORE';
+  saveScoreBtn.onclick = async () => {
+    if (alreadySaved || typeof LB === 'undefined') return;
+    saveScoreBtn.disabled = true;
+    saveScoreBtn.textContent = 'SAVING…';
+    const initials = await LB.promptInitials();
+    if (!initials) {
+      saveScoreBtn.disabled = false;
+      saveScoreBtn.textContent = 'SAVE MY SCORE';
+      return;
+    }
+    await LB.submitScore('trader', initials, Math.round(clamp(eq,0,Infinity)), satsEarned);
+    alreadySaved = true;
+    saveScoreBtn.textContent = 'SAVED AS ' + initials + ' ✓';
+    refreshBoard();
+  };
 }
 
 /* ================= UPDATE ALL ================= */
