@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Gift — The Orange Robot</title>
+  <meta name="description" content="A Vault scene from The Orange Robot: the Christmas morning the orange robot was first unwrapped." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="https://theorangerobot.com/games/gift.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,700;1,400&family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --orange:#e06820;--orange-dk:#b5541a;--blue:#b5541a;--blue-dk:#7a3810;
+      --brass:#c9a84c;--brass-dk:#8a6f2e;
+      --paper:#f0e8d8;--paper-2:#c8b89a;--ink:#1a1410;--ink-soft:#6a5c46;
+      --green:#54F092;--green-dim:#1f8a4d;--term:#070B07;
+      --navy:#241d16;--gold:#c9a84c;
+      --serif:'EB Garamond',Georgia,'Times New Roman',serif;
+      --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+      --sans:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%}
+    body{background:radial-gradient(120% 120% at 50% 0%,#2e2519 0%,#1a1410 55%,#0d0b09 100%);
+      color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+    /* NAV */
+    .topbar{display:flex;justify-content:space-between;align-items:center;
+      padding:10px 20px;border-bottom:1px solid #ffffff11}
+    .topbar a{font-family:var(--mono);font-size:11px;letter-spacing:.15em;
+      text-transform:uppercase;color:#7a6e62;text-decoration:none}
+    .topbar a:hover{color:var(--gold)}
+    .sats-pill{font-family:var(--mono);font-size:11px;letter-spacing:.1em;
+      color:var(--gold);background:#241d16;border:1px solid #3a2e1f;
+      padding:4px 10px;border-radius:999px}
+    /* CARD */
+    .stage{display:flex;align-items:center;justify-content:center;
+      min-height:calc(100vh - 48px);padding:16px}
+    .card{width:min(700px,98vw);background:var(--paper);border-radius:14px;
+      padding:clamp(14px,3.5vw,26px) clamp(12px,4vw,28px);
+      box-shadow:0 14px 40px rgba(0,0,0,.5),inset 0 1px 0 #fff8;
+      border:1px solid #c8b89a;position:relative;text-align:center;
+      background-image:radial-gradient(rgba(120,90,40,.05) 1px,transparent 1px);
+      background-size:5px 5px}
+    h1,h2{font-family:var(--serif);font-weight:600;letter-spacing:-.01em;margin:0}
+    h2{font-size:clamp(17px,5.5vw,30px);line-height:1.05;margin-bottom:10px}
+    .eyebrow{font-family:var(--mono);font-size:clamp(9px,2.4vw,11px);letter-spacing:.18em;
+      text-transform:uppercase;color:var(--orange-dk);margin:0 0 7px}
+    p.note{font-size:clamp(12px,3.2vw,14.5px);line-height:1.55;color:var(--ink-soft);margin:6px 0 12px}
+    .hint{font-family:var(--mono);font-size:clamp(9px,2.6vw,11px);letter-spacing:.1em;
+      color:var(--ink-soft);text-transform:uppercase;margin:8px 0}
+    canvas{display:block;max-width:100%}
+    .stagecanvas{width:460px;height:clamp(160px,38vw,270px);max-width:94vw;margin:8px auto}
+    /* PRESENT */
+    .present{width:clamp(90px,26vw,150px);height:clamp(80px,22vw,130px);
+      margin:6px auto 0;position:relative;cursor:pointer;touch-action:manipulation}
+    .present .lid,.present .box{position:absolute;left:0;right:0;border-radius:8px;
+      background:linear-gradient(180deg,#9a2f3a,#7a2330);box-shadow:inset 0 2px 0 #ffffff22}
+    .present .box{top:34px;bottom:0}
+    .present .lid{top:0;height:42px;transition:transform .7s cubic-bezier(.5,-0.4,.3,1.4),opacity .7s}
+    .present .ribv{position:absolute;top:0;bottom:0;left:50%;width:18px;transform:translateX(-50%);
+      background:linear-gradient(90deg,#c9a84c,#a8893a)}
+    .present .ribh{position:absolute;left:0;right:0;top:48px;height:18px;background:linear-gradient(0deg,#c9a84c,#a8893a)}
+    .present.open .lid{transform:translateY(-60px) rotate(-12deg);opacity:0}
+    /* BUTTON */
+    .btn{font-family:var(--sans);font-weight:600;font-size:clamp(13px,3.8vw,15px);
+      cursor:pointer;border:none;border-radius:10px;
+      padding:clamp(10px,2.5vw,13px) clamp(14px,4vw,20px);color:#fff;
+      background:linear-gradient(180deg,var(--orange),var(--orange-dk));
+      box-shadow:0 5px 0 #8c3f12,0 8px 14px rgba(0,0,0,.28);
+      transition:transform .06s,box-shadow .06s;letter-spacing:.01em;margin-top:10px}
+    .btn:active{transform:translateY(4px);box-shadow:0 1px 0 #8c3f12}
+    .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html">← The Vault</a>
+  <span class="sats-pill" id="hub-sats">0 ⚡</span>
+</div>
+<div class="stage">
+  <div class="card">
+    <p class="eyebrow">Christmas morning · 2003</p>
+    <h2>The Gift</h2>
+    <p class="note" id="xmasText">One box left under the tree, wrapped in red. His father is watching, half-smiling.</p>
+    <div class="present" id="present" role="button" tabindex="0" aria-label="Unwrap the present">
+      <div class="box"></div><div class="ribh"></div><div class="lid"></div><div class="ribv"></div>
+    </div>
+    <img id="robotReveal" src="xmasgift.png" alt="The orange robot in its gift box" style="display:none;width:460px;max-width:94vw;height:260px;object-fit:cover;border-radius:10px;margin:8px auto;box-shadow:0 8px 24px rgba(0,0,0,0.3)" />
+    <p class="hint" id="xmasHint">Tap the present to unwrap it</p>
+    <div class="row">
+      <button class="btn" id="xmasNext" style="display:none" onclick="claimAndContinue()">Done ✓</button>
+    </div>
+  </div>
+</div>
+<script src="wallet.js"></script>
+<script>
+var REDUCE = false;
+var state = { raf: null };
+
+document.getElementById('hub-sats').textContent = TOR.fmt(TOR.getSats()) + ' ⚡';
+
+  var SOUND = (function(){
+    var ctx=null, master=null, on=true, noiseBuf=null, hum=null, climb=null;
+    function init(){
+      if(ctx) return true;
+      try{
+        var AC=window.AudioContext||window.webkitAudioContext; if(!AC) return false;
+        ctx=new AC(); master=ctx.createGain(); master.gain.value=on?0.85:0.0001; master.connect(ctx.destination);
+        var n=Math.floor(ctx.sampleRate*1.2); noiseBuf=ctx.createBuffer(1,n,ctx.sampleRate);
+        var d=noiseBuf.getChannelData(0); for(var i=0;i<n;i++) d[i]=Math.random()*2-1;
+        return true;
+      }catch(e){ return false; }
+    }
+    function t(){ return ctx?ctx.currentTime:0; }
+    function tone(freq,type,g,a,dec,when,glide){
+      if(!ctx) return; var s=when||t();
+      var o=ctx.createOscillator(), gn=ctx.createGain();
+      o.type=type||'sine'; o.frequency.setValueAtTime(Math.max(1,freq),s);
+      if(glide) o.frequency.exponentialRampToValueAtTime(Math.max(1,glide),s+a+dec);
+      gn.gain.setValueAtTime(0.0001,s);
+      gn.gain.exponentialRampToValueAtTime(Math.max(0.0001,g),s+a);
+      gn.gain.exponentialRampToValueAtTime(0.0001,s+a+dec);
+      o.connect(gn); gn.connect(master); o.start(s); o.stop(s+a+dec+0.05);
+    }
+    function noise(g,a,dec,ft,ff,when,glide){
+      if(!ctx) return; var s=when||t();
+      var src=ctx.createBufferSource(); src.buffer=noiseBuf;
+      var f=ctx.createBiquadFilter(); f.type=ft||'bandpass'; f.Q.value=5;
+      f.frequency.setValueAtTime(ff||1000,s);
+      if(glide) f.frequency.exponentialRampToValueAtTime(Math.max(50,glide),s+a+dec);
+      var gn=ctx.createGain(); gn.gain.setValueAtTime(0.0001,s);
+      gn.gain.exponentialRampToValueAtTime(Math.max(0.0001,g),s+a);
+      gn.gain.exponentialRampToValueAtTime(0.0001,s+a+dec);
+      src.connect(f); f.connect(gn); gn.connect(master); src.start(s); src.stop(s+a+dec+0.05);
+    }
+    return {
+      resume:function(){ if(!init())return; if(ctx.state==='suspended') ctx.resume(); },
+      setOn:function(v){ on=v; if(master) master.gain.setTargetAtTime(on?0.85:0.0001,t(),0.02); },
+      isOn:function(){ return on; },
+      click:function(){ tone(440,'square',0.05,0.004,0.05); },
+      wind:function(charge){ var f=560+charge*8; noise(0.13,0.004,0.07,'bandpass',f); tone(f*1.6,'square',0.05,0.003,0.05); },
+      step:function(speed,alt){ var b=(alt?235:300)*(0.6+speed*0.5); tone(b,'triangle',0.02+0.06*speed,0.004,0.08); noise(0.01+0.05*speed,0.003,0.05,'lowpass',850); },
+      springDown:function(){ tone(440,'sawtooth',0.10,0.02,0.55,t(),95); noise(0.07,0.01,0.45,'lowpass',650); },
+      unwrap:function(){ noise(0.13,0.02,0.28,'highpass',2400); tone(720,'triangle',0.05,0.02,0.22); },
+      creak:function(){ tone(190,'sawtooth',0.07,0.55,0.6,t(),120); noise(0.04,0.05,0.5,'bandpass',500); },
+      coin:function(streak){ var b=900+Math.min(streak||1,14)*16; tone(b,'square',0.11,0.005,0.09); tone(b*1.5,'square',0.10,0.005,0.17,t()+0.075); },
+      hash:function(){ noise(0.012,0.002,0.03,'highpass',5200); },
+      humStart:function(){ if(!ctx||hum) return;
+        var g=ctx.createGain(); g.gain.value=0.0001; g.connect(master);
+        var o1=ctx.createOscillator(); o1.type='sine'; o1.frequency.value=68;
+        var o2=ctx.createOscillator(); o2.type='triangle'; o2.frequency.value=68.7;
+        var nz=ctx.createBufferSource(); nz.buffer=noiseBuf; nz.loop=true;
+        var nf=ctx.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=300;
+        var ng=ctx.createGain(); ng.gain.value=0.05;
+        var lfo=ctx.createOscillator(); lfo.frequency.value=0.28; var lg=ctx.createGain(); lg.gain.value=70;
+        lfo.connect(lg); lg.connect(nf.frequency);
+        o1.connect(g); o2.connect(g); nz.connect(nf); nf.connect(ng); ng.connect(g);
+        o1.start(); o2.start(); nz.start(); lfo.start();
+        g.gain.setTargetAtTime(0.09,t(),0.7); hum={g:g,nodes:[o1,o2,nz,lfo]};
+      },
+      humStop:function(){ if(!hum) return; var h=hum; hum=null;
+        try{ h.g.gain.setTargetAtTime(0.0001,t(),0.3); }catch(e){}
+        setTimeout(function(){ h.nodes.forEach(function(n){ try{n.stop();}catch(e){} }); },700);
+      },
+      climbStart:function(){ if(!ctx||climb) return;
+        var o=ctx.createOscillator(); o.type='sine'; o.frequency.value=120;
+        var g=ctx.createGain(); g.gain.value=0.0001; o.connect(g); g.connect(master);
+        o.start(); g.gain.setTargetAtTime(0.05,t(),0.2); climb={o:o,g:g}; },
+      climbSet:function(p){ if(!climb) return; climb.o.frequency.setTargetAtTime(120*Math.pow(2,p*3.6),t(),0.08); },
+      climbStop:function(){ if(!climb) return; var c=climb; climb=null; try{ c.g.gain.setTargetAtTime(0.0001,t(),0.2);}catch(e){} setTimeout(function(){ try{c.o.stop();}catch(e){} },400); },
+      chord:function(){ [392,494,587,784,988].forEach(function(f,i){ tone(f,'triangle',0.10,0.02,1.3,t()+i*0.06); }); }
+    };
+  })();
+  function drawRobot(ctx, W, H, o){
+    o = o||{};
+    var key = o.key||0, legp = o.leg||0, glow = (o.glow==null?1:o.glow), scale=o.scale||1, offx=o.dx||0;
+    ctx.clearRect(0,0,W,H);
+    // floor line
+    ctx.save();
+    ctx.translate(W/2 + offx, H*0.5);
+    ctx.scale(scale,scale);
+    // shadow
+    ctx.fillStyle='rgba(0,0,0,.18)';
+    ctx.beginPath(); ctx.ellipse(0,118,70,12,0,0,7); ctx.fill();
+    // legs (swing around hips)
+    var sw = Math.sin(legp)*0.5;
+    [[-26, sw],[26,-sw]].forEach(function(L){
+      ctx.save(); ctx.translate(L[0],58); ctx.rotate(L[1]);
+      ctx.fillStyle='#243140'; rr(ctx,-13,0,26,52,9); ctx.fill();
+      ctx.fillStyle='#2f4256'; rr(ctx,-18,46,40,16,7); ctx.fill(); // foot
+      ctx.restore();
+    });
+    // arms (swing opposite)
+    [[-66,-sw],[66,sw]].forEach(function(A){
+      ctx.save(); ctx.translate(A[0],-18); ctx.rotate(A[1]*0.6);
+      ctx.fillStyle='#cf6322'; rr(ctx,-12,0,24,56,10); ctx.fill();
+      ctx.fillStyle='#2f4256'; ctx.beginPath(); ctx.arc(0,58,12,0,7); ctx.fill();
+      ctx.restore();
+    });
+    // body
+    var grd = ctx.createLinearGradient(0,-30,0,70);
+    grd.addColorStop(0,'#e06820'); grd.addColorStop(1,'#cf5f22');
+    ctx.fillStyle=grd; rr(ctx,-58,-30,116,98,20); ctx.fill();
+    ctx.strokeStyle='#a8491a'; ctx.lineWidth=3; ctx.stroke();
+    // chest panel (blue)
+    ctx.fillStyle='#235a8a'; rr(ctx,-38,-8,76,52,12); ctx.fill();
+    ctx.fillStyle='#2f7bb6'; rr(ctx,-34,-4,68,44,9); ctx.fill();
+    // gauges
+    ['#e0c068','#9be29b'].forEach(function(c,i){ ctx.fillStyle=c; ctx.beginPath(); ctx.arc(-16+i*32,10,7,0,7); ctx.fill(); ctx.strokeStyle='#0004'; ctx.lineWidth=2; ctx.stroke(); });
+    ctx.strokeStyle='#1b466b'; ctx.lineWidth=2;
+    for(var i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(-30,24+i*5); ctx.lineTo(30,24+i*5); ctx.stroke(); }
+    // wind key (right side) — stem + cloverleaf
+    ctx.save(); ctx.translate(70,4);
+    ctx.fillStyle='#b58a2f'; rr(ctx,-12,-6,18,12,4); ctx.fill(); // stem to body
+    ctx.translate(16,0); ctx.rotate(key);
+    ctx.fillStyle='#7a5f22'; ctx.fillRect(-3,-2,4,4);
+    ctx.fillStyle='#d8b452';
+    for(var a=0;a<4;a++){ var ang=a*Math.PI/2; ctx.beginPath(); ctx.arc(Math.cos(ang)*12,Math.sin(ang)*12,9,0,7); ctx.fill(); }
+    ctx.fillStyle='#b8902f'; ctx.beginPath(); ctx.arc(0,0,6,0,7); ctx.fill();
+    ctx.restore();
+    // neck + head
+    ctx.fillStyle='#8a8f98'; rr(ctx,-10,-44,20,16,4); ctx.fill();
+    var hg=ctx.createLinearGradient(0,-96,0,-44); hg.addColorStop(0,'#e06820'); hg.addColorStop(1,'#d96c2b');
+    ctx.fillStyle=hg; rr(ctx,-42,-96,84,56,16); ctx.fill();
+    ctx.strokeStyle='#a8491a'; ctx.lineWidth=3; ctx.stroke();
+    // antenna
+    ctx.strokeStyle='#7a5f22'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,-96); ctx.lineTo(0,-114); ctx.stroke();
+    ctx.fillStyle='#e0c068'; ctx.beginPath(); ctx.arc(0,-118,6,0,7); ctx.fill();
+    // eyes
+    ctx.fillStyle='#241d16'; rr(ctx,-30,-82,60,26,10); ctx.fill();
+    var eg = 'rgba(120,'+Math.round(180+60*glow)+',255,'+(0.55+0.45*glow)+')';
+    [-15,15].forEach(function(ex){ ctx.fillStyle=eg; ctx.beginPath(); ctx.arc(ex,-69,7,0,7); ctx.fill();
+      ctx.fillStyle='#eaffff'; ctx.beginPath(); ctx.arc(ex,-69,3,0,7); ctx.fill(); });
+    // mouth grill
+    ctx.strokeStyle='#9aa0a8'; ctx.lineWidth=2;
+    for(var m=0;m<3;m++){ ctx.beginPath(); ctx.moveTo(-16,-50+m*4); ctx.lineTo(16,-50+m*4); ctx.stroke(); }
+    ctx.restore();
+  }
+
+  /* ---------- per-scene setup ---------- */
+  var SETUP = {};
+
+  // 0 title — idle bob + slow key turn
+  SETUP[0] = function(){
+    var c=document.getElementById('cvTitle'), x=c.getContext('2d'), t0=performance.now();
+    function loop(t){ var e=(t-t0)/1000;
+      drawRobot(x,c.width,c.height,{key:e*0.6, leg:Math.sin(e*2)*0.25, glow:0.6+0.4*Math.sin(e*2.2), scale:0.92, dx:Math.sin(e*1.3)*4});
+      state.raf=requestAnimationFrame(loop); }
+    state.raf=requestAnimationFrame(loop);
+  };
+
+// Gift scene logic
+var present = document.getElementById('present');
+var cv = document.getElementById('cvXmas');
+var hint = document.getElementById('xmasHint');
+var txt = document.getElementById('xmasText');
+var nxt = document.getElementById('xmasNext');
+var opened = false;
+
+function openPresent() {
+  if (opened) return;
+  opened = true;
+  SOUND.resume(); SOUND.unwrap();
+  present.classList.add('open');
+  setTimeout(function() {
+    present.style.display = 'none';
+    document.getElementById('robotReveal').style.display = 'block';
+    hint.textContent = '"A wind-up man," his father said. "Keep the key safe — it\'s the only one."';
+    txt.textContent = 'An orange tin robot with blue arms and a brass key in its side.';
+    nxt.style.display = 'inline-block';
+
+    // Earn sats
+    var earned = TOR.earn(150, 'The Gift — unwrapped');
+    TOR.toast(150);
+    TOR.markDone('gift');
+    document.getElementById('hub-sats').textContent = TOR.fmt(earned) + ' ⚡';
+  }, REDUCE ? 10 : 680);
+}
+
+function claimAndContinue() {
+  if (state.raf) cancelAnimationFrame(state.raf);
+  window.location.href = 'index.html';
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('hub-sats').textContent = TOR.fmt(TOR.getSats()) + ' ⚡';
+  var present = document.getElementById('present');
+  present.onclick = openPresent;
+  present.onkeydown = function(e) { if(e.key==='Enter'||e.key===' '){e.preventDefault(); openPresent();} };
+});
+</script>
+</body>
+</html>
