@@ -8,29 +8,29 @@
   <meta name="robots" content="noindex, follow" />
   <link rel="canonical" href="https://theorangerobot.com/games/valuechart.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=IBM+Plex+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,700;1,400&family=Cinzel:wght@400;600&family=Inter:wght@300;400;500&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
   <style>
     :root{
-      --orange:#E8722C;--orange-dk:#BD551A;--brass:#CBA24C;
-      --paper:#F1E9D8;--paper-2:#E6D9BF;--ink:#2A2118;--ink-soft:#6A5C46;
-      --gold:#ECB53F;
-      --serif:'Fraunces',Georgia,'Times New Roman',serif;
+      --orange:#e06820;--orange-dk:#b5541a;--brass:#c9a84c;
+      --paper:#f0e8d8;--paper-2:#c8b89a;--ink:#1a1410;--ink-soft:#6a5c46;
+      --gold:#c9a84c;
+      --serif:'EB Garamond',Georgia,'Times New Roman',serif;
       --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
-      --sans:'Space Grotesk',system-ui,-apple-system,Segoe UI,sans-serif;
+      --sans:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
     }
     *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
     html,body{margin:0;min-height:100%}
-    body{background:radial-gradient(120% 120% at 50% 0%,#20283a 0%,#161a22 55%,#0e1016 100%);
+    body{background:radial-gradient(120% 120% at 50% 0%,#2e2519 0%,#1a1410 55%,#0d0b09 100%);
       color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
     .topbar{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;border-bottom:1px solid #ffffff11}
-    .topbar a{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#7b8190;text-decoration:none}
+    .topbar a{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:#7a6e62;text-decoration:none}
     .topbar a:hover{color:var(--gold)}
-    .sats-pill{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--gold);background:#1a1f2a;border:1px solid #2c3242;padding:4px 10px;border-radius:999px}
+    .sats-pill{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--gold);background:#241d16;border:1px solid #3a2e1f;padding:4px 10px;border-radius:999px}
     .stage{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 48px);padding:16px}
     .card{width:min(700px,98vw);background:var(--paper);border-radius:14px;
       padding:clamp(14px,3.5vw,26px) clamp(12px,4vw,28px);
       box-shadow:0 14px 40px rgba(0,0,0,.5),inset 0 1px 0 #fff8;
-      border:1px solid #d8c9a8;text-align:center;
+      border:1px solid #c8b89a;text-align:center;
       background-image:radial-gradient(rgba(120,90,40,.05) 1px,transparent 1px);background-size:5px 5px}
     h2{font-family:var(--serif);font-weight:600;font-size:clamp(17px,5.5vw,30px);line-height:1.05;margin:0 0 10px}
     .eyebrow{font-family:var(--mono);font-size:clamp(9px,2.4vw,11px);letter-spacing:.18em;text-transform:uppercase;color:var(--orange-dk);margin:0 0 7px}
@@ -62,7 +62,7 @@
   <div class="card">
     <p class="eyebrow">What it became</p>
     <h2>The Value Over The Years</h2>
-    <p style="font-size:12px;color:#7f8aa0;margin:-8px 0 10px;line-height:1.5">Solid line: real Bitcoin price history, 2009–2025. Dashed line beyond today: speculative, part of the story — not a forecast.</p>
+    <p style="font-size:12px;color:#8a7d6e;margin:-8px 0 10px;line-height:1.5">Solid line: real Bitcoin price history, 2009–2025. Dashed line beyond today: speculative, part of the story — not a forecast.</p>
     <div class="chartwrap">
       <div class="readout">
         <div class="yr" id="vYear">2009</div>
@@ -220,7 +220,7 @@ function Yv(v){ var l=v<=1?0:Math.log10(v); return H-padB-(l/maxL)*(H-padT-padB)
 function grid(){
   x.clearRect(0,0,W,H);
   x.strokeStyle='rgba(255,255,255,.08)'; x.lineWidth=1;
-  x.fillStyle='#7f8aa0'; x.font='11px IBM Plex Mono';
+  x.fillStyle='#8a7d6e'; x.font='11px IBM Plex Mono';
   [1,100,10000,1000000].forEach(function(v){ var yy=Yv(v); x.beginPath(); x.moveTo(padL,yy); x.lineTo(W-padR,yy); x.stroke(); x.fillText(money(v),6,yy+3); });
   [2009,2013,2017,2021,2025,2034].forEach(function(yr){ x.fillText(yr,X(yr)-12,H-8); });
 
@@ -230,13 +230,13 @@ function grid(){
   x.strokeStyle='rgba(255,255,255,.25)'; x.lineWidth=1; x.setLineDash([3,3]);
   x.beginPath(); x.moveTo(sx,padT); x.lineTo(sx,H-padB); x.stroke();
   x.restore();
-  x.fillStyle='#7f8aa0'; x.font='10px IBM Plex Mono';
+  x.fillStyle='#8a7d6e'; x.font='10px IBM Plex Mono';
   x.fillText('real data ends',sx-38,padT+10);
   x.fillText('story speculation →',sx+4,padT+10);
 }
 function plotTo(year){
   // Real, solid segment
-  x.strokeStyle='#ECB53F'; x.lineWidth=3; x.lineJoin='round'; x.beginPath();
+  x.strokeStyle='#c9a84c'; x.lineWidth=3; x.lineJoin='round'; x.beginPath();
   var started=false;
   for(var yr=Y0;yr<=Math.min(year,SPLIT_YEAR)+0.001;yr+=0.1){
     var v=priceAt(yr); var px=X(yr),py=Yv(v);
