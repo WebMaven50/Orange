@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /games/bonus-*
-Disallow: /easteregg.html
-Disallow: /games/easteregg.html
-
-Sitemap: https://theorangerobot.com/sitemap.xml
