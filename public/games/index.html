@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Vault — Games & Hidden Scenes | The Orange Robot</title>
+  <meta name="description" content="The Vault: interactive games and hidden scenes from The Orange Robot, V.J. Alden's modern parable retelling the story of Joseph in the age of Bitcoin and AI." />
+  <link rel="canonical" href="https://theorangerobot.com/games/index.html" />
+  <meta name="robots" content="index, follow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Cinzel:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #0d0b09; --rust: #b5541a; --rust-glow: #e06820;
+      --parchment: #f0e8d8; --parchment2: #c8b89a;
+      --smoke: #1a1410; --smoke2: #241d16; --smoke3: #2e2519;
+      --ash: #7a6e62; --key-gold: #c9a84c; --white: #f5f0e8;
+      --green: #4caf7d; --red: #c0392b;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--ink); color: var(--parchment); font-family: 'EB Garamond', serif; font-size: 18px; line-height: 1.7; min-height: 100vh; }
+
+    /* NAV */
+    nav { padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--smoke3); }
+    .nav-logo { font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: 0.2em; color: var(--key-gold); text-decoration: none; }
+    .nav-back  { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.15em; color: var(--ash); text-decoration: none; }
+    .nav-back:hover { color: var(--white); }
+
+    /* WALLET BANNER */
+    .wallet-banner {
+      background: var(--smoke2);
+      border-bottom: 1px solid var(--smoke3);
+      padding: 1.2rem 2rem;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;
+    }
+    .wallet-sats {
+      display: flex; align-items: baseline; gap: 0.5rem;
+    }
+    .sats-number { font-family: 'Cinzel', serif; font-size: 2rem; color: var(--key-gold); }
+    .sats-label  { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; letter-spacing: 0.2em; color: var(--ash); text-transform: uppercase; }
+    .wallet-actions { display: flex; gap: 0.8rem; align-items: center; }
+    .btn-store {
+      font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 0.15em; text-transform: uppercase;
+      padding: 0.5rem 1.2rem; background: var(--rust); color: var(--white); border: none; cursor: pointer;
+      transition: background 0.2s; text-decoration: none; display: inline-block;
+    }
+    .btn-store:hover { background: var(--rust-glow); }
+    .btn-wipe {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 0.4rem 0.8rem; background: transparent; color: var(--ash); border: 1px solid var(--smoke3); cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .btn-wipe:hover { color: var(--red); border-color: var(--red); }
+
+    /* PROGRESS BAR */
+    .unlock-bar { padding: 0.7rem 2rem; background: var(--smoke); border-bottom: 1px solid var(--smoke3); }
+    .unlock-bar-inner { max-width: 860px; margin: 0 auto; }
+    .unlock-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.18em; color: var(--ash); text-transform: uppercase; margin-bottom: 0.4rem; display: flex; justify-content: space-between; }
+    .progress-track { height: 6px; background: var(--smoke3); border-radius: 99px; overflow: visible; position: relative; }
+    .progress-fill  { height: 100%; background: linear-gradient(90deg, var(--rust), var(--key-gold)); border-radius: 99px; transition: width 0.6s ease; position: relative; }
+    .progress-fill::after { content: ''; position: absolute; right: -3px; top: -3px; width: 12px; height: 12px; background: var(--key-gold); border-radius: 50%; box-shadow: 0 0 8px rgba(201,168,76,0.8); }
+    .unlock-pips { display: flex; justify-content: space-between; margin-top: 0.5rem; }
+    .unlock-pip { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--ash); text-align: center; flex: 1; }
+    .unlock-pip.reached { color: var(--key-gold); }
+
+    /* MAIN */
+    main { max-width: 900px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+    .section-label { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--rust); margin-bottom: 1rem; }
+
+    /* LIVE MARKET CHART */
+    .live-section { margin-bottom: 2.5rem; }
+    .live-card {
+      background: var(--smoke2); border: 1px solid rgba(201,168,76,0.25);
+      padding: 1.6rem 1.6rem 1.2rem;
+    }
+    .live-head { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1.1rem; }
+    .live-badge { display: inline-flex; align-items: center; gap: 0.4rem; font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--green); }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: live-pulse 1.8s ease-in-out infinite; }
+    @keyframes live-pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(76,175,125,0.5);} 50%{opacity:0.5;box-shadow:0 0 0 5px rgba(76,175,125,0);} }
+    .live-price-row { display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap; }
+    .live-price { font-family: 'Cinzel', serif; font-size: 2rem; color: var(--key-gold); }
+    .live-change { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; letter-spacing: 0.05em; }
+    .live-change.up { color: var(--green); }
+    .live-change.down { color: var(--red); }
+    .live-window-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ash); text-align: right; }
+    .live-range-picker { display: flex; gap: 0.35rem; }
+    .live-range-btn {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; letter-spacing: 0.08em;
+      color: var(--ash); background: transparent; border: 1px solid var(--smoke3);
+      padding: 0.28rem 0.6rem; cursor: pointer; transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+    .live-range-btn:hover { color: var(--white); border-color: var(--ash); }
+    .live-range-btn.active { color: var(--ink); background: var(--key-gold); border-color: var(--key-gold); }
+    .live-updated { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--ash); margin-top: 0.15rem; }
+    .live-chart-wrap { width: 100%; height: 160px; position: relative; }
+    .live-chart-wrap canvas { width: 100%; height: 100%; display: block; }
+    .live-error { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--ash); font-style: italic; padding: 1.5rem 0; text-align: center; }
+
+    /* GAME GRID */
+    .games-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.2rem; margin-bottom: 3rem; }
+    .game-card {
+      background: var(--smoke2); border: 1px solid rgba(181,84,26,0.2);
+      padding: 1.5rem; text-decoration: none; color: inherit; display: block;
+      transition: border-color 0.2s, box-shadow 0.2s; position: relative; overflow: hidden;
+    }
+    .game-card:hover:not(.locked) { border-color: var(--rust); box-shadow: 0 0 24px rgba(181,84,26,0.12); }
+    .game-card.locked { opacity: 0.5; cursor: not-allowed; }
+    .game-card.done::after {
+      content: '✓'; position: absolute; top: 0.8rem; right: 0.8rem;
+      font-family: 'Cinzel', serif; font-size: 0.75rem; color: var(--green);
+      border: 1px solid var(--green); padding: 0.1rem 0.4rem; border-radius: 2px;
+    }
+    .game-icon  { font-size: 1.8rem; margin-bottom: 0.8rem; }
+    .game-title { font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 400; color: var(--white); margin-bottom: 0.3rem; letter-spacing: 0.04em; }
+    .game-desc  { font-size: 0.88rem; color: var(--ash); line-height: 1.5; margin-bottom: 0.8rem; }
+    .game-reward { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--key-gold); letter-spacing: 0.1em; }
+    .game-badge { display: inline-block; font-family: 'Cinzel', serif; font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.15rem 0.5rem; margin-top: 0.5rem; }
+    .game-badge.new { background: var(--rust); color: var(--white); }
+    .game-badge.soon { border: 1px solid var(--smoke3); color: var(--ash); }
+
+    /* UNLOCK VAULT */
+    .vault-section { margin-bottom: 3rem; }
+    .unlock-grid { display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1rem; }
+    .unlock-row {
+      display: flex; align-items: center; gap: 1rem;
+      background: var(--smoke2); border: 1px solid var(--smoke3); padding: 0.9rem 1.2rem;
+    }
+    .unlock-icon { font-size: 1.2rem; min-width: 1.8rem; text-align: center; }
+    .unlock-info { flex: 1; }
+    .unlock-title { font-family: 'Cinzel', serif; font-size: 0.85rem; color: var(--white); }
+    .unlock-title.locked-title { color: var(--ash); }
+    .unlock-req   { font-family: 'IBM Plex Mono', monospace; font-size: 0.65rem; color: var(--ash); letter-spacing: 0.1em; margin-top: 0.15rem; }
+    .btn-read {
+      font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 0.35rem 0.9rem; background: var(--rust); color: var(--white); border: none; cursor: pointer; white-space: nowrap;
+      text-decoration: none; display: inline-block;
+    }
+    .btn-read:hover { background: var(--rust-glow); }
+
+    /* MODAL */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 200; align-items: center; justify-content: center; padding: 1.5rem; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--smoke2); border: 1px solid var(--rust); max-width: 640px; width: 100%; max-height: 82vh; overflow-y: auto; padding: 2.5rem 2rem; position: relative; }
+    .modal-label { font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: 0.25em; color: var(--rust); text-transform: uppercase; margin-bottom: 0.5rem; }
+    .modal-title { font-family: 'Cinzel', serif; font-size: 1.4rem; color: var(--white); font-weight: 400; margin-bottom: 1.5rem; }
+    .modal-body  { font-size: 1rem; color: var(--parchment); line-height: 1.85; }
+    .modal-body p { margin-bottom: 1rem; }
+    .modal-close { position: absolute; top: 1rem; right: 1.2rem; background: none; border: none; color: var(--ash); font-size: 1.4rem; cursor: pointer; font-family: 'Cinzel', serif; }
+    .modal-close:hover { color: var(--white); }
+
+    /* WIPE CONFIRM */
+    .wipe-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 300; align-items: center; justify-content: center; padding: 1.5rem; }
+    .wipe-overlay.open { display: flex; }
+    .wipe-card { background: var(--smoke2); border: 1px solid var(--red); max-width: 420px; width: 100%; padding: 2rem; text-align: center; }
+    .wipe-card h3 { font-family: 'Cinzel', serif; font-size: 1.2rem; color: var(--white); margin-bottom: 1rem; }
+    .wipe-card p  { font-size: 0.9rem; color: var(--ash); margin-bottom: 1.5rem; font-style: italic; }
+    .wipe-confirm { font-family: 'Cinzel', serif; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.7rem 1.5rem; background: var(--red); color: var(--white); border: none; cursor: pointer; margin-right: 0.8rem; }
+    .wipe-cancel  { font-family: 'Cinzel', serif; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.7rem 1.5rem; background: transparent; color: var(--ash); border: 1px solid var(--ash); cursor: pointer; }
+
+    /* LOG */
+    .log-section { margin-bottom: 3rem; }
+    .log-list { margin-top: 1rem; display: flex; flex-direction: column; gap: 0.3rem; }
+    .log-row { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--smoke3); font-size: 0.85rem; }
+    .log-label  { color: var(--parchment2); }
+    .log-amount { font-family: 'IBM Plex Mono', monospace; color: var(--key-gold); font-size: 0.8rem; }
+    .log-empty  { font-style: italic; color: var(--ash); font-size: 0.9rem; }
+
+    @media (max-width: 560px) { .wallet-banner { flex-direction: column; align-items: flex-start; } .sats-number { font-size: 1.6rem; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="../index.html" class="nav-logo">The Orange Robot</a>
+  <a href="../index.html" class="nav-back">← Back to Site</a>
+</nav>
+
+<!-- WALLET BANNER -->
+<div class="wallet-banner">
+  <div class="wallet-sats">
+    <span class="sats-number" id="total-sats">0</span>
+    <span class="sats-label">⚡ satoshis mined</span>
+  </div>
+  <div class="wallet-actions">
+    <a href="#store" class="btn-store">Store (Coming Soon)</a>
+    <button class="btn-wipe" onclick="showWipe()">Lost my seed phrase</button>
+  </div>
+</div>
+
+<!-- PROGRESS BAR -->
+<div class="unlock-bar">
+  <div class="unlock-bar-inner">
+    <div class="unlock-label">
+      <span>Unlock Vault Progress</span>
+      <span id="next-unlock-label">Next unlock at 200 sats</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="unlock-pips">
+      <div class="unlock-pip" id="pip-200">200 ⚡</div>
+      <div class="unlock-pip" id="pip-500">500 ⚡</div>
+      <div class="unlock-pip" id="pip-900">900 ⚡</div>
+      <div class="unlock-pip" id="pip-1400">1,400 ⚡</div>
+    </div>
+  </div>
+</div>
+
+<main>
+
+  <!-- LIVE MARKET -->
+  <div class="live-section">
+    <p class="section-label">Live Market</p>
+    <div class="live-card">
+      <div class="live-head">
+        <div>
+          <span class="live-badge"><span class="live-dot"></span>LIVE · 1 BTC / USD</span>
+          <div class="live-price-row">
+            <span class="live-price" id="live-price">—</span>
+            <span class="live-change" id="live-change"></span>
+          </div>
+          <div class="live-updated" id="live-updated">Connecting…</div>
+        </div>
+        <div class="live-range-picker" id="live-range-picker">
+          <button class="live-range-btn" data-days="7">7D</button>
+          <button class="live-range-btn active" data-days="30">30D</button>
+          <button class="live-range-btn" data-days="90">90D</button>
+          <button class="live-range-btn" data-days="365">1Y</button>
+          <button class="live-range-btn" data-days="0">All</button>
+        </div>
+      </div>
+      <div class="live-chart-wrap">
+        <canvas id="live-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAMES -->
+  <p class="section-label">The Games</p>
+  <div class="games-grid">
+
+    <a href="easteregg.html" class="game-card" id="card-easteregg">
+      <div class="game-icon">🗝</div>
+      <div class="game-title">Easter Egg Hunt</div>
+      <div class="game-desc">21 questions about the hidden numbers woven through the book. Halving rewards. Can you find them all?</div>
+      <div class="game-reward">⚡ Up to 781 sats · Halving cycle rewards</div>
+      <span class="game-badge new">Play Now</span>
+    </a>
+
+    <a href="gift.html" class="game-card" id="card-gift">
+      <div class="game-icon">🎁</div>
+      <div class="game-title">The Gift</div>
+      <div class="game-desc">Christmas 2003. Frank wraps something small and sets it under the tree. You are Joey at twelve years old.</div>
+      <div class="game-reward">⚡ Up to 150 sats</div>
+      <span class="game-badge new">Play Now</span>
+    </a>
+
+    <a href="mining.html" class="game-card" id="card-mining">
+      <div class="game-icon">⛏</div>
+      <div class="game-title">The Mining Sim</div>
+      <div class="game-desc">2009. A terminal. A block reward of 50 BTC. Start mining and watch the blockchain grow.</div>
+      <div class="game-reward">⚡ 10 sats per block mined</div>
+      <span class="game-badge new">Play Now</span>
+    </a>
+
+    <a href="coldstorage.html" class="game-card" id="card-coldstorage">
+      <div class="game-icon">🤖</div>
+      <div class="game-title">Cold Storage</div>
+      <div class="game-desc">Open the robot. Reveal what's scratched inside the metal. The key is split — the way his father taught him.</div>
+      <div class="game-reward">⚡ 200 sats</div>
+      <span class="game-badge new">Play Now</span>
+    </a>
+
+    <a href="valuechart.html" class="game-card" id="card-valuechart">
+      <div class="game-icon">📈</div>
+      <div class="game-title">The Value Chart</div>
+      <div class="game-desc">Watch 1 Bitcoin climb from $0 in 2009 to $2.8 million by 2034. Your mining stash grows with it.</div>
+      <div class="game-reward">⚡ 100 sats for watching through</div>
+      <span class="game-badge new">Play Now</span>
+    </a>
+
+    <a href="joseph.html" class="game-card" id="card-joseph">
+      <div class="game-icon">⚖️</div>
+      <div class="game-title">The Joseph Parallel</div>
+      <div class="game-desc">Match scenes from the novel to their Genesis source. Gold coins for each match. Convert to sats.</div>
+      <div class="game-reward">⚡ Up to 500 sats</div>
+      <span class="game-badge new">Play Now</span>
+    </a>
+
+    <a href="dreamer.html" class="game-card" id="card-dreamer">
+      <div class="game-icon">🌙</div>
+      <div class="game-title">The Dreamer's Path</div>
+      <div class="game-desc">A choose-your-own-path story. You are Joey at seventeen. The robot sits on your desk. The brothers are watching.</div>
+      <div class="game-reward">⚡ Up to 300 sats</div>
+      <span class="game-badge new">Play Now</span>
+    </a>
+
+    <a href="orange-robot-trader.html" class="game-card" id="card-trader">
+      <div class="game-icon">📈</div>
+      <div class="game-title">Orange Robot Trader</div>
+      <div class="game-desc">Ride the candles. Buy the dip, hold through the fear, and learn why Joey never sold. Time in the market beats timing the market.</div>
+      <div class="game-reward">⚡ Play Now</div>
+      <span class="game-badge new">New</span>
+    </a>
+
+    <a href="bitcoin-blitz.html" class="game-card" id="card-blitz">
+      <div class="game-icon">💥</div>
+      <div class="game-title">Bitcoin Blitz!</div>
+      <div class="game-desc">A fast-paced arcade rush. Grab the coins, dodge the FUD, and stack sats before the clock runs out.</div>
+      <div class="game-reward">⚡ Play Now</div>
+      <span class="game-badge new">New</span>
+    </a>
+
+  </div>
+
+  <!-- UNLOCK VAULT -->
+  <div class="vault-section">
+    <p class="section-label">Unlock Vault</p>
+    <div class="unlock-grid" id="unlock-grid">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <!-- ACTIVITY LOG -->
+  <div class="log-section">
+    <p class="section-label">Activity Log</p>
+    <div class="log-list" id="log-list">
+      <p class="log-empty">No activity yet. Play a game to start mining.</p>
+    </div>
+  </div>
+
+</main>
+
+<!-- SCENE MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <p class="modal-label" id="modal-label">Bonus Scene</p>
+    <h2 class="modal-title" id="modal-title"></h2>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- WIPE CONFIRM -->
+<div class="wipe-overlay" id="wipe-overlay">
+  <div class="wipe-card">
+    <h3>Lost your seed phrase?</h3>
+    <p>This will permanently zero your wallet — all satoshis, all unlocks, all progress. This cannot be undone.</p>
+    <button class="wipe-confirm" onclick="confirmWipe()">Wipe Everything</button>
+    <button class="wipe-cancel"  onclick="hideWipe()">Cancel</button>
+  </div>
+</div>
+
+<script src="wallet.js"></script>
+<script>
+// ── LIVE BITCOIN CHART (mempool.space, no API key required) ──
+(function() {
+  var HISTORY_URL   = 'https://mempool.space/api/v1/historical-price?currency=USD';
+  var CURRENT_URL    = 'https://mempool.space/api/v1/prices';
+  var POLL_MS         = 60000;
+  var RANGE_KEY       = 'tor_chart_range';
+  var DEFAULT_DAYS   = 30;
+
+  var allHistory = [];  // full dataset ever fetched, oldest -> newest, [{t,p}, ...]
+  var points     = [];  // currently displayed window, derived from allHistory
+  var basePrice  = null;
+  var windowDays = DEFAULT_DAYS;
+  var failCount  = 0;
+
+  function loadSavedRange() {
+    try {
+      var saved = parseInt(localStorage.getItem(RANGE_KEY), 10);
+      if (!isNaN(saved)) windowDays = saved; // 0 == "All"
+    } catch (e) { /* localStorage unavailable — fine, use default */ }
+  }
+
+  function saveRange(days) {
+    try { localStorage.setItem(RANGE_KEY, String(days)); } catch (e) {}
+  }
+
+  function rangeLabel(days) {
+    if (days === 7) return '7d';
+    if (days === 30) return '30d';
+    if (days === 90) return '90d';
+    if (days === 365) return '1y';
+    return 'all-time';
+  }
+
+  function setError(msg) {
+    var wrap = document.querySelector('.live-chart-wrap');
+    if (wrap) wrap.innerHTML = '<div class="live-error">' + msg + '</div>';
+  }
+
+  function fmtUSD(n) {
+    return '$' + Math.round(n).toLocaleString('en-US');
+  }
+
+  function updatePriceUI(current) {
+    document.getElementById('live-price').textContent = fmtUSD(current);
+    var changeEl = document.getElementById('live-change');
+    if (basePrice) {
+      var pct = ((current - basePrice) / basePrice) * 100;
+      var sign = pct >= 0 ? '+' : '';
+      changeEl.textContent = sign + pct.toFixed(2) + '% · ' + rangeLabel(windowDays);
+      changeEl.className = 'live-change ' + (pct >= 0 ? 'up' : 'down');
+    }
+    var now = new Date();
+    document.getElementById('live-updated').textContent =
+      'Updated ' + now.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+  }
+
+  function applyWindow() {
+    if (!allHistory.length) { points = []; return; }
+    var windowed;
+    if (windowDays === 0) {
+      windowed = allHistory.slice(); // "All"
+    } else {
+      var cutoff = Math.floor(Date.now() / 1000) - windowDays * 86400;
+      windowed = allHistory.filter(function(pt) { return pt.t >= cutoff; });
+      if (windowed.length < 2) windowed = allHistory.slice(-Math.max(windowDays, 2));
+    }
+    points = windowed;
+    basePrice = points.length ? points[0].p : null;
+  }
+
+  function drawChart() {
+    var canvas = document.getElementById('live-chart');
+    if (!canvas || points.length < 2) return;
+    var wrap = canvas.parentElement;
+    var W = wrap.clientWidth, H = wrap.clientHeight;
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+
+    var prices = points.map(function(pt){ return pt.p; });
+    var min = Math.min.apply(null, prices);
+    var max = Math.max.apply(null, prices);
+    var pad = (max - min) * 0.12 || max * 0.05;
+    min -= pad; max += pad;
+
+    var padTop = 8, padBottom = 8;
+    function x(i) { return (i / (points.length - 1)) * W; }
+    function y(p) { return padTop + (1 - (p - min) / (max - min)) * (H - padTop - padBottom); }
+
+    var rising = prices[prices.length - 1] >= prices[0];
+    var lineColor = rising ? '#4caf7d' : '#c0392b';
+
+    var grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, rising ? 'rgba(76,175,125,0.28)' : 'rgba(192,57,43,0.24)');
+    grad.addColorStop(1, 'rgba(76,175,125,0)');
+
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(prices[0]));
+    for (var i = 1; i < prices.length; i++) ctx.lineTo(x(i), y(prices[i]));
+    ctx.lineTo(x(prices.length - 1), H);
+    ctx.lineTo(x(0), H);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(x(0), y(prices[0]));
+    for (var j = 1; j < prices.length; j++) ctx.lineTo(x(j), y(prices[j]));
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = 2;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    var lastX = x(prices.length - 1), lastY = y(prices[prices.length - 1]);
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = lineColor;
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 7, 0, Math.PI * 2);
+    ctx.strokeStyle = lineColor;
+    ctx.globalAlpha = 0.35;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  function refreshDisplay() {
+    applyWindow();
+    if (points.length) updatePriceUI(points[points.length - 1].p);
+    drawChart();
+  }
+
+  function setActiveButton() {
+    var btns = document.querySelectorAll('.live-range-btn');
+    for (var i = 0; i < btns.length; i++) {
+      var d = parseInt(btns[i].getAttribute('data-days'), 10);
+      btns[i].className = 'live-range-btn' + (d === windowDays ? ' active' : '');
+    }
+  }
+
+  function onRangeClick(e) {
+    var btn = e.target.closest ? e.target.closest('.live-range-btn') : e.target;
+    if (!btn || !btn.getAttribute) return;
+    var days = parseInt(btn.getAttribute('data-days'), 10);
+    if (isNaN(days) || days === windowDays) return;
+    windowDays = days;
+    saveRange(days);
+    setActiveButton();
+    refreshDisplay();
+  }
+
+  function loadHistory() {
+    fetch(HISTORY_URL).then(function(r) {
+      if (!r.ok) throw new Error('history fetch failed');
+      return r.json();
+    }).then(function(data) {
+      var raw = (data && data.prices) || [];
+      allHistory = raw.filter(function(p) { return p.USD > 0; })
+                       .map(function(p) { return { t: p.time, p: p.USD }; })
+                       .sort(function(a, b) { return a.t - b.t; });
+      refreshDisplay();
+      pollCurrent();
+    }).catch(function() {
+      pollCurrent();
+    });
+  }
+
+  function pollCurrent() {
+    fetch(CURRENT_URL).then(function(r) {
+      if (!r.ok) throw new Error('price fetch failed');
+      return r.json();
+    }).then(function(data) {
+      failCount = 0;
+      var price = data.USD;
+      var now = Math.floor(Date.now() / 1000);
+      if (allHistory.length) {
+        allHistory.push({ t: now, p: price });
+      } else {
+        allHistory = [{ t: now - 1, p: price }, { t: now, p: price }];
+      }
+      refreshDisplay();
+    }).catch(function() {
+      failCount++;
+      if (failCount >= 3 && points.length === 0) {
+        setError('Live price unavailable right now — check back soon.');
+      }
+    });
+  }
+
+  window.addEventListener('resize', drawChart);
+  loadSavedRange();
+  setActiveButton();
+  var picker = document.getElementById('live-range-picker');
+  if (picker) picker.addEventListener('click', onRangeClick);
+  loadHistory();
+  setInterval(pollCurrent, POLL_MS);
+})();
+</script>
+<script>
+// ── BONUS SCENE PAGE LINKS ──
+const SCENE_PAGES = {
+  'estate-sale': 'bonus-estate-sale.html',
+  'early-bird':  'bonus-early-bird.html'
+};
+// ── RENDER ──
+function render() {
+  const sats = TOR.getSats();
+
+  // Sats display
+  document.getElementById('total-sats').textContent = TOR.fmt(sats);
+
+  // Progress bar (cap at max gate)
+  const maxGate = TOR.UNLOCK_GATES[TOR.UNLOCK_GATES.length - 1].sats;
+  const pct = Math.min(100, (sats / maxGate) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+
+  // Next unlock label
+  const next = TOR.UNLOCK_GATES.find(g => sats < g.sats);
+  document.getElementById('next-unlock-label').textContent = next
+    ? 'Next unlock at ' + next.sats + ' sats'
+    : 'All scenes unlocked!';
+
+  // Pips
+  TOR.UNLOCK_GATES.forEach(function(g) {
+    const pip = document.getElementById('pip-' + g.sats);
+    if (pip && sats >= g.sats) pip.classList.add('reached');
+  });
+
+  // Game cards — mark done
+  ['easteregg','gift','mining','coldstorage','valuechart','joseph','dreamer'].forEach(function(id) {
+    const card = document.getElementById('card-' + id);
+    if (card && TOR.isDone(id)) card.classList.add('done');
+  });
+
+  // Unlock vault
+  const grid = document.getElementById('unlock-grid');
+  grid.innerHTML = '';
+  TOR.UNLOCK_GATES.forEach(function(gate) {
+    const unlocked = TOR.isUnlocked(gate.id);
+    const row = document.createElement('div');
+    row.className = 'unlock-row';
+    row.innerHTML = `
+      <div class="unlock-icon">${unlocked ? '🔓' : '🔒'}</div>
+      <div class="unlock-info">
+        <div class="unlock-title ${unlocked ? '' : 'locked-title'}">${gate.title}</div>
+        <div class="unlock-req">${unlocked ? 'Unlocked' : 'Requires ' + gate.sats + ' sats'} ${!gate.available && !unlocked ? '· Coming soon' : ''}</div>
+      </div>
+      ${unlocked && gate.available && SCENE_PAGES[gate.id] ? `<a class="btn-read" href="${SCENE_PAGES[gate.id]}" style="font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;padding:0.35rem 0.9rem;background:#8b2500;color:#fff;border:none;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-block;">Read</a>` : ''}
+    `;
+    grid.appendChild(row);
+  });
+
+  // Activity log
+  const log = TOR.getLog();
+  const logEl = document.getElementById('log-list');
+  if (log.length === 0) {
+    logEl.innerHTML = '<p class="log-empty">No activity yet. Play a game to start mining.</p>';
+  } else {
+    logEl.innerHTML = log.slice(0, 12).map(function(e) {
+      const d = new Date(e.ts);
+      const t = d.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + d.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+      return `<div class="log-row"><span class="log-label">${e.label}</span><span class="log-amount">+${TOR.fmt(e.amount)} ⚡ · ${TOR.fmt(e.total)} total</span></div>`;
+    }).join('');
+  }
+}
+
+function openScene(id) {
+  const page = SCENE_PAGES[id];
+  if (page) window.location.href = page;
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function showWipe()   { document.getElementById('wipe-overlay').classList.add('open'); }
+function hideWipe()   { document.getElementById('wipe-overlay').classList.remove('open'); }
+function confirmWipe() {
+  TOR.wipeWallet();
+  hideWipe();
+  render();
+}
+
+// Listen for storage changes (when returning from a game)
+window.addEventListener('storage', render);
+window.addEventListener('focus',   render);
+
+render();
+</script>
+</body>
+</html>

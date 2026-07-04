@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>BITCOIN BLITZ!</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Inter:wght@400;600;800&family=EB+Garamond:ital,wght@0,400;0,700&display=swap');
+
+  :root{
+    --ink:#1a1410;
+    --paper:#f0e8d8;
+    --gold:#e06820;
+    --red:#b5541a;
+    --blue:#7a3810;
+    --pink:#c9a84c;
+  }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none; }
+
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:
+      radial-gradient(circle at 1px 1px, rgba(0,0,0,0.06) 1px, transparent 1.6px) 0 0/14px 14px,
+      #c8b89a;
+    font-family:'Inter', sans-serif;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+
+  .frame{
+    width:min(96vw, 620px);
+    height:min(94vh, 880px);
+    background: var(--paper);
+    border:6px solid var(--ink);
+    border-radius:14px;
+    box-shadow: 8px 8px 0 var(--ink);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    position:relative;
+  }
+
+  .titlebar{
+    background: var(--ink);
+    padding:8px 10px 4px;
+    text-align:center;
+    border-bottom:5px solid var(--ink);
+    position:relative;
+    flex-shrink:0;
+  }
+  .title{
+    font-family:'Cinzel', serif;
+    letter-spacing:1px;
+    font-size:clamp(26px, 6vw, 38px);
+    color:var(--gold);
+    -webkit-text-stroke: 2px var(--ink);
+    text-shadow: 3px 3px 0 var(--red), 3px 3px 0 var(--red);
+    transform: rotate(-1.5deg);
+    margin:0;
+    line-height:1;
+  }
+  .subtitle{
+    font-family:'Cinzel', serif;
+    color:var(--paper);
+    font-size:12px;
+    letter-spacing:3px;
+    margin-top:2px;
+  }
+
+  .hud{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 10px;
+    background: var(--paper);
+    border-bottom:5px solid var(--ink);
+    flex-shrink:0;
+    gap:8px;
+  }
+  .caption{
+    background:#fff;
+    border:3px solid var(--ink);
+    border-radius:8px;
+    padding:4px 10px;
+    box-shadow: 3px 3px 0 var(--ink);
+    font-family:'Cinzel', serif;
+    font-size:15px;
+    letter-spacing:1px;
+    white-space:nowrap;
+  }
+  .caption span{ color:var(--red); }
+  .lives{ display:flex; gap:4px; }
+  .life{
+    width:22px; height:22px; border-radius:50%;
+    background: var(--gold);
+    border:2.5px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:800; color:var(--ink);
+    transition: all .25s;
+  }
+  .life.lost{ background:#bbb; opacity:.35; transform:scale(0.7); }
+
+  .stage-wrap{
+    position:relative;
+    flex:1;
+    min-height:0;
+  }
+  canvas{
+    display:block;
+    width:100%;
+    height:100%;
+    touch-action:none;
+    cursor:none;
+  }
+
+  .overlay{
+    position:absolute; inset:0;
+    background: rgba(22,19,14,0.88);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px;
+    text-align:center;
+    padding:24px;
+  }
+  .overlay.hidden{ display:none; }
+  .overlay h2{
+    font-family:'Cinzel', serif;
+    font-size:clamp(34px, 9vw, 54px);
+    color:var(--gold);
+    -webkit-text-stroke:2px var(--ink);
+    text-shadow: 4px 4px 0 var(--red);
+    transform: rotate(-2deg);
+    margin:0;
+  }
+  .overlay p{
+    color:var(--paper);
+    font-family:'Cinzel', serif;
+    font-size:14px;
+    max-width:340px;
+    line-height:1.5;
+    margin:0;
+  }
+  .overlay .score-final{
+    font-family:'Cinzel', serif;
+    font-size:26px;
+    color:var(--paper);
+  }
+  .overlay .score-final span{ color:var(--gold); }
+
+  .comic-btn{
+    font-family:'Cinzel', serif;
+    font-size:22px;
+    letter-spacing:1px;
+    color:var(--ink);
+    background: var(--gold);
+    border:4px solid var(--ink);
+    border-radius:10px;
+    padding:12px 30px;
+    box-shadow: 5px 5px 0 var(--red);
+    cursor:pointer;
+    transition: transform .08s;
+  }
+  .comic-btn:active{ transform: translate(3px,3px); box-shadow: 2px 2px 0 var(--red); }
+
+  .mute-btn{
+    position:absolute; top:8px; right:8px;
+    width:34px; height:34px;
+    border-radius:50%;
+    background:#fff;
+    border:3px solid var(--ink);
+    box-shadow: 3px 3px 0 var(--ink);
+    font-size:15px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    z-index:5;
+  }
+  .mute-btn:active{ transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+
+  .footer-tip{
+    position:absolute; bottom:6px; left:0; right:0;
+    text-align:center;
+    font-size:10px;
+    color: rgba(22,19,14,0.5);
+    font-family:'Inter', sans-serif;
+    font-weight:700;
+    letter-spacing:0.5px;
+    pointer-events:none;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="titlebar">
+    <h1 class="title">₿ BITCOIN BLITZ!</h1>
+    <div class="subtitle">CATCH THE COIN OR BUST</div>
+  </div>
+
+  <div class="hud">
+    <div class="caption">SCORE <span id="scoreVal">0</span></div>
+    <div class="lives" id="lives">
+      <div class="life"></div>
+      <div class="life"></div>
+      <div class="life"></div>
+    </div>
+    <div class="caption">LVL <span id="levelVal">1</span></div>
+  </div>
+
+  <div class="stage-wrap">
+    <canvas id="game"></canvas>
+
+    <div class="overlay" id="startOverlay">
+      <h2>READY?</h2>
+      <p>Drag / move your mouse (or finger) to slide the catcher. Snag gold coins and pink gems for points. <strong>AVOID THE BOMBS.</strong> It gets faster the longer you survive!</p>
+      <button class="comic-btn" id="startBtn">START GAME</button>
+    </div>
+
+    <div class="overlay hidden" id="overOverlay">
+      <h2 id="overTitle">BOOM!</h2>
+      <div class="score-final">FINAL SCORE: <span id="finalScore">0</span></div>
+      <p id="overNote">Better luck next heist.</p>
+      <button class="comic-btn" id="restartBtn">PLAY AGAIN</button>
+    </div>
+
+    <div class="footer-tip">MOVE TO CATCH · SPACE / TAP TO START</div>
+
+    <button class="mute-btn" id="muteBtn" title="Mute / unmute">🔊</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreEl = document.getElementById('scoreVal');
+  const levelEl = document.getElementById('levelVal');
+  const livesWrap = document.getElementById('lives');
+  const startOverlay = document.getElementById('startOverlay');
+  const overOverlay = document.getElementById('overOverlay');
+  const startBtn = document.getElementById('startBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const finalScoreEl = document.getElementById('finalScore');
+  const overTitleEl = document.getElementById('overTitle');
+  const overNoteEl = document.getElementById('overNote');
+  const muteBtn = document.getElementById('muteBtn');
+
+  // ---------- Audio (all synthesized, no files needed) ----------
+  let audioCtx = null;
+  let muted = false;
+
+  function ensureAudio(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+  }
+
+  function playCoinSound(pitchUp){
+    if(muted || !audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const freqs = pitchUp ? [1500, 2000] : [1100, 1500];
+    freqs.forEach((f,i)=>{
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(f, t0 + i*0.035);
+      gain.gain.setValueAtTime(0.001, t0 + i*0.035);
+      gain.gain.exponentialRampToValueAtTime(0.22, t0 + i*0.035 + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + i*0.035 + 0.22);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(t0 + i*0.035);
+      osc.stop(t0 + i*0.035 + 0.24);
+    });
+  }
+
+  function playMissSound(){
+    // comedic descending "raspberry" - fully synthesized, no files
+    if(muted || !audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const dur = 0.42;
+
+    const osc = audioCtx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, t0);
+    osc.frequency.exponentialRampToValueAtTime(55, t0 + dur);
+
+    const lfo = audioCtx.createOscillator();
+    lfo.type = 'square';
+    lfo.frequency.setValueAtTime(38, t0);
+    lfo.frequency.linearRampToValueAtTime(22, t0 + dur);
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.value = 0.6;
+
+    const mainGain = audioCtx.createGain();
+    mainGain.gain.setValueAtTime(0.001, t0);
+    mainGain.gain.exponentialRampToValueAtTime(0.28, t0 + 0.04);
+    mainGain.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+
+    lfo.connect(lfoGain);
+    lfoGain.connect(mainGain.gain);
+    osc.connect(mainGain);
+    mainGain.connect(audioCtx.destination);
+
+    osc.start(t0); lfo.start(t0);
+    osc.stop(t0 + dur); lfo.stop(t0 + dur);
+  }
+
+  function playBombSound(){
+    if(muted || !audioCtx) return;
+    const t0 = audioCtx.currentTime;
+    const bufferSize = audioCtx.sampleRate * 0.4;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++){
+      data[i] = (Math.random()*2 - 1) * (1 - i/bufferSize);
+    }
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1200, t0);
+    filter.frequency.exponentialRampToValueAtTime(120, t0 + 0.35);
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.35, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.4);
+    noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+    noise.start(t0);
+  }
+
+  muteBtn.addEventListener('click', ()=>{
+    muted = !muted;
+    muteBtn.textContent = muted ? '🔇' : '🔊';
+  });
+
+  let W = 0, H = 0, DPR = 1;
+  function resize(){
+    const rect = canvas.parentElement.getBoundingClientRect();
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = rect.width; H = rect.height;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- Game state ----------
+  let running = false;
+  let score = 0;
+  let lives = 3;
+  let elapsed = 0;           // seconds survived
+  let spawnTimer = 0;
+  let items = [];
+  let effects = [];
+  let particles = [];
+  let combo = 0;
+  let shake = 0;
+
+  let catcherX = 0;
+  let catcherTargetX = 0;
+  const catcherW = 78;
+  const catcherH = 46;
+  let catcherSquash = 0;
+
+  function reset(){
+    score = 0; lives = 3; elapsed = 0; spawnTimer = 0;
+    items = []; effects = []; particles = [];
+    combo = 0; shake = 0;
+    catcherX = W/2; catcherTargetX = W/2;
+    updateHUD();
+  }
+
+  function updateHUD(){
+    scoreEl.textContent = score;
+    levelEl.textContent = currentLevel();
+    const lifeEls = livesWrap.querySelectorAll('.life');
+    lifeEls.forEach((el,i)=>{
+      el.classList.toggle('lost', i >= lives);
+      el.textContent = '₿';
+    });
+  }
+
+  function currentLevel(){ return 1 + Math.floor(elapsed / 18); }
+
+  // ---------- Difficulty curve ----------
+  function spawnInterval(){ return Math.max(0.42, 1.15 - elapsed*0.013); } // seconds
+  function fallSpeed(){ return 150 + Math.min(320, elapsed*7); } // px/s
+  function bombChance(){ return Math.min(0.32, 0.07 + elapsed*0.0028); }
+  function gemChance(){ return 0.14; }
+
+  // ---------- Input ----------
+  function setTargetFromClientX(clientX){
+    const rect = canvas.getBoundingClientRect();
+    catcherTargetX = clientX - rect.left;
+  }
+  canvas.addEventListener('mousemove', e => setTargetFromClientX(e.clientX));
+  canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if(e.touches[0]) setTargetFromClientX(e.touches[0].clientX);
+  }, {passive:false});
+  canvas.addEventListener('touchstart', e => {
+    if(e.touches[0]) setTargetFromClientX(e.touches[0].clientX);
+  });
+
+  let keyLeft=false, keyRight=false;
+  window.addEventListener('keydown', e=>{
+    if(e.code==='ArrowLeft'||e.code==='KeyA') keyLeft=true;
+    if(e.code==='ArrowRight'||e.code==='KeyD') keyRight=true;
+    if(e.code==='Space'){ e.preventDefault(); if(!running) doStart(); }
+  });
+  window.addEventListener('keyup', e=>{
+    if(e.code==='ArrowLeft'||e.code==='KeyA') keyLeft=false;
+    if(e.code==='ArrowRight'||e.code==='KeyD') keyRight=false;
+  });
+
+  // ---------- Spawning ----------
+  function spawnItem(){
+    const r = Math.random();
+    let type = 'coin';
+    if(r < bombChance()) type = 'bomb';
+    else if(r < bombChance() + gemChance()) type = 'gem';
+
+    const radius = type === 'bomb' ? 22 : (type === 'gem' ? 18 : 24);
+    items.push({
+      type,
+      x: 30 + Math.random() * (W - 60),
+      y: -30,
+      r: radius,
+      vy: fallSpeed() * (0.85 + Math.random()*0.3),
+      rot: Math.random()*Math.PI*2,
+      vrot: (Math.random()-0.5) * 3,
+      wobble: Math.random()*Math.PI*2
+    });
+  }
+
+  // ---------- Effects ----------
+  function addBurst(x, y, text, color){
+    effects.push({ x, y, text, color, t:0, life: 0.55 });
+  }
+  function addParticles(x, y, color, n){
+    for(let i=0;i<n;i++){
+      const a = Math.random()*Math.PI*2;
+      const spd = 80 + Math.random()*160;
+      particles.push({
+        x, y, vx: Math.cos(a)*spd, vy: Math.sin(a)*spd - 60,
+        t:0, life: 0.5 + Math.random()*0.3, color, size: 3+Math.random()*3
+      });
+    }
+  }
+
+  // ---------- Collision ----------
+  function catcherTop(){ return H - 70; }
+
+  function checkCatch(item){
+    const cx = catcherX, cy = catcherTop() + catcherH*0.35;
+    const dx = item.x - cx, dy = item.y - cy;
+    const rangeX = catcherW/2 + item.r*0.6;
+    const rangeY = catcherH*0.6 + item.r*0.6;
+    return Math.abs(dx) < rangeX && Math.abs(dy) < rangeY && item.y > catcherTop() - 10;
+  }
+
+  // ---------- Update ----------
+  let lastT = performance.now();
+  function update(dt){
+    elapsed += dt;
+
+    // catcher motion
+    catcherX += (catcherTargetX - catcherX) * Math.min(1, dt*12);
+    if(keyLeft) catcherTargetX -= 480*dt;
+    if(keyRight) catcherTargetX += 480*dt;
+    catcherTargetX = Math.max(catcherW/2, Math.min(W - catcherW/2, catcherTargetX));
+    catcherSquash = Math.max(0, catcherSquash - dt*3);
+
+    // spawn
+    spawnTimer -= dt;
+    if(spawnTimer <= 0){
+      spawnItem();
+      spawnTimer = spawnInterval();
+    }
+
+    // items
+    for(let i=items.length-1;i>=0;i--){
+      const it = items[i];
+      it.y += it.vy*dt;
+      it.rot += it.vrot*dt;
+      it.wobble += dt*4;
+      it.x += Math.sin(it.wobble)*0.4;
+
+      if(checkCatch(it)){
+        items.splice(i,1);
+        catcherSquash = 1;
+        if(it.type === 'bomb'){
+          lives -= 1;
+          combo = 0;
+          shake = 1;
+          addBurst(it.x, it.y, 'BOOM!', '#b5541a');
+          addParticles(it.x, it.y, '#b5541a', 18);
+          playBombSound();
+          updateHUD();
+          if(lives <= 0){ endGame(false); return; }
+        } else {
+          combo += 1;
+          const mult = 1 + Math.floor(combo/5)*0.5;
+          const base = it.type === 'gem' ? 25 : 10;
+          const gained = Math.round(base * mult);
+          score += gained;
+          const label = combo > 1 && combo % 5 === 0 ? `COMBO x${Math.floor(combo/5)+1}!` : `+${gained}`;
+          addBurst(it.x, it.y, label, it.type==='gem' ? '#c9a84c' : '#e06820');
+          addParticles(it.x, it.y, it.type==='gem' ? '#c9a84c' : '#e06820', 12);
+          playCoinSound(it.type === 'gem');
+          updateHUD();
+        }
+        continue;
+      }
+
+      if(it.y - it.r > H){
+        items.splice(i,1);
+        if(it.type !== 'bomb'){
+          combo = 0;
+          playMissSound();
+        }
+      }
+    }
+
+    // effects
+    for(let i=effects.length-1;i>=0;i--){
+      effects[i].t += dt;
+      if(effects[i].t > effects[i].life) effects.splice(i,1);
+    }
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i];
+      p.t += dt;
+      p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 300*dt;
+      if(p.t > p.life) particles.splice(i,1);
+    }
+
+    shake = Math.max(0, shake - dt*3.2);
+  }
+
+  function endGame(won){
+    running = false;
+    finalScoreEl.textContent = score;
+    if(lives <= 0){
+      overTitleEl.textContent = 'BOOM!';
+      overNoteEl.textContent = "That bomb had your name on it. Survived " + Math.floor(elapsed) + "s.";
+    }
+    overOverlay.classList.remove('hidden');
+  }
+
+  // ---------- Drawing ----------
+  function drawHalftoneBG(){
+    ctx.fillStyle = '#f0e8d8';
+    ctx.fillRect(0,0,W,H);
+    ctx.fillStyle = 'rgba(22,19,14,0.05)';
+    const spacing = 16;
+    for(let y=0; y<H; y+=spacing){
+      for(let x=0; x<W; x+=spacing){
+        const off = (Math.floor(y/spacing) % 2) * spacing/2;
+        ctx.beginPath();
+        ctx.arc(x+off, y, 1.6, 0, Math.PI*2);
+        ctx.fill();
+      }
+    }
+    // faint diagonal speed lines for "intensity"
+    ctx.strokeStyle = 'rgba(22,19,14,0.035)';
+    ctx.lineWidth = 10;
+    for(let i=-2;i<8;i++){
+      ctx.beginPath();
+      ctx.moveTo(i*90 - 40, 0);
+      ctx.lineTo(i*90 - 140, H);
+      ctx.stroke();
+    }
+  }
+
+  function drawCatcher(){
+    const x = catcherX;
+    const topY = catcherTop();
+    const squash = 1 + catcherSquash*0.18;
+    ctx.save();
+    ctx.translate(x, topY + catcherH/2);
+    ctx.scale(1/squash, squash);
+    ctx.translate(-x, -(topY + catcherH/2));
+
+    // shadow
+    ctx.fillStyle = 'rgba(22,19,14,0.18)';
+    ctx.beginPath();
+    ctx.ellipse(x, topY + catcherH + 6, catcherW*0.55, 7, 0, 0, Math.PI*2);
+    ctx.fill();
+
+    // bowl shape
+    ctx.beginPath();
+    ctx.moveTo(x - catcherW/2, topY);
+    ctx.lineTo(x + catcherW/2, topY);
+    ctx.lineTo(x + catcherW/2 - 10, topY + catcherH);
+    ctx.quadraticCurveTo(x, topY + catcherH + 14, x - catcherW/2 + 10, topY + catcherH);
+    ctx.closePath();
+    ctx.fillStyle = '#7a3810';
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#1a1410';
+    ctx.stroke();
+
+    // rim highlight
+    ctx.beginPath();
+    ctx.moveTo(x - catcherW/2 + 6, topY + 6);
+    ctx.lineTo(x + catcherW/2 - 6, topY + 6);
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    // rim top bar
+    ctx.beginPath();
+    ctx.roundRect ? ctx.roundRect(x - catcherW/2 - 4, topY - 6, catcherW + 8, 10, 4) :
+      ctx.rect(x - catcherW/2 - 4, topY - 6, catcherW + 8, 10);
+    ctx.fillStyle = '#e06820';
+    ctx.fill();
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = '#1a1410';
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawCoin(it){
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.rot*0.15);
+    // drop shadow (comic pop offset)
+    ctx.beginPath();
+    ctx.arc(3, 4, it.r, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(22,19,14,0.25)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(0, 0, it.r, 0, Math.PI*2);
+    ctx.fillStyle = '#e06820';
+    ctx.fill();
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = '#1a1410';
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(0, 0, it.r*0.72, 0, Math.PI*2);
+    ctx.strokeStyle = '#1a1410';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.fillStyle = '#1a1410';
+    ctx.font = `800 ${it.r*1.05}px 'Cinzel', serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('₿', 0, 1);
+
+    // sparkle
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-it.r*0.45, -it.r*0.55);
+    ctx.lineTo(-it.r*0.15, -it.r*0.55);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawGem(it){
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.rot*0.1);
+    ctx.beginPath();
+    ctx.moveTo(3, -it.r+4); ctx.lineTo(it.r+3, 4); ctx.lineTo(3, it.r+4); ctx.lineTo(-it.r+3, 4);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(22,19,14,0.25)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -it.r); ctx.lineTo(it.r, 0); ctx.lineTo(0, it.r); ctx.lineTo(-it.r, 0);
+    ctx.closePath();
+    ctx.fillStyle = '#c9a84c';
+    ctx.fill();
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = '#1a1410';
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, -it.r); ctx.lineTo(0, it.r);
+    ctx.moveTo(-it.r, 0); ctx.lineTo(it.r, 0);
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawBomb(it){
+    ctx.save();
+    ctx.translate(it.x, it.y);
+    ctx.rotate(it.rot*0.2);
+
+    ctx.beginPath();
+    ctx.arc(3, 4, it.r, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(22,19,14,0.25)';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(0, 0, it.r, 0, Math.PI*2);
+    ctx.fillStyle = '#1a1410';
+    ctx.fill();
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = '#b5541a';
+    ctx.stroke();
+
+    // hazard stripes
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(0,0,it.r-3,0,Math.PI*2);
+    ctx.clip();
+    ctx.strokeStyle = '#b5541a';
+    ctx.lineWidth = 5;
+    for(let i=-2;i<3;i++){
+      ctx.beginPath();
+      ctx.moveTo(i*10 - it.r, -it.r);
+      ctx.lineTo(i*10 - it.r + 14, it.r);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // fuse
+    ctx.beginPath();
+    ctx.moveTo(0, -it.r);
+    ctx.quadraticCurveTo(6, -it.r-10, 2, -it.r-16);
+    ctx.strokeStyle = '#e06820';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(2, -it.r-17, 3, 0, Math.PI*2);
+    ctx.fillStyle = '#b5541a';
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawItem(it){
+    if(it.type === 'coin') drawCoin(it);
+    else if(it.type === 'gem') drawGem(it);
+    else drawBomb(it);
+  }
+
+  function drawBurstShape(x, y, r, color){
+    ctx.beginPath();
+    const spikes = 10;
+    for(let i=0;i<spikes*2;i++){
+      const ang = (Math.PI*2 * i) / (spikes*2);
+      const rad = i % 2 === 0 ? r : r*0.55;
+      const px = x + Math.cos(ang)*rad;
+      const py = y + Math.sin(ang)*rad;
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#1a1410';
+    ctx.stroke();
+  }
+
+  function drawEffects(){
+    effects.forEach(fx=>{
+      const p = fx.t / fx.life;
+      const scale = 0.6 + p*0.9;
+      const alpha = 1 - p;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, alpha);
+      ctx.translate(fx.x, fx.y - p*30);
+      drawBurstShape(0, 0, 26*scale, fx.color);
+      ctx.fillStyle = '#1a1410';
+      ctx.font = `${16 + 4*scale}px 'Cinzel', serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(fx.text, 0, 1);
+      ctx.restore();
+    });
+
+    particles.forEach(p=>{
+      const alpha = 1 - p.t/p.life;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, alpha);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(p.x-p.size/2, p.y-p.size/2, p.size, p.size);
+      ctx.restore();
+    });
+  }
+
+  function draw(){
+    ctx.save();
+    if(shake > 0){
+      const mag = shake*8;
+      ctx.translate((Math.random()-0.5)*mag, (Math.random()-0.5)*mag);
+    }
+    drawHalftoneBG();
+
+    // ground panel line
+    ctx.strokeStyle = 'rgba(22,19,14,0.15)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, H-14); ctx.lineTo(W, H-14);
+    ctx.stroke();
+
+    items.forEach(drawItem);
+    drawCatcher();
+    drawEffects();
+    ctx.restore();
+  }
+
+  // ---------- Loop ----------
+  function loop(t){
+    const dt = Math.min(0.033, (t - lastT)/1000);
+    lastT = t;
+    if(running){
+      update(dt);
+      updateHUD();
+    }
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function doStart(){
+    ensureAudio();
+    reset();
+    startOverlay.classList.add('hidden');
+    overOverlay.classList.add('hidden');
+    running = true;
+  }
+
+  startBtn.addEventListener('click', doStart);
+  restartBtn.addEventListener('click', doStart);
+
+  // initial idle render
+  reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
