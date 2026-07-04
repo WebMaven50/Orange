@@ -190,11 +190,13 @@
   .confirm-btn:active{ transform: scale(0.98); }
 
   .bottom-actions{ display:flex; gap:8px; margin-top:8px; }
-  .sleep-btn, .newgame-btn{
+  .sleep-btn, .newgame-btn, .cashout-btn{
     flex:1; padding:9px; border-radius:8px; border:1px solid var(--line);
     background:var(--panel2); color:var(--text); font-weight:700; font-size:12px; cursor:pointer;
     display:flex; align-items:center; justify-content:center; gap:5px;
   }
+  .cashout-btn{ border-color:var(--orange); color:var(--orange); }
+  .cashout-btn:disabled{ opacity:0.4; border-color:var(--line); color:var(--text); }
   .sleep-btn:disabled{ opacity:0.4; }
 
   /* ---------- Overlays ---------- */
@@ -210,6 +212,7 @@
   }
   .overlay h2.win{ color: var(--gold); }
   .overlay h2.bust{ color: var(--red); }
+  .overlay h2.cashout{ color: var(--orange); }
   .overlay p{ color:var(--text-dim); font-size:13px; line-height:1.6; max-width:320px; margin:0; }
   .overlay .bigstat{ font-family:'IBM Plex Mono', monospace; font-size:22px; font-weight:800; }
   .overlay .statgrid{
@@ -347,6 +350,7 @@
     <button class="confirm-btn buy" id="confirmBtn">BUY BTC</button>
     <div class="bottom-actions">
       <button class="sleep-btn" id="sleepBtn">😴 Sleep 8h</button>
+      <button class="cashout-btn" id="cashoutBtn">💰 Cash Out</button>
       <button class="newgame-btn" id="newGameBtn">↻ New Session</button>
     </div>
   </div>
@@ -390,6 +394,7 @@
       <p style="margin-top:10px;"><b>15m / 1H / 4H candles are simulated within real bounds.</b> Minute-level historical data isn't available here, so intraday movement is procedurally generated — but it's mathematically constrained to start/end at that day's real open and close, and never exceed that day's real high/low.</p>
       <p style="margin-top:10px;"><b>Trading:</b> A 0.26% fee applies to every order, like a real exchange. Selling more BTC than you hold opens a short position — powerful, but it's how you can go bankrupt if the price moves against you.</p>
       <p style="margin-top:10px;"><b>Sleep:</b> Passes 8 game-hours in 3 real seconds. Price keeps moving while you're out — you just can't trade during it.</p>
+      <p style="margin-top:10px;"><b>Cash Out:</b> You don't have to wait for $1M or bankruptcy — hit Cash Out anytime to lock in your current equity as your final score and save it to the leaderboard.</p>
     </div>
     <button class="ghost-btn" id="closeInfo2">Got it</button>
   </div>
@@ -458,6 +463,8 @@ function newSession(){
     priceHistoryForChange: [],
   };
   state.lastPrice = priceAtAbsMinute(state.absMinute);
+  sleepBtn.disabled = false;
+  cashoutBtn.disabled = false;
   hideOverlay(endOverlay);
   hideOverlay(startOverlay);
   updateAll(true);
@@ -598,7 +605,7 @@ const cashVal=$('cashVal'), posVal=$('posVal'), equityVal=$('equityVal'), plVal=
 const goalFill=$('goalFill'), goalPct=$('goalPct');
 const amtLabel=$('amtLabel'), confirmBtn=$('confirmBtn');
 const buyTab=$('buyTab'), sellTab=$('sellTab');
-const sleepBtn=$('sleepBtn'), newGameBtn=$('newGameBtn');
+const sleepBtn=$('sleepBtn'), newGameBtn=$('newGameBtn'), cashoutBtn=$('cashoutBtn');
 const sleepVeil=$('sleepVeil');
 const startOverlay=$('startOverlay'), endOverlay=$('endOverlay'), infoOverlay=$('infoOverlay');
 const chartCanvas=$('chart'), chartCtx=chartCanvas.getContext('2d');
@@ -851,6 +858,7 @@ function startSleep(){
   state.isSleeping = true;
   sleepVeil.classList.add('on');
   sleepBtn.disabled = true;
+  cashoutBtn.disabled = true;
   state.sleepStartMinute = state.absMinute;
   state.sleepTargetMinute = state.absMinute + 480; // 8 hours
   state.sleepAnimStart = performance.now();
@@ -864,6 +872,7 @@ function updateSleep(now){
     state.isSleeping = false;
     sleepVeil.classList.remove('on');
     sleepBtn.disabled = false;
+    cashoutBtn.disabled = false;
   }
 }
 
@@ -890,19 +899,21 @@ function tick(now){
 function checkEndConditions(){
   const eq = equity();
   if(eq >= WIN_TARGET){
-    endGame(true);
+    endGame('win');
   } else if(eq <= 0){
-    endGame(false);
+    endGame('bust');
   }
 }
 
-function endGame(won){
+function endGame(outcome){
   state.running = false;
   const eq = equity();
-  $('endEmoji').textContent = won ? '🚀' : '💀';
+  const emoji = outcome === 'win' ? '🚀' : outcome === 'cashout' ? '💰' : '💀';
+  const titleText = outcome === 'win' ? 'TO THE MOON!' : outcome === 'cashout' ? 'CASHED OUT' : 'REKT — LIQUIDATED';
+  $('endEmoji').textContent = emoji;
   const t = $('endTitle');
-  t.textContent = won ? 'TO THE MOON!' : 'REKT — LIQUIDATED';
-  t.className = won ? 'win' : 'bust';
+  t.textContent = titleText;
+  t.className = outcome;
   $('endEquity').textContent = fmtUsd(clamp(eq,0,Infinity));
   const daysPlayed = Math.floor(state.absMinute/1440);
   $('statDays').textContent = daysPlayed;
@@ -998,6 +1009,13 @@ confirmBtn.addEventListener('click', ()=>{
   if(state.side==='buy') doBuy(); else doSell();
 });
 sleepBtn.addEventListener('click', startSleep);
+cashoutBtn.addEventListener('click', ()=>{
+  if(!state.running || state.isSleeping) return;
+  const eq = equity();
+  if(confirm('Cash out now and lock in ' + fmtUsd(eq) + ' as your final score?')){
+    endGame('cashout');
+  }
+});
 newGameBtn.addEventListener('click', ()=>{ if(confirm('Start a new session? Current progress will be lost.')) newSession(); });
 
 $('startBtn').addEventListener('click', newSession);
