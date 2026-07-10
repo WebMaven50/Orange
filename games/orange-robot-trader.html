@@ -191,7 +191,27 @@
   .order-price-row input:focus{ outline:none; border-color:var(--orange); }
 
   .slider-row{ margin-bottom:6px; }
-  .slider-row input[type=range]{ width:100%; }
+  .slider-row input[type=range]{ width:100%; touch-action:none; }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; width:100%; height:20px;
+    background:transparent; touch-action:none; margin:0; padding:0;
+  }
+  input[type=range]::-webkit-slider-runnable-track{
+    height:4px; border-radius:3px; background:var(--panel2);
+  }
+  input[type=range]::-moz-range-track{
+    height:4px; border-radius:3px; background:var(--panel2);
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:20px; height:20px; border-radius:50%;
+    background:var(--orange); cursor:pointer; border:2px solid #1a1204;
+    margin-top:-8px;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:20px; height:20px; border-radius:50%; border:2px solid #1a1204;
+    background:var(--orange); cursor:pointer;
+  }
 
   .open-orders{
     margin-bottom:10px; background:var(--panel2); border:1px solid var(--line);
@@ -288,12 +308,6 @@
   .info-body b{ color:var(--text); }
   .info-body .close-x{
     position:absolute; top:14px; right:16px; font-size:20px; color:var(--text-dim); cursor:pointer;
-  }
-
-  input[type=range]{ -webkit-appearance:none; width:100%; height:4px; border-radius:3px; background:var(--panel2); }
-  input[type=range]::-webkit-slider-thumb{
-    -webkit-appearance:none; width:16px; height:16px; border-radius:50%;
-    background:var(--orange); cursor:pointer; border:2px solid #1a1204;
   }
 
   .sats-earned{
@@ -469,7 +483,7 @@
       <p style="margin-top:10px;"><b>Trading:</b> A 0.26% fee applies to every order, like a real exchange. Selling more BTC than you hold opens a short position — powerful, but it's how you can go bankrupt if the price moves against you.</p>
       <p style="margin-top:10px;"><b>Sleep:</b> Passes 8 game-hours in 3 real seconds. Price keeps moving while you're out — you just can't trade during it.</p>
       <p style="margin-top:10px;"><b>Cash Out:</b> You don't have to wait for $1M or bankruptcy — hit Cash Out anytime to lock in your current equity as your final score and save it to the leaderboard.</p>
-      <p style="margin-top:10px;"><b>Order types:</b> Market fills instantly at the current price. Limit orders fill once the price reaches your chosen level (at that limit price). Stop orders trigger once price crosses your level, then fill at the next market price — like a real exchange, a fast-moving price can mean your fill isn't exactly at the stop price. Trailing stops follow the best price by your chosen dollar distance and fill at market once price pulls back that far. There's no real order book here, so no partial fills or slippage beyond that — every fill is treated as fully executed at the price described above.</p>
+      <p style="margin-top:10px;"><b>Order types:</b> Market fills instantly at the current price. Limit orders fill once the price reaches your chosen level (at that limit price). Stop orders trigger once price crosses your level, then fill at the next market price — like a real exchange, a fast-moving price can mean your fill isn't exactly at the stop price. Trailing stops follow the best price by your chosen percentage distance and fill at market once price pulls back that far. There's no real order book here, so no partial fills or slippage beyond that — every fill is treated as fully executed at the price described above.</p>
     </div>
     <button class="ghost-btn" id="closeInfo2">Got it</button>
   </div>
@@ -722,12 +736,28 @@ function timeStringForMinuteOfDay(m){
 function resizeCanvases(){
   [ [chartCanvas, chartCanvas.parentElement], [skyCanvas, skyCanvas.parentElement] ].forEach(([cv, wrap])=>{
     const rect = wrap.getBoundingClientRect();
+    if(rect.width<1 || rect.height<1) return; // transient 0-size layout pass — skip, next observer tick will catch it
     const dpr = Math.min(window.devicePixelRatio||1, 2);
     cv.width = Math.max(1,rect.width*dpr); cv.height = Math.max(1,rect.height*dpr);
     cv.getContext('2d').setTransform(dpr,0,0,dpr,0,0);
   });
 }
-window.addEventListener('resize', resizeCanvases);
+window.addEventListener('resize', ()=>{ resizeCanvases(); if(state) updateAll(false); });
+
+// The window 'resize' event alone doesn't catch every layout change that
+// resizes the chart's container — e.g. toggling the trailing-stop price row,
+// or a mobile browser's toolbar collapsing/expanding. When that happens
+// without a matching resizeCanvases() call, the canvas's backing-store
+// resolution goes stale relative to its on-screen box, and the browser
+// stretches old pixel content into the new box — which looks like leftover
+// "ghost" candles. ResizeObserver catches ALL of these cases directly.
+if(typeof ResizeObserver !== 'undefined'){
+  const chartResizeObserver = new ResizeObserver(()=>{
+    resizeCanvases();
+    if(state) updateAll(false);
+  });
+  chartResizeObserver.observe(chartCanvas.parentElement);
+}
 
 function renderSky(){
   const rect = skyCanvas.parentElement.getBoundingClientRect();
@@ -899,11 +929,17 @@ function maxAmountFor(side){
   }
 }
 
+let sliderDragging = false;
 function updateSliderBounds(){
   const max = maxAmountFor(state.side);
   amountSlider.max = Math.max(100, max);
   if(state.amountUsd > max) state.amountUsd = max;
-  amountSlider.value = state.amountUsd;
+  // Don't stomp on the thumb's position while the user is actively dragging it —
+  // the game loop calls this every animation frame, and re-assigning .value
+  // during a live drag fights the browser's native slider interaction.
+  if(!sliderDragging){
+    amountSlider.value = state.amountUsd;
+  }
   updateAmountLabel();
 }
 
@@ -960,9 +996,16 @@ function placeOrder(){
   const rawPrice = parseFloat(orderPriceInput.value);
   if(!isFinite(rawPrice) || rawPrice <= 0) return;
 
+  // Store the amount as a % of whatever's available right now, so if the
+  // order sits pending and your balance grows/shrinks before it fills, it
+  // still executes for that same % (e.g. "100%" always means "everything"),
+  // not a dollar figure frozen at the moment you placed it.
+  const maxNow = maxAmountFor(side);
+  const amountPct = maxNow > 0 ? clamp(amountUsd/maxNow, 0, 1) : 0;
+
   const order = {
     id: state.nextOrderId++,
-    type, side, amountUsd,
+    type, side, amountPct,
     createdAtPrice: state.lastPrice,
   };
   if(type==='limit'){
@@ -970,7 +1013,7 @@ function placeOrder(){
   } else if(type==='stop'){
     order.stopPrice = rawPrice;
   } else if(type==='trailing'){
-    order.trailAmount = rawPrice;
+    order.trailPct = rawPrice; // percentage distance, e.g. 2 = 2%
     order.extreme = state.lastPrice;
   }
   state.pendingOrders.push(order);
@@ -984,6 +1027,13 @@ function cancelOrder(id){
   renderOpenOrders();
 }
 
+function amountForOrder(o){
+  // Re-evaluate against CURRENT balance/equity, not whatever it was worth
+  // when the order was placed.
+  const maxNow = maxAmountFor(o.side);
+  return Math.max(0, maxNow * o.amountPct);
+}
+
 function checkPendingOrders(){
   if(!state.pendingOrders.length) return;
   const price = state.lastPrice;
@@ -992,18 +1042,20 @@ function checkPendingOrders(){
   for(const o of state.pendingOrders){
     let filled = false;
     if(o.type==='limit'){
-      if(o.side==='buy' && price<=o.limitPrice){ executeBuy(o.amountUsd, o.limitPrice); filled=true; }
-      else if(o.side==='sell' && price>=o.limitPrice){ executeSell(o.amountUsd, o.limitPrice); filled=true; }
+      if(o.side==='buy' && price<=o.limitPrice){ executeBuy(amountForOrder(o), o.limitPrice); filled=true; }
+      else if(o.side==='sell' && price>=o.limitPrice){ executeSell(amountForOrder(o), o.limitPrice); filled=true; }
     } else if(o.type==='stop'){
-      if(o.side==='buy' && price>=o.stopPrice){ executeBuy(o.amountUsd, price); filled=true; }
-      else if(o.side==='sell' && price<=o.stopPrice){ executeSell(o.amountUsd, price); filled=true; }
+      if(o.side==='buy' && price>=o.stopPrice){ executeBuy(amountForOrder(o), price); filled=true; }
+      else if(o.side==='sell' && price<=o.stopPrice){ executeSell(amountForOrder(o), price); filled=true; }
     } else if(o.type==='trailing'){
       if(o.side==='sell'){
         o.extreme = Math.max(o.extreme, price);
-        if(price <= o.extreme - o.trailAmount){ executeSell(o.amountUsd, price); filled=true; }
+        const trigger = o.extreme * (1 - o.trailPct/100);
+        if(price <= trigger){ executeSell(amountForOrder(o), price); filled=true; }
       } else {
         o.extreme = Math.min(o.extreme, price);
-        if(price >= o.extreme + o.trailAmount){ executeBuy(o.amountUsd, price); filled=true; }
+        const trigger = o.extreme * (1 + o.trailPct/100);
+        if(price >= trigger){ executeBuy(amountForOrder(o), price); filled=true; }
       }
     }
     if(filled) changed = true; else remaining.push(o);
@@ -1022,10 +1074,12 @@ function renderOpenOrders(){
   openOrdersList.innerHTML = orders.map(o=>{
     const typeLabel = o.type==='limit' ? 'LIMIT' : o.type==='stop' ? 'STOP' : 'TRAILING';
     const detail = o.type==='trailing'
-      ? ('trail $'+o.trailAmount.toLocaleString())
+      ? ('trail '+o.trailPct+'%')
       : ('@ '+fmtUsd(o.type==='limit'?o.limitPrice:o.stopPrice));
+    const pctLabel = Math.round(o.amountPct*100)+'%';
+    const liveAmt = fmtCompactUsd(amountForOrder(o));
     return `<div class="oo-row">
-      <span><span class="oo-tag ${o.side}">${o.side}</span>${typeLabel} ${detail} · ${fmtCompactUsd(o.amountUsd)}</span>
+      <span><span class="oo-tag ${o.side}">${o.side}</span>${typeLabel} ${detail} · ${pctLabel} (~${liveAmt})</span>
       <button class="oo-cancel" onclick="cancelOrder(${o.id})">✕</button>
     </div>`;
   }).join('');
@@ -1147,6 +1201,7 @@ function updateAll(resized){
   renderSky();
   renderChart();
   updateHUD();
+  if(state.pendingOrders.length) renderOpenOrders();
 }
 
 /* ================= EVENTS ================= */
@@ -1184,13 +1239,24 @@ amountSlider.addEventListener('input', ()=>{
   state.amountUsd = parseInt(amountSlider.value,10) || 0;
   updateAmountLabel();
 });
+// Track live drag so the per-frame game loop (updateSliderBounds) doesn't
+// yank the thumb back to state.amountUsd while it's being dragged.
+['pointerdown','mousedown','touchstart'].forEach(ev=>{
+  amountSlider.addEventListener(ev, ()=>{ sliderDragging = true; });
+});
+['pointerup','mouseup','touchend','touchcancel'].forEach(ev=>{
+  amountSlider.addEventListener(ev, ()=>{
+    sliderDragging = false;
+    updateSliderBounds(); // reconcile/clamp once the drag ends
+  });
+});
 
 function orderPriceDefaultLabel(){
   const type = state.orderType;
   const side = state.side;
   if(type==='limit') return side==='buy' ? 'Limit Price — buy at or below ($)' : 'Limit Price — sell at or above ($)';
   if(type==='stop') return side==='buy' ? 'Stop Price — buy once above ($)' : 'Stop Price — sell once below ($)';
-  if(type==='trailing') return side==='buy' ? 'Trail Amount — buy $ above the low' : 'Trail Amount — sell $ below the peak';
+  if(type==='trailing') return side==='buy' ? 'Trail Distance — buy % above the low' : 'Trail Distance — sell % below the peak';
   return '';
 }
 function refreshOrderPriceRow(){
@@ -1201,9 +1267,13 @@ function refreshOrderPriceRow(){
     orderPriceRow.style.display = 'block';
     orderPriceLabel.textContent = orderPriceDefaultLabel();
     if(type==='trailing'){
-      orderPriceInput.value = Math.max(1, Math.round(state.lastPrice*0.02));
+      orderPriceInput.value = 2; // default 2% trail distance
+      orderPriceInput.step = '0.1';
+      orderPriceInput.min = '0.1';
     } else {
       orderPriceInput.value = Math.round(state.lastPrice);
+      orderPriceInput.step = '1';
+      orderPriceInput.removeAttribute('min');
     }
   }
 }
@@ -1226,6 +1296,7 @@ document.querySelectorAll('.ot-btn').forEach(btn=>{
     state.orderType = btn.dataset.ot;
     refreshOrderPriceRow();
     refreshConfirmButton();
+    updateSliderBounds();
   });
 });
 
