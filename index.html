@@ -445,31 +445,6 @@
       box-shadow: 0 0 60px rgba(181,84,26,0.12);
     }
 
-    .wallet-label {
-      font-family: 'Cinzel', serif;
-      font-size: 0.72rem;
-      letter-spacing: 0.25em;
-      text-transform: uppercase;
-      color: var(--rust);
-      margin-bottom: 0.8rem;
-    }
-
-    .wallet-balance {
-      font-family: 'Cinzel', serif;
-      font-size: clamp(2rem, 6vw, 3.5rem);
-      color: var(--key-gold);
-      margin: 0.5rem 0;
-      letter-spacing: 0.05em;
-    }
-
-    .wallet-balance-usd {
-      font-family: 'EB Garamond', serif;
-      font-size: 1rem;
-      color: var(--ash);
-      font-style: italic;
-      margin-bottom: 1.5rem;
-    }
-
     .wallet-address {
       font-family: 'Inter', monospace;
       font-size: 0.72rem;
@@ -502,14 +477,6 @@
       font-style: italic;
       margin-top: 1rem;
     }
-
-    .wallet-loading {
-      color: var(--ash);
-      font-style: italic;
-      font-size: 0.9rem;
-      animation: pulse 1.5s infinite;
-    }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
 
     /* ── STORY GAMES ── */
     .games-section {
@@ -880,15 +847,9 @@
       <p class="section-label" style="text-align:center">The Key</p>
       <h2 style="text-align:center">Support the Author Directly</h2>
       <p style="text-align:center; color:var(--ash); max-width:520px; margin:0 auto 2.5rem; font-size:0.95rem;">
-        If this book meant something to you, you can send Bitcoin directly — no middleman, no platform cut. The balance below updates in real time, a living record of readers who chose to connect.
+        If this book meant something to you, you can send Bitcoin directly — no middleman, no platform cut.
       </p>
       <div class="wallet-card">
-        <p class="wallet-label">Total received</p>
-        <div class="wallet-balance" id="btc-balance">
-          <span class="wallet-loading">Loading…</span>
-        </div>
-        <div class="wallet-balance-usd" id="btc-usd"></div>
-        <button type="button" id="btc-refresh" onclick="loadWalletBalance()" style="background:none;border:1px solid var(--smoke3);color:var(--ash);font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;padding:0.4rem 1rem;margin-top:0.75rem;cursor:pointer;border-radius:2px;">↻ Refresh Balance</button>
         <div class="qr-placeholder" id="qr-code">
           QR Code<br>(add wallet address)
         </div>
@@ -929,46 +890,20 @@
       emberContainer.appendChild(e);
     }
 
-    // ── Bitcoin wallet balance ──
-    const WALLET_ADDRESS = 'bc1qfm09kkgz8qkmek7eqrjrwudrn4apjd9q34xnwn';
+    // ── Bitcoin wallet ──
+    const WALLET_ADDRESS = 'bc1q457tyyquqnxyymqtkpl6mve6uy3slvjpr9smpz';
 
-    async function loadWalletBalance() {
-      const balEl = document.getElementById('btc-balance');
-      const usdEl = document.getElementById('btc-usd');
+    function loadWallet() {
       const addrEl = document.getElementById('wallet-address');
       const qrEl = document.getElementById('qr-code');
-
-      if (!WALLET_ADDRESS) {
-        balEl.innerHTML = '<span style="font-size:1rem;color:var(--ash);font-family:\'EB Garamond\',serif;font-style:italic">Wallet address coming soon</span>';
-        return;
-      }
 
       addrEl.textContent = WALLET_ADDRESS;
 
       // QR code - static image
       qrEl.innerHTML = '<img src="btc-wallet-qr.png" alt="Bitcoin wallet QR code" style="width:140px;height:140px;display:block;" />';
-
-      try {
-        // Fetch balance from mempool.space (public API, no key)
-        const res = await fetch(`https://mempool.space/api/address/${WALLET_ADDRESS}`);
-        const data = await res.json();
-        const totalSats = data.chain_stats.funded_txo_sum;
-        const btc = (totalSats / 1e8).toFixed(8);
-
-        // Fetch BTC price
-        const priceRes = await fetch('https://mempool.space/api/v1/prices');
-        const priceData = await priceRes.json();
-        const usdPrice = priceData.USD;
-        const usdVal = (parseFloat(btc) * usdPrice).toLocaleString('en-US', {style:'currency', currency:'USD'});
-
-        balEl.textContent = `${btc} BTC`;
-        usdEl.textContent = `≈ ${usdVal} USD`;
-      } catch (err) {
-        balEl.innerHTML = '<span style="font-size:1rem;color:var(--ash)">Balance unavailable</span>';
-      }
     }
 
-    loadWalletBalance();
+    loadWallet();
   </script>
 
 </body>
