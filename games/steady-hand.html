@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Steady Hand — The Orange Robot</title>
+  <meta name="description" content="A Vault scene from The Orange Robot: backtest Dollar-Cost Averaging against a lump sum, using real historical Bitcoin price data." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="https://theorangerobot.com/games/steady-hand.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:#0d0b09; --rust:#b5541a; --rust-glow:#e06820;
+      --parchment:#f0e8d8; --parchment2:#c8b89a;
+      --smoke:#1a1410; --smoke2:#241d16; --smoke3:#2e2519;
+      --ash:#7a6e62; --key-gold:#c9a84c; --white:#f5f0e8;
+      --green:#54c97a; --green-dim:#1f8a4d; --red:#d9534f;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--ink);color:var(--parchment);font-family:'EB Garamond',serif;min-height:100vh}
+    nav{padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--smoke3)}
+    .nav-logo{font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.2em;color:var(--key-gold);text-decoration:none}
+    .nav-back{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--ash);text-decoration:none}
+    .nav-back:hover{color:var(--white)}
+    .sats-bar{background:var(--smoke2);border-bottom:1px solid var(--smoke3);padding:0.6rem 2rem;display:flex;align-items:center;gap:0.6rem}
+    .sats-bar span{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--key-gold);letter-spacing:0.1em}
+    .sats-bar label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.15em;text-transform:uppercase}
+    .container{max-width:760px;margin:0 auto;padding:2rem 1.5rem}
+    .eyebrow{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.25em;color:var(--rust);text-transform:uppercase;margin-bottom:0.8rem}
+    h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,5vw,2.4rem);font-weight:400;color:var(--white);margin-bottom:0.5rem}
+    .lede{font-style:italic;color:var(--parchment2);margin-bottom:2rem;font-size:1.05rem}
+
+    .card{background:var(--smoke2);border:1px solid var(--smoke3);padding:1.6rem;margin-bottom:1.2rem}
+    .card p{margin-bottom:1rem;line-height:1.6;color:var(--parchment2)}
+    .card p:last-of-type{margin-bottom:1.4rem}
+
+    .field-row{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.1rem}
+    .field{display:flex;flex-direction:column;gap:0.35rem;align-items:center}
+    .field label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.12em;text-transform:uppercase}
+    .field input[type=date],.field input[type=number],.field select{
+      font-family:'IBM Plex Mono',monospace;font-size:0.9rem;background:var(--smoke3);border:1px solid var(--ash);color:var(--white);padding:0.5rem 0.7rem;text-align:center}
+    .field input[type=number]{width:120px}
+
+    .preset-row{display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.2rem}
+    .preset-btn{font-family:'IBM Plex Mono',monospace;font-size:0.68rem;letter-spacing:0.05em;text-transform:uppercase;background:var(--smoke3);border:1px solid var(--ash);color:var(--parchment2);padding:0.4rem 0.8rem;cursor:pointer;transition:background 0.15s}
+    .preset-btn:hover{background:var(--rust);color:var(--white);border-color:var(--rust)}
+    .preset-btn.active{background:var(--rust);color:var(--white);border-color:var(--rust)}
+
+    .msg-box{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--parchment2);min-height:1.4em;margin-bottom:1rem}
+    .msg-box.bad{color:var(--red)}
+
+    .btn-row{display:flex;gap:0.7rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+    .btn{font-family:'Cinzel',serif;font-size:0.74rem;letter-spacing:0.08em;text-transform:uppercase;
+      padding:0.7rem 1.3rem;border:none;cursor:pointer;color:var(--white);transition:background 0.2s}
+    .btn-continue{background:var(--rust);padding:0.75rem 1.8rem}
+    .btn-continue:hover{background:var(--rust-glow)}
+    .btn-again{background:#3c4252}
+    .btn-again:hover{background:#5a6273}
+    .btn-claim{background:var(--green-dim);padding:0.85rem 2rem;font-size:0.78rem}
+    .btn-claim:hover:not(:disabled){background:#27b86b}
+    .btn:disabled{opacity:0.45;cursor:not-allowed}
+    a.btn-hub{display:inline-block;text-decoration:none;background:var(--smoke3);color:var(--parchment2);font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.6rem 1.4rem;margin-top:1rem}
+    a.btn-hub:hover{color:var(--white)}
+
+    .results-title{font-family:'Cinzel',serif;font-size:0.85rem;letter-spacing:0.1em;text-transform:uppercase;text-align:center;color:var(--key-gold);margin-bottom:1rem}
+    .strategy-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem}
+    .strategy-box{background:var(--smoke3);border:1px solid var(--smoke3);padding:1rem;text-align:center}
+    .strategy-box.lump{border-top:3px solid var(--rust-glow)}
+    .strategy-box.dca{border-top:3px solid var(--key-gold)}
+    .strategy-name{font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.6rem}
+    .strategy-box.lump .strategy-name{color:var(--rust-glow)}
+    .strategy-box.dca .strategy-name{color:var(--key-gold)}
+    .strategy-stat{font-family:'IBM Plex Mono',monospace;font-size:0.78rem;color:var(--parchment2);display:flex;justify-content:space-between;padding:0.25rem 0;border-bottom:1px solid var(--smoke2)}
+    .strategy-stat:last-child{border-bottom:none}
+    .strategy-stat b{color:var(--white);font-weight:600}
+
+    .chart-wrap{margin-bottom:1rem}
+    .chart-legend{display:flex;justify-content:center;gap:1.5rem;margin-bottom:0.6rem;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--ash)}
+    .chart-legend span{display:inline-flex;align-items:center;gap:0.4rem}
+    .swatch{width:12px;height:12px;display:inline-block}
+
+    .takeaway{background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.25);padding:1rem 1.2rem;color:var(--parchment2);font-style:italic;line-height:1.6;margin-bottom:1.2rem;font-size:0.9rem}
+
+    .end-stats-row{display:flex;justify-content:center;gap:1.5rem;margin-bottom:1.2rem;flex-wrap:wrap}
+    .stat-box{text-align:center;background:var(--smoke3);border:1px solid var(--smoke3);padding:0.7rem 1.4rem;min-width:100px}
+    .stat-val{font-family:'Cinzel',serif;font-size:1.4rem;color:var(--key-gold);display:block}
+    .stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--ash);letter-spacing:0.15em;text-transform:uppercase}
+    .end-sats{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--key-gold);text-align:center;margin-bottom:0.4rem}
+  </style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">The Vault</a>
+  <a href="index.html" class="nav-back">← Back to Hub</a>
+</nav>
+<div class="sats-bar">
+  <label>Total Sats:</label>
+  <span id="hub-sats">0 ⚡</span>
+</div>
+<div class="container">
+  <p class="eyebrow">The Orange Robot · Game 13</p>
+  <h1>The Steady Hand</h1>
+  <p class="lede">Frank never tried to time anything. Every payday, the same amount, into the same place, no matter what the price was doing. Was he right? Pick a window in Bitcoin's real history and find out — lump sum versus dollar-cost averaging, no simulation, just what actually happened.</p>
+
+  <div id="intro-panel" class="card">
+    <p>This pulls real historical BTC/USD price data, live, straight from a public API — the same one that powers the price ticker elsewhere on this site. Nothing here is made up.</p>
+    <p>Pick a date range and an amount. We'll split that amount two ways: all of it on day one (Lump Sum), or spread evenly across the window (Dollar-Cost Averaging) — and show you what each would actually be worth today, using real prices.</p>
+    <div class="btn-row">
+      <button class="btn btn-continue" id="loadBtn">Load Live Price Data →</button>
+    </div>
+    <div class="msg-box" id="loadMsg"></div>
+  </div>
+
+  <div id="controls-panel" class="card" style="display:none">
+    <p class="results-title">Choose a Window</p>
+    <div class="preset-row" id="presetRow"></div>
+    <div class="field-row">
+      <div class="field">
+        <label>Start Date</label>
+        <input type="date" id="startDate">
+      </div>
+      <div class="field">
+        <label>End Date</label>
+        <input type="date" id="endDate">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Total Invested</label>
+        <input type="number" id="amount" value="1200" min="10" step="10">
+      </div>
+      <div class="field">
+        <label>DCA Frequency</label>
+        <select id="freq">
+          <option value="7">Weekly</option>
+          <option value="14">Every 2 Weeks</option>
+          <option value="30">Monthly</option>
+        </select>
+      </div>
+    </div>
+    <div class="msg-box" id="runMsg"></div>
+    <div class="btn-row">
+      <button class="btn btn-continue" id="runBtn">Run Backtest →</button>
+    </div>
+  </div>
+
+  <div id="results-panel" style="display:none">
+    <div class="card">
+      <p class="results-title" id="resultsRangeLabel"></p>
+      <div class="strategy-grid">
+        <div class="strategy-box lump">
+          <div class="strategy-name">Lump Sum</div>
+          <div class="strategy-stat"><span>Final Value</span><b id="lumpFinal">$0</b></div>
+          <div class="strategy-stat"><span>BTC Bought</span><b id="lumpBtc">0</b></div>
+          <div class="strategy-stat"><span>Avg Cost / BTC</span><b id="lumpCost">$0</b></div>
+          <div class="strategy-stat"><span>Max Drawdown</span><b id="lumpDD">0%</b></div>
+        </div>
+        <div class="strategy-box dca">
+          <div class="strategy-name">DCA</div>
+          <div class="strategy-stat"><span>Final Value</span><b id="dcaFinal">$0</b></div>
+          <div class="strategy-stat"><span>BTC Bought</span><b id="dcaBtc">0</b></div>
+          <div class="strategy-stat"><span>Avg Cost / BTC</span><b id="dcaCost">$0</b></div>
+          <div class="strategy-stat"><span>Max Drawdown</span><b id="dcaDD">0%</b></div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-legend">
+          <span><span class="swatch" style="background:#e06820"></span>Lump Sum</span>
+          <span><span class="swatch" style="background:#c9a84c"></span>DCA</span>
+        </div>
+        <div id="chart"></div>
+      </div>
+      <div class="takeaway" id="takeaway"></div>
+      <div class="btn-row">
+        <button class="btn btn-again" id="againBtn">Run Another Scenario</button>
+      </div>
+    </div>
+
+    <div class="card" style="text-align:center">
+      <div class="end-stats-row">
+        <div class="stat-box"><span class="stat-val" id="scenarioCount">0</span><span class="stat-lbl">Scenarios Explored</span></div>
+      </div>
+      <div class="end-sats" id="endSats">+0 ⚡</div>
+      <div class="btn-row">
+        <button class="btn btn-claim" id="claimBtn">Claim Reward →</button>
+      </div>
+    </div>
+
+    <div style="text-align:center"><a href="index.html" class="btn-hub">← Back to Vault</a></div>
+  </div>
+
+</div>
+
+<script src="wallet.js"></script>
+<script>
+(function(){
+  var hubSats = document.getElementById('hub-sats');
+  function updateHubSats(){ hubSats.textContent = TOR.fmt(TOR.getSats()) + ' ⚡'; }
+  updateHubSats();
+
+  var PRICE_URL = 'https://mempool.space/api/v1/historical-price?currency=USD';
+  var EARLIEST_TS = null, LATEST_TS = null;
+  var prices = null;
+  var scenariosExplored = 0;
+  var lastScenarioKey = null;
+
+  function priceAt(ts){
+    if(!prices || prices.length===0) return null;
+    var lo=0, hi=prices.length-1, ans=prices[0];
+    while(lo<=hi){
+      var mid=(lo+hi)>>1;
+      if(prices[mid].time<=ts){ ans=prices[mid]; lo=mid+1; }
+      else hi=mid-1;
+    }
+    return ans.USD;
+  }
+
+  function fmtUsd(n){
+    return '$' + Math.round(n).toLocaleString('en-US');
+  }
+  function fmtBtc(n){
+    return n.toFixed(6);
+  }
+  function fmtPct(n){
+    return (n*100).toFixed(1) + '%';
+  }
+  function isoDate(d){
+    return d.toISOString().slice(0,10);
+  }
+
+  // ---------- Load data ----------
+  document.getElementById('loadBtn').onclick = function(){
+    var loadMsg = document.getElementById('loadMsg');
+    var btn = document.getElementById('loadBtn');
+    btn.disabled = true;
+    btn.textContent = 'Loading…';
+    loadMsg.textContent = '';
+    fetch(PRICE_URL).then(function(r){
+      if(!r.ok) throw new Error('bad response');
+      return r.json();
+    }).then(function(d){
+      prices = d.prices.slice().sort(function(a,b){ return a.time - b.time; });
+      EARLIEST_TS = prices[0].time;
+      LATEST_TS = prices[prices.length-1].time;
+      document.getElementById('intro-panel').style.display = 'none';
+      document.getElementById('controls-panel').style.display = 'block';
+      initControls();
+    }).catch(function(){
+      loadMsg.textContent = 'Could not reach the price feed. Try again in a moment.';
+      loadMsg.className = 'msg-box bad';
+      btn.disabled = false;
+      btn.textContent = 'Load Live Price Data →';
+    });
+  };
+
+  // ---------- Controls ----------
+  var PRESETS = [
+    { id: '1y', label: 'Last 1 Year', years: 1 },
+    { id: '3y', label: 'Last 3 Years', years: 3 },
+    { id: '5y', label: 'Last 5 Years', years: 5 },
+    { id: '2017top', label: '2017 Top → Now', fixedStart: '2017-12-17' },
+    { id: '2021top', label: '2021 Top → Now', fixedStart: '2021-11-10' },
+    { id: 'genesis', label: 'Since 2011', fixedStart: '2011-01-01' }
+  ];
+
+  function initControls(){
+    var presetRow = document.getElementById('presetRow');
+    presetRow.innerHTML = '';
+    PRESETS.forEach(function(p){
+      var b = document.createElement('button');
+      b.className = 'preset-btn';
+      b.textContent = p.label;
+      b.onclick = function(){
+        Array.prototype.forEach.call(presetRow.children, function(el){ el.classList.remove('active'); });
+        b.classList.add('active');
+        applyPreset(p);
+      };
+      presetRow.appendChild(b);
+    });
+
+    var latest = new Date(LATEST_TS * 1000);
+    var earliest = new Date(EARLIEST_TS * 1000);
+    var startInput = document.getElementById('startDate');
+    var endInput = document.getElementById('endDate');
+    startInput.min = isoDate(earliest);
+    startInput.max = isoDate(latest);
+    endInput.min = isoDate(earliest);
+    endInput.max = isoDate(latest);
+    endInput.value = isoDate(latest);
+
+    // default to "Last 1 Year"
+    applyPreset(PRESETS[0]);
+    presetRow.children[0].classList.add('active');
+  }
+
+  function applyPreset(p){
+    var latest = new Date(LATEST_TS * 1000);
+    var start;
+    if(p.fixedStart){
+      start = new Date(p.fixedStart + 'T00:00:00Z');
+    } else {
+      start = new Date(latest);
+      start.setUTCFullYear(start.getUTCFullYear() - p.years);
+    }
+    var earliest = new Date(EARLIEST_TS * 1000);
+    if(start < earliest) start = earliest;
+    document.getElementById('startDate').value = isoDate(start);
+    document.getElementById('endDate').value = isoDate(latest);
+  }
+
+  document.getElementById('runBtn').onclick = function(){
+    var runMsg = document.getElementById('runMsg');
+    var startVal = document.getElementById('startDate').value;
+    var endVal = document.getElementById('endDate').value;
+    var amount = parseFloat(document.getElementById('amount').value);
+    var freqDays = parseInt(document.getElementById('freq').value, 10);
+
+    if(!startVal || !endVal){
+      runMsg.textContent = 'Pick a start and end date.';
+      runMsg.className = 'msg-box bad';
+      return;
+    }
+    var startDate = new Date(startVal + 'T00:00:00Z');
+    var endDate = new Date(endVal + 'T00:00:00Z');
+    if(startDate >= endDate){
+      runMsg.textContent = 'Start date has to be before end date.';
+      runMsg.className = 'msg-box bad';
+      return;
+    }
+    if(!amount || amount <= 0){
+      runMsg.textContent = 'Enter a positive amount to invest.';
+      runMsg.className = 'msg-box bad';
+      return;
+    }
+    runMsg.textContent = '';
+    var result = runBacktest(startDate, endDate, amount, freqDays);
+    if(!result){
+      runMsg.textContent = 'Not enough price data in that window.';
+      runMsg.className = 'msg-box bad';
+      return;
+    }
+    showResults(result, startVal, endVal, amount, freqDays);
+
+    var key = startVal + '|' + endVal + '|' + amount + '|' + freqDays;
+    if(key !== lastScenarioKey){
+      scenariosExplored++;
+      lastScenarioKey = key;
+      document.getElementById('scenarioCount').textContent = scenariosExplored;
+      var sats = Math.min(200, 80 + (scenariosExplored - 1) * 20);
+      document.getElementById('endSats').textContent = '+' + sats + ' ⚡';
+    }
+  };
+
+  document.getElementById('againBtn').onclick = function(){
+    document.getElementById('results-panel').style.display = 'none';
+    document.getElementById('controls-panel').style.display = 'block';
+  };
+
+  // ---------- Backtest ----------
+  function runBacktest(startDate, endDate, totalUsd, freqDays){
+    var startTs = Math.floor(startDate.getTime()/1000);
+    var endTs = Math.floor(endDate.getTime()/1000);
+    var startPrice = priceAt(startTs);
+    var endPrice = priceAt(endTs);
+    if(!startPrice || !endPrice) return null;
+
+    var lumpBtc = totalUsd / startPrice;
+
+    var installments = [];
+    for(var t = startTs; t <= endTs; t += freqDays * 86400){
+      installments.push(t);
+    }
+    if(installments.length === 0) installments.push(startTs);
+    var perInstallment = totalUsd / installments.length;
+    var dcaBtc = 0;
+    var dcaEvents = [];
+    installments.forEach(function(t){
+      var p = priceAt(t);
+      var bought = perInstallment / p;
+      dcaBtc += bought;
+      dcaEvents.push({ time: t, cumBtc: dcaBtc });
+    });
+
+    var numSamples = 60;
+    var series = [];
+    for(var i=0;i<=numSamples;i++){
+      var st = startTs + Math.round((endTs-startTs) * i/numSamples);
+      var p = priceAt(st);
+      var lumpVal = lumpBtc * p;
+      var cum = 0;
+      for(var j=0;j<dcaEvents.length;j++){
+        if(dcaEvents[j].time <= st) cum = dcaEvents[j].cumBtc; else break;
+      }
+      var dcaVal = cum * p;
+      series.push({ time: st, lumpVal: lumpVal, dcaVal: dcaVal });
+    }
+
+    function maxDrawdown(key){
+      var peak = -Infinity, maxDd = 0;
+      series.forEach(function(pt){
+        var v = pt[key];
+        if(v > peak) peak = v;
+        if(peak > 0){
+          var dd = (peak - v) / peak;
+          if(dd > maxDd) maxDd = dd;
+        }
+      });
+      return maxDd;
+    }
+
+    return {
+      lumpBtc: lumpBtc,
+      lumpFinal: lumpBtc * endPrice,
+      lumpCostBasis: startPrice,
+      lumpDrawdown: maxDrawdown('lumpVal'),
+      dcaBtc: dcaBtc,
+      dcaFinal: dcaBtc * endPrice,
+      dcaCostBasis: totalUsd / dcaBtc,
+      dcaDrawdown: maxDrawdown('dcaVal'),
+      installmentsCount: installments.length,
+      series: series
+    };
+  }
+
+  // ---------- Results rendering ----------
+  function showResults(r, startVal, endVal, amount, freqDays){
+    document.getElementById('controls-panel').style.display = 'none';
+    document.getElementById('results-panel').style.display = 'block';
+
+    document.getElementById('resultsRangeLabel').textContent = startVal + ' → ' + endVal + ' · $' + amount + ' invested';
+
+    document.getElementById('lumpFinal').textContent = fmtUsd(r.lumpFinal);
+    document.getElementById('lumpBtc').textContent = fmtBtc(r.lumpBtc);
+    document.getElementById('lumpCost').textContent = fmtUsd(r.lumpCostBasis);
+    document.getElementById('lumpDD').textContent = fmtPct(r.lumpDrawdown);
+
+    document.getElementById('dcaFinal').textContent = fmtUsd(r.dcaFinal);
+    document.getElementById('dcaBtc').textContent = fmtBtc(r.dcaBtc);
+    document.getElementById('dcaCost').textContent = fmtUsd(r.dcaCostBasis);
+    document.getElementById('dcaDD').textContent = fmtPct(r.dcaDrawdown);
+
+    renderChart(r.series);
+    document.getElementById('takeaway').textContent = takeaway(r);
+  }
+
+  function renderChart(series){
+    var w=680, h=240, pad=30;
+    var allVals = [];
+    series.forEach(function(pt){ allVals.push(pt.lumpVal, pt.dcaVal); });
+    var minV = Math.min.apply(null, allVals);
+    var maxV = Math.max.apply(null, allVals);
+    if(minV === maxV) maxV = minV + 1;
+    function x(i){ return pad + (w-2*pad) * i/(series.length-1); }
+    function y(v){ return h-pad - (h-2*pad) * (v-minV)/(maxV-minV); }
+    var lumpPts = series.map(function(pt,i){ return x(i)+','+y(pt.lumpVal); }).join(' ');
+    var dcaPts = series.map(function(pt,i){ return x(i)+','+y(pt.dcaVal); }).join(' ');
+    var svg = '<svg viewBox="0 0 '+w+' '+h+'" style="width:100%;height:auto;background:var(--smoke3);border:1px solid var(--smoke3)">' +
+      '<line x1="'+pad+'" y1="'+(h-pad)+'" x2="'+(w-pad)+'" y2="'+(h-pad)+'" stroke="#3c342b" stroke-width="1"/>' +
+      '<polyline points="'+dcaPts+'" fill="none" stroke="#c9a84c" stroke-width="2.5"/>' +
+      '<polyline points="'+lumpPts+'" fill="none" stroke="#e06820" stroke-width="2.5"/>' +
+      '</svg>';
+    document.getElementById('chart').innerHTML = svg;
+  }
+
+  function takeaway(r){
+    var diff = r.lumpFinal - r.dcaFinal;
+    var base = Math.min(r.lumpFinal, r.dcaFinal) || 1;
+    var pct = Math.abs(diff) / base * 100;
+    if(pct < 1){
+      return 'Statistically a wash — both strategies landed within 1% of each other over this window.';
+    }
+    if(diff > 0){
+      return 'Lump Sum won this window by about ' + pct.toFixed(0) + '%. Its max drawdown was ' + fmtPct(r.lumpDrawdown) + ' versus DCA’s ' + fmtPct(r.dcaDrawdown) + ' — going all-in early paid off here, but the drawdown number is the part nobody can promise in advance.';
+    }
+    return 'DCA won this window by about ' + pct.toFixed(0) + '%. Spreading the purchases out meant a max drawdown of ' + fmtPct(r.dcaDrawdown) + ', versus ' + fmtPct(r.lumpDrawdown) + ' for going all-in on day one.';
+  }
+
+  // ---------- Claim ----------
+  document.getElementById('claimBtn').onclick = function(){
+    var sats = Math.min(200, 80 + (scenariosExplored - 1) * 20);
+    if(sats <= 0 || scenariosExplored === 0) return;
+    TOR.earn(sats, 'The Steady Hand');
+    TOR.markDone('steady-hand');
+    TOR.toast(sats);
+    updateHubSats();
+    var claimBtn = document.getElementById('claimBtn');
+    claimBtn.textContent = 'Claimed ✓';
+    claimBtn.disabled = true;
+  };
+})();
+</script>
+</body>
+</html>
