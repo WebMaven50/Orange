@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cipher of Egypt — The Orange Robot</title>
+  <meta name="description" content="A Vault scene from The Orange Robot: break three real ciphers — Caesar, substitution, and XOR — to interpret Pharaoh's dreams." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="https://theorangerobot.com/games/cipher-of-egypt.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:#0d0b09; --rust:#b5541a; --rust-glow:#e06820;
+      --parchment:#f0e8d8; --parchment2:#c8b89a;
+      --smoke:#1a1410; --smoke2:#241d16; --smoke3:#2e2519;
+      --ash:#7a6e62; --key-gold:#c9a84c; --white:#f5f0e8;
+      --green:#54c97a; --green-dim:#1f8a4d; --red:#d9534f;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--ink);color:var(--parchment);font-family:'EB Garamond',serif;min-height:100vh}
+    nav{padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--smoke3)}
+    .nav-logo{font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.2em;color:var(--key-gold);text-decoration:none}
+    .nav-back{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--ash);text-decoration:none}
+    .nav-back:hover{color:var(--white)}
+    .sats-bar{background:var(--smoke2);border-bottom:1px solid var(--smoke3);padding:0.6rem 2rem;display:flex;align-items:center;gap:0.6rem}
+    .sats-bar span{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--key-gold);letter-spacing:0.1em}
+    .sats-bar label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.15em;text-transform:uppercase}
+    .container{max-width:760px;margin:0 auto;padding:2rem 1.5rem}
+    .eyebrow{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.25em;color:var(--rust);text-transform:uppercase;margin-bottom:0.8rem}
+    h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,5vw,2.4rem);font-weight:400;color:var(--white);margin-bottom:0.5rem}
+    .lede{font-style:italic;color:var(--parchment2);margin-bottom:2rem;font-size:1.05rem}
+
+    .card{background:var(--smoke2);border:1px solid var(--smoke3);padding:1.6rem;margin-bottom:1.2rem}
+    .card p{margin-bottom:1rem;line-height:1.6;color:var(--parchment2)}
+    .card p:last-of-type{margin-bottom:1.4rem}
+    .intro-rules{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--ash);letter-spacing:0.03em;line-height:1.9;margin-bottom:1.4rem}
+    .intro-rules b{color:var(--key-gold)}
+
+    .stopwatch-row{display:flex;justify-content:center;margin-bottom:1.2rem}
+    .stopwatch{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--key-gold);background:var(--smoke2);border:1px solid var(--smoke3);padding:0.4rem 1.3rem;letter-spacing:0.1em}
+
+    .dream-label{font-family:'Cinzel',serif;font-size:0.78rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--rust-glow);text-align:center;margin-bottom:0.8rem}
+
+    .ciphertext{font-family:'IBM Plex Mono',monospace;font-size:1.05rem;letter-spacing:0.08em;color:var(--white);background:var(--smoke3);border:1px solid var(--smoke3);padding:1rem 1.2rem;text-align:center;margin-bottom:1.2rem;word-spacing:0.4em;line-height:1.8}
+    .preview{font-family:'IBM Plex Mono',monospace;font-size:1.05rem;letter-spacing:0.08em;color:var(--key-gold);background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.25);padding:1rem 1.2rem;text-align:center;margin-bottom:1.2rem;word-spacing:0.4em;line-height:1.8;min-height:1.6em}
+
+    .shift-row{display:flex;align-items:center;gap:1rem;justify-content:center;margin-bottom:1.2rem;flex-wrap:wrap}
+    .shift-row input[type=range]{width:220px}
+    .shift-val{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--white);min-width:2.2em;text-align:center}
+
+    .freq-table{display:flex;flex-wrap:wrap;gap:0.35rem;justify-content:center;margin-bottom:1.2rem;font-family:'IBM Plex Mono',monospace;font-size:0.68rem}
+    .freq-cell{background:var(--smoke3);border:1px solid var(--smoke3);padding:0.3rem 0.5rem;text-align:center;color:var(--ash)}
+    .freq-cell b{color:var(--parchment2);display:block;font-size:0.85rem}
+
+    .key-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:0.4rem;margin-bottom:1.2rem}
+    .key-cell{background:var(--smoke3);border:1px solid var(--smoke3);padding:0.4rem 0.3rem;text-align:center}
+    .key-cell .cipher-letter{font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--ash);letter-spacing:0.05em}
+    .key-cell input{width:100%;text-align:center;background:var(--smoke2);border:1px solid var(--ash);color:var(--white);font-family:'Cinzel',serif;font-size:0.95rem;text-transform:uppercase;padding:0.2rem 0}
+    .key-cell input:disabled{background:rgba(201,168,76,0.12);border-color:var(--key-gold);color:var(--key-gold)}
+
+    .key-input-row{display:flex;justify-content:center;gap:0.7rem;margin-bottom:1.2rem;align-items:center;flex-wrap:wrap}
+    .key-input-row input[type=text]{font-family:'IBM Plex Mono',monospace;font-size:1rem;letter-spacing:0.15em;text-transform:uppercase;background:var(--smoke2);border:1px solid var(--ash);color:var(--white);padding:0.6rem 0.9rem;text-align:center;width:180px}
+
+    .msg-box{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--parchment2);min-height:1.4em;margin-bottom:1rem}
+    .msg-box.good{color:var(--green)}
+    .msg-box.bad{color:var(--red)}
+
+    .btn-row{display:flex;gap:0.7rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+    .btn{font-family:'Cinzel',serif;font-size:0.74rem;letter-spacing:0.08em;text-transform:uppercase;
+      padding:0.7rem 1.3rem;border:none;cursor:pointer;color:var(--white);transition:background 0.2s}
+    .btn-hint{background:#3c4252}
+    .btn-hint:hover{background:#5a6273}
+    .btn-continue{background:var(--rust);padding:0.75rem 1.8rem}
+    .btn-continue:hover{background:var(--rust-glow)}
+    .btn-claim{background:var(--green-dim);padding:0.85rem 2rem;font-size:0.78rem}
+    .btn-claim:hover:not(:disabled){background:#27b86b}
+    .btn:disabled{opacity:0.45;cursor:not-allowed}
+    a.btn-hub{display:inline-block;text-decoration:none;background:var(--smoke3);color:var(--parchment2);font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.6rem 1.4rem;margin-top:1rem}
+    a.btn-hub:hover{color:var(--white)}
+
+    .end-card{background:var(--smoke2);border:1px solid var(--smoke3);padding:1.8rem;text-align:center;margin-bottom:1.2rem}
+    .end-title{font-family:'Cinzel',serif;font-size:1.4rem;color:var(--white);margin-bottom:0.8rem}
+    .end-narrative{color:var(--parchment2);line-height:1.7;font-style:italic;margin-bottom:1.2rem}
+    .final-message{font-family:'IBM Plex Mono',monospace;font-size:0.9rem;color:var(--key-gold);letter-spacing:0.05em;margin-bottom:1.2rem;line-height:1.9;background:rgba(201,168,76,0.07);border:1px solid rgba(201,168,76,0.25);padding:1rem;text-transform:uppercase}
+    .end-stats-row{display:flex;justify-content:center;gap:1.5rem;margin-bottom:1.4rem;flex-wrap:wrap}
+    .stat-box{text-align:center;background:var(--smoke3);border:1px solid var(--smoke3);padding:0.7rem 1.4rem;min-width:100px}
+    .stat-val{font-family:'Cinzel',serif;font-size:1.4rem;color:var(--key-gold);display:block}
+    .stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--ash);letter-spacing:0.15em;text-transform:uppercase}
+    .end-sats{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--key-gold)}
+
+    .lb-widget{background:var(--smoke2);border:1px solid var(--smoke3);padding:1.2rem;margin-bottom:1.2rem}
+    .lb-widget-title{font-family:'Cinzel',serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--key-gold);text-align:center;margin-bottom:0.8rem}
+    .lb-header,.lb-row{display:grid;grid-template-columns:2em 1fr 4.5em 4.5em;gap:0.4rem;padding:0.35rem 0.2rem;font-family:'IBM Plex Mono',monospace;font-size:0.74rem}
+    .lb-header{color:var(--ash);letter-spacing:0.08em;border-bottom:1px solid var(--smoke3);margin-bottom:0.2rem}
+    .lb-row{color:var(--parchment2)}
+    .lb-row.lb-top3{color:var(--key-gold);font-weight:600}
+    .lb-rank{text-align:center}
+    .lb-score,.lb-sats{text-align:right}
+    .lb-empty{text-align:center;font-size:0.78rem;color:var(--ash);padding:0.6rem 0}
+  </style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">The Vault</a>
+  <a href="index.html" class="nav-back">← Back to Hub</a>
+</nav>
+<div class="sats-bar">
+  <label>Total Sats:</label>
+  <span id="hub-sats">0 ⚡</span>
+</div>
+<div class="container">
+  <p class="eyebrow">The Orange Robot · Game 12</p>
+  <h1>Cipher of Egypt</h1>
+  <p class="lede">Pharaoh dreams three times, and three times the priests fail him. Joseph doesn't guess at meanings — he breaks codes. Three dreams, three real ciphers, each harder than the last.</p>
+
+  <div id="intro-panel" class="card">
+    <p>Every cipher here is real — the same kind used for actual encryption, just small enough to break by hand. No made-up puzzle logic, no black boxes.</p>
+    <div class="intro-rules">
+      <b>Dream 1</b> — Caesar cipher. Every letter shifted by a fixed amount. Only 26 possible shifts.<br>
+      <b>Dream 2</b> — Substitution cipher. Every letter swapped for another, consistently. Frequency analysis helps.<br>
+      <b>Dream 3</b> — XOR cipher. The same math real stream ciphers use, with a key you'll have to figure out from the story itself.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-continue" id="beginBtn">Begin the Interpretation →</button>
+    </div>
+  </div>
+
+  <div id="game-panel" style="display:none">
+    <div class="stopwatch-row"><div class="stopwatch" id="stopwatch">0:00</div></div>
+
+    <!-- DREAM 1 -->
+    <div id="dream1-panel">
+      <p class="dream-label">Dream One · Caesar Cipher</p>
+      <div class="ciphertext">ZLCLU MHA JVDZ YPZL MYVT AOL YPCLY UPSL</div>
+      <div class="preview" id="d1-preview">&nbsp;</div>
+      <div class="shift-row">
+        <label style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--ash);letter-spacing:0.1em;text-transform:uppercase">Shift</label>
+        <input type="range" id="d1-shift" min="0" max="25" value="0" step="1">
+        <span class="shift-val" id="d1-shift-val">0</span>
+      </div>
+      <div class="msg-box" id="d1-msg"></div>
+      <div class="btn-row">
+        <button class="btn btn-continue" id="d1-check">Lock In This Shift →</button>
+      </div>
+    </div>
+
+    <!-- DREAM 2 -->
+    <div id="dream2-panel" style="display:none">
+      <p class="dream-label">Dream Two · Substitution Cipher</p>
+      <div class="ciphertext">YTHTO STQO JXIY ZTHXVR EKT GQE XOTY</div>
+      <div class="freq-table" id="d2-freq"></div>
+      <div class="key-grid" id="d2-keygrid"></div>
+      <div class="preview" id="d2-preview">&nbsp;</div>
+      <div class="msg-box" id="d2-msg"></div>
+      <div class="btn-row">
+        <button class="btn btn-hint" id="d2-hint">Reveal a Letter (−15 ⚡)</button>
+        <button class="btn btn-continue" id="d2-check">Check Interpretation →</button>
+      </div>
+    </div>
+
+    <!-- DREAM 3 -->
+    <div id="dream3-panel" style="display:none">
+      <p class="dream-label">Dream Three · XOR Cipher</p>
+      <div class="ciphertext" style="font-size:0.78rem;word-spacing:0.1em;word-break:break-all">0400076509071f1d730e1511196f1d0a046813000617700b05061d16701b1e0001007011051a01651f1f046f1417110104</div>
+      <p style="text-align:center;color:var(--ash);font-family:'IBM Plex Mono',monospace;font-size:0.75rem;margin-bottom:1rem">Clue: the key is the name of the man reading these dreams, in capital letters.</p>
+      <div class="key-input-row">
+        <input type="text" id="d3-key" placeholder="KEY" maxlength="20">
+      </div>
+      <div class="preview" id="d3-preview">&nbsp;</div>
+      <div class="msg-box" id="d3-msg"></div>
+      <div class="btn-row">
+        <button class="btn btn-continue" id="d3-check">Reveal the Interpretation →</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="end-panel" style="display:none">
+    <div class="end-card">
+      <div class="end-title">Pharaoh Understands</div>
+      <p class="end-narrative">Three dreams, one meaning, decoded the same way any cipher falls — not by magic, but by method. The interpretation, laid plain:</p>
+      <div class="final-message">Seven years of plenty. Seven years of famine.<br>Not your keys, not your coins.<br>Store your own grain.</div>
+      <div class="end-stats-row">
+        <div class="stat-box"><span class="stat-val" id="endTime">0:00</span><span class="stat-lbl">Time Elapsed</span></div>
+        <div class="stat-box"><span class="stat-val" id="endHints">0</span><span class="stat-lbl">Hints Used</span></div>
+      </div>
+      <p style="color:var(--ash);font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem">Reward</p>
+      <div class="end-sats" id="endSats">+0 ⚡</div>
+      <div class="btn-row" style="margin-top:1.2rem">
+        <button class="btn btn-claim" id="claimBtn">Claim Reward →</button>
+      </div>
+    </div>
+
+    <div class="lb-widget">
+      <div class="lb-widget-title">🏆 Fastest Interpretations — Cipher of Egypt</div>
+      <div id="lbContainer"><div class="lb-empty">Loading…</div></div>
+      <div class="btn-row" style="margin-top:0.9rem">
+        <button class="btn btn-continue" id="saveScoreBtn">Save My Score</button>
+      </div>
+    </div>
+
+    <div style="text-align:center"><a href="index.html" class="btn-hub">← Back to Vault</a></div>
+  </div>
+
+</div>
+
+<script src="wallet.js"></script>
+<script src="leaderboard.js"></script>
+<script>
+(function(){
+  var hubSats = document.getElementById('hub-sats');
+  function updateHubSats(){ hubSats.textContent = TOR.fmt(TOR.getSats()) + ' ⚡'; }
+  updateHubSats();
+
+  var LB_GAME = 'cipheregypt';
+
+  // ── Dream 1: Caesar cipher ──
+  var D1_CIPHER = "ZLCLU MHA JVDZ YPZL MYVT AOL YPCLY UPSL";
+  var D1_PLAIN = "SEVEN FAT COWS RISE FROM THE RIVER NILE";
+  var D1_SHIFT = 7;
+
+  function caesarDecode(text, shift){
+    return text.replace(/[A-Z]/g, function(ch){
+      var code = ((ch.charCodeAt(0) - 65 - shift) % 26 + 26) % 26;
+      return String.fromCharCode(code + 65);
+    });
+  }
+
+  // ── Dream 2: substitution cipher ──
+  var D2_CIPHER = "YTHTO STQO JXIY ZTHXVR EKT GQE XOTY";
+  var D2_PLAIN = "SEVEN LEAN COWS DEVOUR THE FAT ONES";
+  // cipher letter -> correct plain letter
+  var D2_ANSWER = {Q:'A',M:'B',J:'C',Z:'D',T:'E',G:'F',F:'G',K:'H',P:'I',W:'J',L:'K',S:'L',B:'M',O:'N',X:'O',N:'P',C:'Q',R:'R',Y:'S',E:'T',V:'U',H:'V',I:'W',A:'X',D:'Y',U:'Z'};
+  var D2_HINTS_GIVEN = {Q:'A',T:'E',P:'I',X:'O',V:'U'}; // vowels pre-revealed
+  var d2Guess = {}; // cipher letter -> guessed plain letter (user input)
+  var d2HintsUsed = 0;
+
+  // ── Dream 3: XOR cipher ──
+  var D3_HEX = "0400076509071f1d730e1511196f1d0a046813000617700b05061d16701b1e0001007011051a01651f1f046f1417110104";
+  var D3_PLAIN = "NOT YOUR KEYS NOT YOUR COINS STORE YOUR OWN GRAIN";
+  var D3_KEY = "JOSEPH";
+
+  function xorDecodeHex(hexStr, key){
+    if(!key) return '';
+    var out = '';
+    for(var i=0;i<hexStr.length;i+=2){
+      var byte = parseInt(hexStr.substr(i,2), 16);
+      var k = key.charCodeAt((i/2) % key.length);
+      var code = byte ^ k;
+      out += (code >= 32 && code <= 126) ? String.fromCharCode(code) : '·';
+    }
+    return out;
+  }
+
+  var startTime = null;
+  var elapsedTimerId = null;
+  var stopwatchEl = document.getElementById('stopwatch');
+
+  function fmtTime(s){
+    s = Math.max(0, Math.round(s));
+    var m = Math.floor(s/60), sec = s%60;
+    return m + ':' + (sec<10?'0':'') + sec;
+  }
+
+  function startStopwatch(){
+    startTime = Date.now();
+    elapsedTimerId = setInterval(function(){
+      stopwatchEl.textContent = fmtTime((Date.now()-startTime)/1000);
+    }, 250);
+  }
+  function stopStopwatch(){
+    clearInterval(elapsedTimerId);
+    return (Date.now()-startTime)/1000;
+  }
+
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+  // ---------- DREAM 1 ----------
+  var d1ShiftInput = document.getElementById('d1-shift');
+  var d1ShiftVal = document.getElementById('d1-shift-val');
+  var d1Preview = document.getElementById('d1-preview');
+  var d1Msg = document.getElementById('d1-msg');
+
+  function d1Update(){
+    var shift = parseInt(d1ShiftInput.value, 10);
+    d1ShiftVal.textContent = shift;
+    d1Preview.textContent = caesarDecode(D1_CIPHER, shift);
+  }
+  d1ShiftInput.addEventListener('input', d1Update);
+
+  document.getElementById('d1-check').onclick = function(){
+    var shift = parseInt(d1ShiftInput.value, 10);
+    if(shift === D1_SHIFT){
+      d1Msg.textContent = '✓ The dream is plain.';
+      d1Msg.className = 'msg-box good';
+      setTimeout(function(){
+        document.getElementById('dream1-panel').style.display = 'none';
+        document.getElementById('dream2-panel').style.display = 'block';
+        d2Render();
+      }, 700);
+    } else {
+      d1Msg.textContent = 'Still gibberish. Keep turning the dial.';
+      d1Msg.className = 'msg-box bad';
+    }
+  };
+  d1Update();
+
+  // ---------- DREAM 2 ----------
+  var d2FreqEl = document.getElementById('d2-freq');
+  var d2KeygridEl = document.getElementById('d2-keygrid');
+  var d2Preview = document.getElementById('d2-preview');
+  var d2Msg = document.getElementById('d2-msg');
+
+  function d2UniqueCipherLetters(){
+    var set = {};
+    D2_CIPHER.replace(/[A-Z]/g, function(ch){ set[ch]=true; return ch; });
+    return Object.keys(set).sort();
+  }
+
+  function d2Render(){
+    // frequency table
+    var counts = {};
+    D2_CIPHER.replace(/[A-Z]/g, function(ch){ counts[ch]=(counts[ch]||0)+1; return ch; });
+    var letters = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; });
+    d2FreqEl.innerHTML = letters.map(function(l){
+      return '<div class="freq-cell"><b>' + l + '</b>' + counts[l] + '</div>';
+    }).join('');
+
+    // key grid
+    d2Guess = {};
+    var uniq = d2UniqueCipherLetters();
+    d2KeygridEl.innerHTML = '';
+    uniq.forEach(function(cl){
+      var cell = document.createElement('div');
+      cell.className = 'key-cell';
+      var given = D2_HINTS_GIVEN[cl];
+      cell.innerHTML = '<div class="cipher-letter">' + cl + ' →</div>' +
+        '<input type="text" maxlength="1" data-cl="' + cl + '"' + (given ? ' disabled value="' + given + '"' : '') + '>';
+      d2KeygridEl.appendChild(cell);
+      if(given) d2Guess[cl] = given;
+    });
+    d2KeygridEl.querySelectorAll('input:not(:disabled)').forEach(function(inp){
+      inp.addEventListener('input', function(){
+        var v = inp.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,1);
+        inp.value = v;
+        d2Guess[inp.dataset.cl] = v || null;
+        d2UpdatePreview();
+      });
+    });
+    d2UpdatePreview();
+  }
+
+  function d2UpdatePreview(){
+    d2Preview.textContent = D2_CIPHER.replace(/[A-Z]/g, function(ch){
+      return d2Guess[ch] || '_';
+    });
+  }
+
+  document.getElementById('d2-hint').onclick = function(){
+    var uniq = d2UniqueCipherLetters();
+    var unsolved = uniq.filter(function(cl){ return !d2Guess[cl]; });
+    if(unsolved.length === 0){
+      d2Msg.textContent = 'Every letter is already placed.';
+      d2Msg.className = 'msg-box';
+      return;
+    }
+    var pick = unsolved[Math.floor(Math.random()*unsolved.length)];
+    var answer = D2_ANSWER[pick];
+    d2Guess[pick] = answer;
+    d2HintsUsed++;
+    var input = d2KeygridEl.querySelector('input[data-cl="' + pick + '"]');
+    input.value = answer;
+    input.disabled = true;
+    d2UpdatePreview();
+    d2Msg.textContent = 'Revealed: ' + pick + ' → ' + answer + ' (' + d2HintsUsed + ' hint' + (d2HintsUsed===1?'':'s') + ' used)';
+    d2Msg.className = 'msg-box';
+  };
+
+  document.getElementById('d2-check').onclick = function(){
+    var attempt = D2_CIPHER.replace(/[A-Z]/g, function(ch){ return d2Guess[ch] || '_'; });
+    if(attempt === D2_PLAIN){
+      d2Msg.textContent = '✓ The second dream is plain.';
+      d2Msg.className = 'msg-box good';
+      setTimeout(function(){
+        document.getElementById('dream2-panel').style.display = 'none';
+        document.getElementById('dream3-panel').style.display = 'block';
+      }, 700);
+    } else {
+      var wrong = 0;
+      for(var i=0;i<D2_PLAIN.length;i++){
+        if(attempt[i] !== D2_PLAIN[i]) wrong++;
+      }
+      d2Msg.textContent = 'Not yet — ' + wrong + ' letters still out of place.';
+      d2Msg.className = 'msg-box bad';
+    }
+  };
+
+  // ---------- DREAM 3 ----------
+  var d3KeyInput = document.getElementById('d3-key');
+  var d3Preview = document.getElementById('d3-preview');
+  var d3Msg = document.getElementById('d3-msg');
+  var finalElapsed = 0;
+
+  function d3Update(){
+    var key = d3KeyInput.value.toUpperCase();
+    d3Preview.textContent = key ? xorDecodeHex(D3_HEX, key) : ' ';
+  }
+  d3KeyInput.addEventListener('input', d3Update);
+
+  document.getElementById('d3-check').onclick = function(){
+    var key = d3KeyInput.value.toUpperCase();
+    var attempt = xorDecodeHex(D3_HEX, key);
+    if(attempt === D3_PLAIN){
+      d3Msg.textContent = '✓ All three dreams are plain.';
+      d3Msg.className = 'msg-box good';
+      finalElapsed = stopStopwatch();
+      setTimeout(finishGame, 700);
+    } else {
+      d3Msg.textContent = 'That key produces noise, not meaning.';
+      d3Msg.className = 'msg-box bad';
+    }
+  };
+
+  function finishGame(){
+    document.getElementById('game-panel').style.display = 'none';
+    document.getElementById('end-panel').style.display = 'block';
+
+    document.getElementById('endTime').textContent = fmtTime(finalElapsed);
+    document.getElementById('endHints').textContent = d2HintsUsed;
+
+    var sats = clamp(200 - d2HintsUsed*15 - Math.floor(finalElapsed/20), 40, 220);
+    document.getElementById('endSats').textContent = '+' + sats + ' ⚡';
+
+    var claimBtn = document.getElementById('claimBtn');
+    claimBtn.disabled = false;
+    claimBtn.onclick = function(){
+      TOR.earn(sats, 'Cipher of Egypt');
+      TOR.markDone('cipher-of-egypt');
+      TOR.toast(sats);
+      updateHubSats();
+      claimBtn.textContent = 'Claimed ✓';
+      claimBtn.disabled = true;
+    };
+
+    var lbContainer = document.getElementById('lbContainer');
+    function refreshBoard(){
+      if(typeof LB === 'undefined') return;
+      LB.fetchTop(LB_GAME, 5).then(function(entries){
+        LB.renderBoard(lbContainer, entries, { scoreLabel: 'SPEED' });
+      });
+    }
+    refreshBoard();
+
+    var saved = false;
+    var saveBtn = document.getElementById('saveScoreBtn');
+    saveBtn.onclick = function(){
+      if(saved || typeof LB === 'undefined') return;
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'SAVING…';
+      LB.promptInitials().then(function(initials){
+        if(!initials){
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save My Score';
+          return;
+        }
+        // lower time is better, but leaderboard sorts descending — store inverted-friendly value
+        var scoreVal = Math.max(1, Math.round(3600 - finalElapsed));
+        LB.submitScore(LB_GAME, initials, scoreVal, sats).then(function(){
+          saved = true;
+          saveBtn.textContent = 'SAVED AS ' + initials + ' ✓';
+          refreshBoard();
+        });
+      });
+    };
+  }
+
+  document.getElementById('beginBtn').onclick = function(){
+    document.getElementById('intro-panel').style.display = 'none';
+    document.getElementById('game-panel').style.display = 'block';
+    startStopwatch();
+  };
+})();
+</script>
+</body>
+</html>
