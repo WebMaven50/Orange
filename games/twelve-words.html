@@ -110,7 +110,7 @@
 <div class="container">
   <p class="eyebrow">The Orange Robot · Game 11</p>
   <h1>Twelve Words</h1>
-  <p class="lede">Frank never trusted a bank, and he never trusted paper either. What he trusted was memory — twelve ordinary words, in one exact order, scratched into twelve scraps and hidden around the workshop. You've found all twelve. You just don't know which goes where. The vault re-locks itself in eight minutes.</p>
+  <p class="lede">Joey never trusted a bank, and he never trusted paper either. What he trusted was memory — twelve ordinary words, in one exact order, scratched into twelve scraps and hidden around the workshop. You've found all twelve. You just don't know which goes where. The vault re-locks itself in eight minutes.</p>
 
   <div id="intro-panel" class="intro-card">
     <p>This is a real BIP39 recovery phrase — the same kind of twelve-word seed that unlocks an actual Bitcoin wallet. Twelve words, twelve clues, one correct order.</p>
@@ -194,7 +194,7 @@
     "It turns, it clicks, and without it, cold storage stays cold forever.",
     "Coiled metal, wound tight — the same word for the season after winter, and for the small part that made the robot walk.",
     "Seven good years, then seven lean ones. What do you call the gathering-in, before the fields go quiet?",
-    "Frank told Joey almost everything, eventually — except this, for a very long time.",
+    "This is the one thing Joey never told his brothers — not once, not even when it would've been easier to.",
     "A room with thick walls, built for exactly one purpose: to keep something safe from everyone but you.",
     "Count the scraps of paper in your hand right now. That's your answer.",
     "Insert the sixth word into the mechanism, turn it — and this is what finally happens to the door."
@@ -374,7 +374,7 @@
 
     if(success){
       titleEl.textContent = 'The Vault Opens';
-      narrEl.textContent = 'Twelve words, one exact order — the same way Frank left it. "Not silver, not gold, but the words themselves" (a line he liked to repeat, and Joey finally understood why).';
+      narrEl.textContent = 'Twelve words, one exact order — exactly how Joey arranged them, back when this was still just a hunch worth protecting. "Not silver, not gold, but the words themselves" — the kind of thing you don\'t understand until you\'re the one holding the keys.';
       phraseEl.textContent = ANSWER.join(' · ');
       var timeBonus = Math.round((timeLeft / TOTAL_TIME) * 100);
       var attemptsPenalty = Math.min(50, wrongAttempts * 5);
