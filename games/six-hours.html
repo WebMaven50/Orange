@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Six Hours — The Orange Robot</title>
+  <meta name="description" content="A Vault scene from The Orange Robot: real blackjack, roulette, and craps odds. You are Mike. The only real decision is when to stop." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="https://theorangerobot.com/games/six-hours.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:#0d0b09; --rust:#6b4a2e; --rust-glow:#8a5f3a;
+      --parchment:#e8e0d0; --parchment2:#a89a88;
+      --smoke:#161210; --smoke2:#201a16; --smoke3:#2a221c;
+      --ash:#6e6258; --key-gold:#a89158; --white:#e8e0d0;
+      --green:#4a8f63; --green-dim:#356b47; --red:#a4423a;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--ink);color:var(--parchment);font-family:'EB Garamond',serif;min-height:100vh}
+    nav{padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--smoke3)}
+    .nav-logo{font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.2em;color:var(--key-gold);text-decoration:none}
+    .nav-back{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--ash);text-decoration:none}
+    .nav-back:hover{color:var(--white)}
+    .sats-bar{background:var(--smoke2);border-bottom:1px solid var(--smoke3);padding:0.6rem 2rem;display:flex;align-items:center;gap:0.6rem}
+    .sats-bar span{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--key-gold);letter-spacing:0.1em}
+    .sats-bar label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.15em;text-transform:uppercase}
+    .container{max-width:780px;margin:0 auto;padding:2rem 1.5rem}
+    .eyebrow{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.25em;color:var(--rust-glow);text-transform:uppercase;margin-bottom:0.8rem}
+    h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,5vw,2.4rem);font-weight:400;color:var(--white);margin-bottom:0.5rem}
+    .lede{font-style:italic;color:var(--parchment2);margin-bottom:2rem;font-size:1.05rem}
+
+    .card{background:var(--smoke2);border:1px solid var(--smoke3);padding:1.6rem;margin-bottom:1.2rem}
+    .card p{margin-bottom:1rem;line-height:1.6;color:var(--parchment2)}
+    .card p:last-of-type{margin-bottom:1.4rem}
+
+    .status-bar{display:flex;justify-content:space-between;align-items:center;background:var(--smoke3);border:1px solid var(--smoke3);padding:0.8rem 1.2rem;margin-bottom:1rem;flex-wrap:wrap;gap:0.6rem}
+    .chip-stack{font-family:'Cinzel',serif;font-size:1.4rem;color:var(--key-gold)}
+    .chip-stack.up{color:var(--green)}
+    .chip-stack.down{color:var(--red)}
+    .clock{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--ash);letter-spacing:0.1em}
+
+    .walk-away-row{display:flex;justify-content:center;margin-bottom:1.2rem}
+    .btn-walk{font-family:'Cinzel',serif;font-size:0.78rem;letter-spacing:0.1em;text-transform:uppercase;background:var(--smoke3);border:1px solid var(--ash);color:var(--parchment2);padding:0.7rem 1.6rem;cursor:pointer;transition:all 0.3s}
+    .btn-walk.tempt{border-color:var(--green);color:var(--green);box-shadow:0 0 14px rgba(74,143,99,0.35)}
+    .walk-hint{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--green);margin-bottom:1rem;min-height:1.2em;font-style:italic}
+
+    .table-tabs{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.2rem}
+    .table-tab{font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;background:var(--smoke3);border:1px solid var(--smoke3);color:var(--parchment2);padding:0.6rem 1.1rem;cursor:pointer}
+    .table-tab.active{background:var(--rust);color:var(--white);border-color:var(--rust)}
+
+    .table-panel{display:none;background:var(--smoke3);border:1px solid var(--smoke3);padding:1.4rem;margin-bottom:1rem;min-height:220px}
+    .table-panel.active{display:block}
+    .hand-row{display:flex;justify-content:center;gap:2rem;margin-bottom:1rem;flex-wrap:wrap}
+    .hand-col{text-align:center}
+    .hand-lbl{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem}
+    .cards{display:flex;gap:0.3rem;justify-content:center}
+    .playing-card{width:38px;height:54px;background:var(--parchment);border:1px solid var(--ink);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:0.9rem;color:var(--ink)}
+    .playing-card.red-suit{color:var(--red)}
+    .playing-card.hidden{background:var(--smoke);color:var(--smoke)}
+    .hand-total{font-family:'Cinzel',serif;font-size:1rem;color:var(--white);margin-top:0.4rem}
+
+    .wheel-result{text-align:center;font-family:'Cinzel',serif;font-size:2rem;margin-bottom:0.6rem}
+    .wheel-result.red-num{color:var(--red)}
+    .wheel-result.black-num{color:var(--parchment)}
+    .wheel-result.green-num{color:var(--green)}
+
+    .bet-row{display:flex;gap:0.5rem;justify-content:center;margin-bottom:1rem;flex-wrap:wrap}
+    .bet-btn{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;background:var(--smoke2);border:1px solid var(--ash);color:var(--parchment2);padding:0.5rem 0.9rem;cursor:pointer}
+    .bet-btn.active{background:var(--rust);color:var(--white);border-color:var(--rust)}
+    .bet-btn:disabled{opacity:0.35;cursor:not-allowed}
+
+    .action-row{display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;margin-bottom:0.8rem}
+    .action-btn{font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;background:var(--rust);color:var(--white);border:none;padding:0.6rem 1.2rem;cursor:pointer}
+    .action-btn:hover:not(:disabled){background:var(--rust-glow)}
+    .action-btn:disabled{opacity:0.35;cursor:not-allowed}
+    .action-btn.secondary{background:var(--smoke2);border:1px solid var(--ash)}
+
+    .result-msg{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:0.85rem;min-height:1.4em;margin-top:0.6rem}
+    .result-msg.win{color:var(--green)}
+    .result-msg.lose{color:var(--red)}
+    .result-msg.push{color:var(--ash)}
+
+    .end-card{background:var(--smoke2);border:1px solid var(--smoke3);padding:1.8rem;text-align:center;margin-bottom:1.2rem}
+    .end-title{font-family:'Cinzel',serif;font-size:1.4rem;color:var(--white);margin-bottom:0.8rem}
+    .end-narrative{color:var(--parchment2);line-height:1.7;font-style:italic;margin-bottom:1.2rem}
+    .end-stats-row{display:flex;justify-content:center;gap:1.5rem;margin-bottom:1.2rem;flex-wrap:wrap}
+    .stat-box{text-align:center;background:var(--smoke3);border:1px solid var(--smoke3);padding:0.7rem 1.4rem;min-width:110px}
+    .stat-val{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--key-gold);display:block}
+    .stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--ash);letter-spacing:0.12em;text-transform:uppercase}
+    .end-sats{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--key-gold)}
+
+    .btn{font-family:'Cinzel',serif;font-size:0.74rem;letter-spacing:0.08em;text-transform:uppercase;
+      padding:0.7rem 1.3rem;border:none;cursor:pointer;color:var(--white);transition:background 0.2s}
+    .btn-continue{background:var(--rust);padding:0.75rem 1.8rem}
+    .btn-continue:hover{background:var(--rust-glow)}
+    .btn-claim{background:var(--green-dim);padding:0.85rem 2rem;font-size:0.78rem}
+    .btn-claim:hover:not(:disabled){background:#3f9b58}
+    .btn:disabled{opacity:0.45;cursor:not-allowed}
+    .btn-row{display:flex;gap:0.7rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+    a.btn-hub{display:inline-block;text-decoration:none;background:var(--smoke3);color:var(--parchment2);font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.6rem 1.4rem;margin-top:1rem}
+    a.btn-hub:hover{color:var(--white)}
+  </style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">The Vault</a>
+  <a href="index.html" class="nav-back">← Back to Hub</a>
+</nav>
+<div class="sats-bar">
+  <label>Total Sats:</label>
+  <span id="hub-sats">0 ⚡</span>
+</div>
+<div class="container">
+  <p class="eyebrow">The Orange Robot · Game 16</p>
+  <h1>Six Hours</h1>
+  <p class="lede">Mike had been at the blackjack table for six hours. He started with thirty thousand and fifty dollars — the fifty was Frank's, given to Joey as a boy, a lifetime ago. Tonight, you're Mike. The house has better math than you do. The only real decision is when to stop.</p>
+
+  <div id="intro-panel" class="card">
+    <p>Three tables, real rules, real odds — nothing here is rigged against you beyond what an actual casino already has built in. Blackjack pays 3:2 on a natural, dealer stands on 17. Roulette is an American double-zero wheel. Craps is pass-line only.</p>
+    <p>You can walk away from the table at any time, with whatever's in front of you. Nothing forces you to keep playing. That's the whole point.</p>
+    <div class="btn-row">
+      <button class="btn btn-continue" id="beginBtn">Sit Down →</button>
+    </div>
+  </div>
+
+  <div id="game-panel" style="display:none">
+    <div class="status-bar">
+      <div>
+        <div class="chip-stack" id="chipStack">$30,050</div>
+        <div class="clock" id="sessionClock">10:12 PM</div>
+      </div>
+      <button class="btn-walk" id="walkBtn">Walk Away</button>
+    </div>
+    <div class="walk-hint" id="walkHint">&nbsp;</div>
+
+    <div class="table-tabs">
+      <button class="table-tab active" data-table="blackjack">Blackjack</button>
+      <button class="table-tab" data-table="roulette">Roulette</button>
+      <button class="table-tab" data-table="craps">Craps</button>
+    </div>
+
+    <!-- BLACKJACK -->
+    <div class="table-panel active" id="table-blackjack">
+      <div class="bet-row" id="bjBetRow">
+        <button class="bet-btn" data-amt="50">$50</button>
+        <button class="bet-btn" data-amt="200">$200</button>
+        <button class="bet-btn" data-amt="1000">$1,000</button>
+        <button class="bet-btn" data-amt="5000">$5,000</button>
+      </div>
+      <div class="hand-row">
+        <div class="hand-col">
+          <div class="hand-lbl">Dealer</div>
+          <div class="cards" id="bjDealerCards"></div>
+          <div class="hand-total" id="bjDealerTotal">&nbsp;</div>
+        </div>
+        <div class="hand-col">
+          <div class="hand-lbl">You</div>
+          <div class="cards" id="bjPlayerCards"></div>
+          <div class="hand-total" id="bjPlayerTotal">&nbsp;</div>
+        </div>
+      </div>
+      <div class="action-row" id="bjActions">
+        <button class="action-btn" id="bjDealBtn">Deal</button>
+      </div>
+      <div class="result-msg" id="bjMsg"></div>
+    </div>
+
+    <!-- ROULETTE -->
+    <div class="table-panel" id="table-roulette">
+      <div class="bet-row" id="rlBetRow">
+        <button class="bet-btn" data-amt="50">$50</button>
+        <button class="bet-btn" data-amt="200">$200</button>
+        <button class="bet-btn" data-amt="1000">$1,000</button>
+        <button class="bet-btn" data-amt="5000">$5,000</button>
+      </div>
+      <div class="bet-row" id="rlTypeRow">
+        <button class="bet-btn" data-type="red">Red</button>
+        <button class="bet-btn" data-type="black">Black</button>
+        <button class="bet-btn" data-type="odd">Odd</button>
+        <button class="bet-btn" data-type="even">Even</button>
+        <button class="bet-btn" data-type="low">1–18</button>
+        <button class="bet-btn" data-type="high">19–36</button>
+      </div>
+      <div class="wheel-result" id="rlResult">—</div>
+      <div class="action-row">
+        <button class="action-btn" id="rlSpinBtn">Spin</button>
+      </div>
+      <div class="result-msg" id="rlMsg"></div>
+    </div>
+
+    <!-- CRAPS -->
+    <div class="table-panel" id="table-craps">
+      <div class="bet-row" id="crBetRow">
+        <button class="bet-btn" data-amt="50">$50</button>
+        <button class="bet-btn" data-amt="200">$200</button>
+        <button class="bet-btn" data-amt="1000">$1,000</button>
+        <button class="bet-btn" data-amt="5000">$5,000</button>
+      </div>
+      <div class="wheel-result" id="crResult">—</div>
+      <div class="hand-total" id="crPoint">&nbsp;</div>
+      <div class="action-row">
+        <button class="action-btn" id="crRollBtn">Come Out Roll</button>
+      </div>
+      <div class="result-msg" id="crMsg"></div>
+    </div>
+  </div>
+
+  <div id="end-panel" style="display:none">
+    <div class="end-card">
+      <div class="end-title" id="endTitle"></div>
+      <p class="end-narrative" id="endNarrative"></p>
+      <div class="end-stats-row">
+        <div class="stat-box"><span class="stat-val" id="endChips">$0</span><span class="stat-lbl">Left the Table With</span></div>
+        <div class="stat-box"><span class="stat-val" id="endRounds">0</span><span class="stat-lbl">Rounds Played</span></div>
+      </div>
+      <p style="color:var(--ash);font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem">Reward</p>
+      <div class="end-sats" id="endSats">+0 ⚡</div>
+      <div class="btn-row" style="margin-top:1.2rem">
+        <button class="btn btn-claim" id="claimBtn">Claim Reward →</button>
+      </div>
+    </div>
+    <div style="text-align:center"><a href="index.html" class="btn-hub">← Back to Vault</a></div>
+  </div>
+
+</div>
+
+<script src="wallet.js"></script>
+<script>
+(function(){
+  var hubSats = document.getElementById('hub-sats');
+  function updateHubSats(){ hubSats.textContent = TOR.fmt(TOR.getSats()) + ' ⚡'; }
+  updateHubSats();
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  function fmtUsd(n){ return '$' + Math.round(n).toLocaleString('en-US'); }
+
+  var STARTING_CHIPS = 30050;
+  var chips = STARTING_CHIPS;
+  var roundsPlayed = 0;
+  var sessionMinutes = 0; // minutes since 10:00 PM
+  var ended = false;
+
+  var chipStackEl = document.getElementById('chipStack');
+  var clockEl = document.getElementById('sessionClock');
+  var walkBtn = document.getElementById('walkBtn');
+  var walkHint = document.getElementById('walkHint');
+
+  function fmtClock(mins){
+    var totalMin = 22*60 + mins; // start at 10:00 PM
+    var h = Math.floor(totalMin/60) % 24;
+    var m = totalMin % 60;
+    var ampm = h < 12 ? 'AM' : 'PM';
+    var h12 = h % 12; if(h12===0) h12 = 12;
+    return h12 + ':' + (m<10?'0':'') + m + ' ' + ampm;
+  }
+
+  function updateStatus(){
+    chipStackEl.textContent = fmtUsd(chips);
+    chipStackEl.className = 'chip-stack ' + (chips > STARTING_CHIPS ? 'up' : (chips < STARTING_CHIPS ? 'down' : ''));
+    clockEl.textContent = fmtClock(sessionMinutes);
+    if(chips >= STARTING_CHIPS && chips > 0){
+      walkBtn.classList.add('tempt');
+      walkHint.textContent = 'You\'re at or above where you started. This is the moment Mike never took.';
+    } else {
+      walkBtn.classList.remove('tempt');
+      walkHint.textContent = ' ';
+    }
+  }
+
+  function advanceClock(){
+    sessionMinutes += 8 + Math.floor(Math.random()*12); // ~8-20 min per round
+  }
+
+  function checkBust(){
+    if(chips <= 0){
+      chips = 0;
+      endSession(true, false);
+      return true;
+    }
+    return false;
+  }
+
+  // ---------- table switching ----------
+  var tabs = document.querySelectorAll('.table-tab');
+  tabs.forEach(function(tab){
+    tab.addEventListener('click', function(){
+      tabs.forEach(function(t){ t.classList.remove('active'); });
+      tab.classList.add('active');
+      document.querySelectorAll('.table-panel').forEach(function(p){ p.classList.remove('active'); });
+      document.getElementById('table-' + tab.dataset.table).classList.add('active');
+    });
+  });
+
+  // ================= BLACKJACK =================
+  (function(){
+    var betAmt = 50;
+    var betRow = document.getElementById('bjBetRow');
+    var dealBtn = document.getElementById('bjDealBtn');
+    var actions = document.getElementById('bjActions');
+    var msgEl = document.getElementById('bjMsg');
+    var dealerCardsEl = document.getElementById('bjDealerCards');
+    var playerCardsEl = document.getElementById('bjPlayerCards');
+    var dealerTotalEl = document.getElementById('bjDealerTotal');
+    var playerTotalEl = document.getElementById('bjPlayerTotal');
+
+    betRow.querySelectorAll('.bet-btn').forEach(function(b){
+      b.addEventListener('click', function(){
+        betRow.querySelectorAll('.bet-btn').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active');
+        betAmt = parseInt(b.dataset.amt, 10);
+      });
+    });
+    betRow.querySelector('.bet-btn').classList.add('active');
+
+    var SUITS = ['♠','♥','♦','♣'];
+    function drawCard(){
+      var rank = 1 + Math.floor(Math.random()*13); // 1=A, 11/12/13=J/Q/K
+      var suit = SUITS[Math.floor(Math.random()*4)];
+      var value = rank===1 ? 11 : Math.min(rank,10);
+      var label = rank===1?'A':(rank===11?'J':(rank===12?'Q':(rank===13?'K':String(rank))));
+      return { label: label, suit: suit, value: value, red: (suit==='♥'||suit==='♦') };
+    }
+    function handValue(hand){
+      var total = 0, aces = 0;
+      hand.forEach(function(c){ total += c.value; if(c.value===11) aces++; });
+      while(total > 21 && aces > 0){ total -= 10; aces--; }
+      return total;
+    }
+    function renderHand(el, hand, hideSecond){
+      el.innerHTML = '';
+      hand.forEach(function(c, i){
+        var d = document.createElement('div');
+        if(hideSecond && i===1){
+          d.className = 'playing-card hidden';
+          d.textContent = '?';
+        } else {
+          d.className = 'playing-card' + (c.red ? ' red-suit' : '');
+          d.textContent = c.label + c.suit;
+        }
+        el.appendChild(d);
+      });
+    }
+
+    var playerHand, dealerHand, bet, roundOver;
+
+    function startRound(){
+      if(chips <= 0) return;
+      bet = Math.min(betAmt, chips);
+      chips -= bet;
+      updateStatus();
+      playerHand = [drawCard(), drawCard()];
+      dealerHand = [drawCard(), drawCard()];
+      roundOver = false;
+      renderHand(playerCardsEl, playerHand, false);
+      renderHand(dealerCardsEl, dealerHand, true);
+      playerTotalEl.textContent = handValue(playerHand);
+      dealerTotalEl.textContent = '?';
+      msgEl.textContent = '';
+      msgEl.className = 'result-msg';
+      dealBtn.style.display = 'none';
+      actions.innerHTML = '';
+      var hitBtn = mkBtn('Hit', hit);
+      var standBtn = mkBtn('Stand', stand);
+      var doubleBtn = mkBtn('Double', doubleDown, 'secondary');
+      if(chips < bet) doubleBtn.disabled = true;
+      actions.appendChild(hitBtn); actions.appendChild(standBtn); actions.appendChild(doubleBtn);
+
+      var pv = handValue(playerHand);
+      if(pv === 21){ stand(); }
+    }
+
+    function mkBtn(label, fn, cls){
+      var b = document.createElement('button');
+      b.className = 'action-btn' + (cls?' '+cls:'');
+      b.textContent = label;
+      b.onclick = fn;
+      return b;
+    }
+
+    function hit(){
+      if(roundOver) return;
+      playerHand.push(drawCard());
+      renderHand(playerCardsEl, playerHand, false);
+      var pv = handValue(playerHand);
+      playerTotalEl.textContent = pv;
+      if(pv > 21){ resolve('bust'); }
+      else if(pv === 21){ stand(); }
+    }
+
+    function doubleDown(){
+      if(roundOver || chips < bet) return;
+      chips -= bet;
+      bet *= 2;
+      updateStatus();
+      playerHand.push(drawCard());
+      renderHand(playerCardsEl, playerHand, false);
+      playerTotalEl.textContent = handValue(playerHand);
+      if(handValue(playerHand) > 21){ resolve('bust'); }
+      else { stand(); }
+    }
+
+    function stand(){
+      if(roundOver) return;
+      roundOver = true;
+      renderHand(dealerCardsEl, dealerHand, false);
+      while(handValue(dealerHand) < 17){ dealerHand.push(drawCard()); }
+      renderHand(dealerCardsEl, dealerHand, false);
+      var dv = handValue(dealerHand);
+      dealerTotalEl.textContent = dv;
+      var pv = handValue(playerHand);
+      if(dv > 21) resolve('dealerbust');
+      else if(dv > pv) resolve('lose');
+      else if(dv < pv) resolve('win');
+      else resolve('push');
+    }
+
+    function resolve(outcome){
+      roundOver = true;
+      var pv = handValue(playerHand);
+      var playerNatural = playerHand.length===2 && pv===21;
+      var dealerNatural = dealerHand.length===2 && handValue(dealerHand)===21;
+      var winnings = 0;
+      if(outcome==='bust'){
+        msgEl.textContent = 'Bust — you lose $' + bet.toLocaleString('en-US') + '.';
+        msgEl.className = 'result-msg lose';
+      } else if(outcome==='dealerbust' || outcome==='win'){
+        if(playerNatural && !dealerNatural){
+          winnings = bet + Math.round(bet*1.5);
+          msgEl.textContent = 'Blackjack! +$' + Math.round(bet*1.5).toLocaleString('en-US');
+        } else {
+          winnings = bet*2;
+          msgEl.textContent = 'You win $' + bet.toLocaleString('en-US') + '.';
+        }
+        msgEl.className = 'result-msg win';
+      } else if(outcome==='push'){
+        winnings = bet;
+        msgEl.textContent = playerNatural && dealerNatural ? 'Both blackjack — push.' : 'Push.';
+        msgEl.className = 'result-msg push';
+      } else {
+        msgEl.textContent = 'Dealer wins. -$' + bet.toLocaleString('en-US') + '.';
+        msgEl.className = 'result-msg lose';
+      }
+      chips += winnings;
+      roundsPlayed++;
+      advanceClock();
+      updateStatus();
+      dealBtn.style.display = 'inline-block';
+      dealBtn.textContent = 'Deal Again';
+      actions.innerHTML = '';
+      actions.appendChild(dealBtn);
+      if(checkBust()) return;
+    }
+
+    dealBtn.addEventListener('click', startRound);
+  })();
+
+  // ================= ROULETTE =================
+  (function(){
+    var RED = {1:1,3:1,5:1,7:1,9:1,12:1,14:1,16:1,18:1,19:1,21:1,23:1,25:1,27:1,30:1,32:1,34:1,36:1};
+    var betAmt = 50, betType = null;
+    var betRow = document.getElementById('rlBetRow');
+    var typeRow = document.getElementById('rlTypeRow');
+    var spinBtn = document.getElementById('rlSpinBtn');
+    var resultEl = document.getElementById('rlResult');
+    var msgEl = document.getElementById('rlMsg');
+
+    betRow.querySelectorAll('.bet-btn').forEach(function(b){
+      b.addEventListener('click', function(){
+        betRow.querySelectorAll('.bet-btn').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active');
+        betAmt = parseInt(b.dataset.amt, 10);
+      });
+    });
+    betRow.querySelector('.bet-btn').classList.add('active');
+
+    typeRow.querySelectorAll('.bet-btn').forEach(function(b){
+      b.addEventListener('click', function(){
+        typeRow.querySelectorAll('.bet-btn').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active');
+        betType = b.dataset.type;
+      });
+    });
+
+    function spin(){
+      if(!betType){ msgEl.textContent = 'Pick a bet type first.'; msgEl.className='result-msg lose'; return; }
+      if(chips <= 0) return;
+      var actualBet = Math.min(betAmt, chips);
+      chips -= actualBet;
+      updateStatus();
+
+      var pocket = Math.floor(Math.random()*38); // 0-37; 37 represents "00"
+      var label, color;
+      if(pocket === 0){ label='0'; color='green'; }
+      else if(pocket === 37){ label='00'; color='green'; }
+      else {
+        label = String(pocket);
+        color = RED[pocket] ? 'red' : 'black';
+      }
+      resultEl.textContent = label;
+      resultEl.className = 'wheel-result ' + color + '-num';
+
+      var win = false;
+      if(color !== 'green'){
+        var n = pocket;
+        if(betType==='red' && color==='red') win = true;
+        else if(betType==='black' && color==='black') win = true;
+        else if(betType==='odd' && n%2===1) win = true;
+        else if(betType==='even' && n%2===0 && n!==0) win = true;
+        else if(betType==='low' && n>=1 && n<=18) win = true;
+        else if(betType==='high' && n>=19 && n<=36) win = true;
+      }
+
+      if(win){
+        chips += actualBet*2;
+        msgEl.textContent = 'Winner — +$' + actualBet.toLocaleString('en-US') + '.';
+        msgEl.className = 'result-msg win';
+      } else {
+        msgEl.textContent = 'No luck. -$' + actualBet.toLocaleString('en-US') + '.';
+        msgEl.className = 'result-msg lose';
+      }
+      roundsPlayed++;
+      advanceClock();
+      updateStatus();
+      if(checkBust()) return;
+    }
+    spinBtn.addEventListener('click', spin);
+  })();
+
+  // ================= CRAPS =================
+  (function(){
+    var betAmt = 50;
+    var betRow = document.getElementById('crBetRow');
+    var rollBtn = document.getElementById('crRollBtn');
+    var resultEl = document.getElementById('crResult');
+    var pointEl = document.getElementById('crPoint');
+    var msgEl = document.getElementById('crMsg');
+    var point = null, bet = 0;
+
+    betRow.querySelectorAll('.bet-btn').forEach(function(b){
+      b.addEventListener('click', function(){
+        betRow.querySelectorAll('.bet-btn').forEach(function(x){ x.classList.remove('active'); });
+        b.classList.add('active');
+        betAmt = parseInt(b.dataset.amt, 10);
+      });
+    });
+    betRow.querySelector('.bet-btn').classList.add('active');
+
+    function rollDice(){ return 1+Math.floor(Math.random()*6) + 1+Math.floor(Math.random()*6); }
+
+    function roll(){
+      if(point === null){
+        if(chips <= 0) return;
+        bet = Math.min(betAmt, chips);
+        chips -= bet;
+        updateStatus();
+        betRow.querySelectorAll('.bet-btn').forEach(function(b){ b.disabled = true; });
+      }
+      var sum = rollDice();
+      resultEl.textContent = sum;
+      resultEl.className = 'wheel-result';
+
+      if(point === null){
+        if(sum===7 || sum===11){
+          settleCraps(true, 'Natural ' + sum + ' — you win $' + bet.toLocaleString('en-US') + '.');
+        } else if(sum===2 || sum===3 || sum===12){
+          settleCraps(false, 'Craps (' + sum + ') — you lose $' + bet.toLocaleString('en-US') + '.');
+        } else {
+          point = sum;
+          pointEl.textContent = 'Point is ' + point;
+          rollBtn.textContent = 'Roll';
+          msgEl.textContent = 'Point set at ' + point + '. Roll it again before a 7.';
+          msgEl.className = 'result-msg';
+        }
+      } else {
+        if(sum === point){
+          settleCraps(true, 'Hit the point (' + point + ') — you win $' + bet.toLocaleString('en-US') + '.');
+        } else if(sum === 7){
+          settleCraps(false, 'Seven out — you lose $' + bet.toLocaleString('en-US') + '.');
+        } else {
+          msgEl.textContent = 'Rolled ' + sum + '. Still need ' + point + ' before a 7.';
+          msgEl.className = 'result-msg';
+        }
+      }
+    }
+
+    function settleCraps(win, message){
+      if(win) chips += bet*2;
+      msgEl.textContent = message;
+      msgEl.className = 'result-msg ' + (win ? 'win' : 'lose');
+      point = null;
+      pointEl.textContent = ' ';
+      rollBtn.textContent = 'Come Out Roll';
+      betRow.querySelectorAll('.bet-btn').forEach(function(b){ b.disabled = false; });
+      roundsPlayed++;
+      advanceClock();
+      updateStatus();
+      if(checkBust()) return;
+    }
+
+    rollBtn.addEventListener('click', roll);
+  })();
+
+  // ================= WALK AWAY / SESSION END =================
+  walkBtn.addEventListener('click', function(){
+    endSession(false, true);
+  });
+
+  function endSession(busted, walked){
+    if(ended) return;
+    ended = true;
+    document.getElementById('game-panel').style.display = 'none';
+    document.getElementById('end-panel').style.display = 'block';
+
+    var titleEl = document.getElementById('endTitle');
+    var narrEl = document.getElementById('endNarrative');
+    var sats;
+
+    if(busted){
+      titleEl.textContent = 'Every Dollar. Every Cent.';
+      narrEl.textContent = 'The stack that represented thirty thousand dollars is gone. Every cent of it — including the original fifty dollars Frank gave Joey as a boy. The dealer looks at you with the practiced neutrality of someone who\'s seen this a thousand times. Somewhere out there, the sun is coming up gray over Atlantic City.';
+      sats = 15;
+    } else if(chips >= STARTING_CHIPS){
+      titleEl.textContent = 'You Are Not Mike';
+      narrEl.textContent = 'You walked away ahead. Nothing about the math changes that this was still a losing game to keep playing — the house edge doesn\'t forgive winners who stay. But you stopped. That\'s the entire difference between you and how this chapter actually ends.';
+      sats = clamp(Math.round((chips/STARTING_CHIPS)*200), 20, 250);
+    } else {
+      titleEl.textContent = 'You Walked Away';
+      narrEl.textContent = 'You\'re down, but you\'re not at zero, and you\'re not still sitting at that table telling yourself the next hand is the one that fixes it. That decision — stopping before the number hits zero — is the one Mike never made.';
+      sats = clamp(Math.round((chips/STARTING_CHIPS)*200), 20, 250);
+    }
+
+    document.getElementById('endChips').textContent = fmtUsd(chips);
+    document.getElementById('endRounds').textContent = roundsPlayed;
+    document.getElementById('endSats').textContent = '+' + sats + ' ⚡';
+
+    var claimBtn = document.getElementById('claimBtn');
+    claimBtn.disabled = false;
+    claimBtn.onclick = function(){
+      TOR.earn(sats, 'Six Hours');
+      TOR.markDone('six-hours');
+      TOR.toast(sats);
+      updateHubSats();
+      claimBtn.textContent = 'Claimed ✓';
+      claimBtn.disabled = true;
+    };
+  }
+
+  document.getElementById('beginBtn').onclick = function(){
+    document.getElementById('intro-panel').style.display = 'none';
+    document.getElementById('game-panel').style.display = 'block';
+    updateStatus();
+  };
+})();
+</script>
+</body>
+</html>
