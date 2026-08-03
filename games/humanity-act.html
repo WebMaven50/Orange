@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Humanity Act — The Orange Robot</title>
+  <meta name="description" content="A Vault scene from The Orange Robot: solve the desk crossword, then decide how much of the workforce stays human." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="https://theorangerobot.com/games/humanity-act.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:#0d0b09; --rust:#b5541a; --rust-glow:#e06820;
+      --parchment:#f0e8d8; --parchment2:#c8b89a;
+      --smoke:#1a1410; --smoke2:#241d16; --smoke3:#2e2519;
+      --ash:#7a6e62; --key-gold:#c9a84c; --white:#f5f0e8;
+      --green:#54c97a; --green-dim:#1f8a4d; --red:#d9534f;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--ink);color:var(--parchment);font-family:'EB Garamond',serif;min-height:100vh}
+    nav{padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--smoke3)}
+    .nav-logo{font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.2em;color:var(--key-gold);text-decoration:none}
+    .nav-back{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--ash);text-decoration:none}
+    .nav-back:hover{color:var(--white)}
+    .sats-bar{background:var(--smoke2);border-bottom:1px solid var(--smoke3);padding:0.6rem 2rem;display:flex;align-items:center;gap:0.6rem}
+    .sats-bar span{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--key-gold);letter-spacing:0.1em}
+    .sats-bar label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.15em;text-transform:uppercase}
+    .container{max-width:780px;margin:0 auto;padding:2rem 1.5rem}
+    .eyebrow{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.25em;color:var(--rust);text-transform:uppercase;margin-bottom:0.8rem}
+    h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,5vw,2.4rem);font-weight:400;color:var(--white);margin-bottom:0.5rem}
+    .lede{font-style:italic;color:var(--parchment2);margin-bottom:2rem;font-size:1.05rem}
+
+    .card{background:var(--smoke2);border:1px solid var(--smoke3);padding:1.6rem;margin-bottom:1.2rem}
+    .card p{margin-bottom:1rem;line-height:1.6;color:var(--parchment2)}
+    .card p:last-of-type{margin-bottom:1.4rem}
+    .card blockquote{border-left:3px solid var(--rust);padding-left:1rem;margin:1rem 0;font-style:italic;color:var(--parchment)}
+    .phase-label{font-family:'Cinzel',serif;font-size:0.78rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--rust-glow);text-align:center;margin-bottom:1rem}
+
+    /* crossword */
+    .xword-wrap{display:flex;justify-content:center;margin-bottom:1.2rem}
+    .xword-grid{display:grid;grid-template-columns:repeat(7,minmax(30px,42px));grid-template-rows:repeat(7,minmax(30px,42px));gap:2px;background:var(--smoke3)}
+    .xcell{position:relative;background:var(--parchment);display:flex;align-items:center;justify-content:center}
+    .xcell.black{background:var(--ink)}
+    .xcell input{width:100%;height:100%;border:none;background:transparent;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:1.1rem;color:var(--ink);text-transform:uppercase;outline:none}
+    .xcell input.correct{background:rgba(84,201,122,0.35)}
+    .xcell input.incorrect{background:rgba(217,83,79,0.35)}
+    .xcell .xnum{position:absolute;top:1px;left:2px;font-size:0.5rem;color:var(--rust);font-family:'IBM Plex Mono',monospace}
+    .clue-cols{display:flex;gap:2rem;justify-content:center;margin-bottom:1.2rem;flex-wrap:wrap}
+    .clue-col h3{font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--key-gold);margin-bottom:0.5rem}
+    .clue-col ol{list-style:none;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--parchment2);line-height:1.9;max-width:280px}
+    .clue-col li{margin-bottom:0.3rem}
+    .clue-col b{color:var(--white);margin-right:0.3rem}
+
+    /* boardroom */
+    .stat-row{display:flex;justify-content:center;gap:1rem;margin-bottom:1.1rem;flex-wrap:wrap}
+    .stat-box{text-align:center;background:var(--smoke3);border:1px solid var(--smoke3);padding:0.6rem 1.1rem;min-width:100px}
+    .stat-val{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--key-gold);display:block}
+    .stat-val.good{color:var(--green)}
+    .stat-val.bad{color:var(--red)}
+    .stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--ash);letter-spacing:0.12em;text-transform:uppercase}
+
+    .curve-wrap{background:var(--smoke3);border:1px solid var(--smoke3);padding:1rem;margin-bottom:1rem}
+    .curve-svg{width:100%;height:auto;display:block}
+    .curve-caption{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.08em;margin-top:0.4rem}
+
+    .slider-row{margin-bottom:1.2rem}
+    .slider-row input[type=range]{width:100%}
+    .slider-labels{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.08em;margin-top:0.2rem}
+
+    .flag-row{display:flex;justify-content:center;gap:1.4rem;margin-bottom:1.2rem}
+    .flag-item{text-align:center;width:80px}
+    .flag-emoji{font-size:1.6rem}
+    .flag-bar-track{background:var(--smoke3);height:8px;margin-top:0.4rem;border-radius:4px;overflow:hidden}
+    .flag-bar-fill{background:var(--rust-glow);height:100%;width:0%;transition:width 0.15s}
+    .flag-lbl{font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--ash);letter-spacing:0.05em;margin-top:0.3rem}
+
+    .warn-box{background:rgba(217,83,79,0.12);border:1px solid var(--red);padding:0.8rem 1rem;margin-bottom:1.1rem;font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--red);text-align:center;display:none}
+    .warn-box.show{display:block}
+
+    .msg-box{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--parchment2);min-height:1.4em;margin-bottom:1rem}
+    .msg-box.bad{color:var(--red)}
+    .msg-box.good{color:var(--green)}
+
+    .btn-row{display:flex;gap:0.7rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+    .btn{font-family:'Cinzel',serif;font-size:0.74rem;letter-spacing:0.08em;text-transform:uppercase;
+      padding:0.7rem 1.3rem;border:none;cursor:pointer;color:var(--white);transition:background 0.2s}
+    .btn-check{background:#3c4252}
+    .btn-check:hover{background:#5a6273}
+    .btn-continue{background:var(--rust);padding:0.75rem 1.8rem}
+    .btn-continue:hover{background:var(--rust-glow)}
+    .btn-claim{background:var(--green-dim);padding:0.85rem 2rem;font-size:0.78rem}
+    .btn-claim:hover:not(:disabled){background:#27b86b}
+    .btn:disabled{opacity:0.45;cursor:not-allowed}
+    a.btn-hub{display:inline-block;text-decoration:none;background:var(--smoke3);color:var(--parchment2);font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.6rem 1.4rem;margin-top:1rem}
+    a.btn-hub:hover{color:var(--white)}
+
+    .end-card{background:var(--smoke2);border:1px solid var(--smoke3);padding:1.8rem;text-align:center;margin-bottom:1.2rem}
+    .end-title{font-family:'Cinzel',serif;font-size:1.4rem;color:var(--white);margin-bottom:0.8rem}
+    .end-narrative{color:var(--parchment2);line-height:1.7;font-style:italic;margin-bottom:1.2rem}
+    .end-sats{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--key-gold)}
+  </style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">The Vault</a>
+  <a href="index.html" class="nav-back">← Back to Hub</a>
+</nav>
+<div class="sats-bar">
+  <label>Total Sats:</label>
+  <span id="hub-sats">0 ⚡</span>
+</div>
+<div class="container">
+  <p class="eyebrow">The Orange Robot · Game 15</p>
+  <h1>The Humanity Act</h1>
+  <p class="lede">Cognition Labs employs eleven hundred people. About four hundred of them do work the systems could already do. Jake Holloway keeps them on anyway — and today, in front of Congress, he's fighting for a law that would make it everyone's rule, not just his.</p>
+
+  <div id="intro-panel" class="card">
+    <blockquote>"I don't care if my employees spend their days doing crossword puzzles. They stay employed. They stay paid. They stay human. They stay dignified."</blockquote>
+    <p>Two parts to this one. First, you're at the desk — one of the four hundred, doing exactly what Jake said didn't matter. Then you're in the room where the actual number gets decided, and it turns out thirty percent isn't just a nice sentiment. It's the only number on the table that doesn't get somebody hurt.</p>
+    <div class="btn-row">
+      <button class="btn btn-continue" id="beginBtn">Sit Down at the Desk →</button>
+    </div>
+  </div>
+
+  <!-- PHASE 1: CROSSWORD -->
+  <div id="phase1-panel" style="display:none">
+    <p class="phase-label">Phase One · The Desk</p>
+    <div class="xword-wrap"><div class="xword-grid" id="xgrid"></div></div>
+    <div class="clue-cols">
+      <div class="clue-col">
+        <h3>Across</h3>
+        <ol id="clues-across"></ol>
+      </div>
+      <div class="clue-col">
+        <h3>Down</h3>
+        <ol id="clues-down"></ol>
+      </div>
+    </div>
+    <div class="msg-box" id="xmsg"></div>
+    <div class="btn-row">
+      <button class="btn btn-check" id="checkBtn">Check Answers</button>
+      <button class="btn btn-continue hidden" id="toPhase2Btn" style="display:none">Continue to the Boardroom →</button>
+    </div>
+  </div>
+
+  <!-- PHASE 2: BOARDROOM -->
+  <div id="phase2-panel" style="display:none">
+    <p class="phase-label">Phase Two · The Boardroom</p>
+    <p style="text-align:center;color:var(--parchment2);font-size:0.9rem;margin-bottom:1.2rem">You set the ratio. Below thirty percent human isn't legal — the Act won't let you. Above it, the company survives longer, but the number in the corner tells you how.</p>
+
+    <div class="stat-row">
+      <div class="stat-box"><span class="stat-val" id="pctHuman">30%</span><span class="stat-lbl">Human Workforce</span></div>
+      <div class="stat-box"><span class="stat-val" id="profitVal">+20%</span><span class="stat-lbl">Profit Margin</span></div>
+      <div class="stat-box"><span class="stat-val" id="jobsAtRisk">770</span><span class="stat-lbl">Jobs Automated</span></div>
+    </div>
+
+    <div class="curve-wrap">
+      <svg class="curve-svg" id="curveSvg" viewBox="0 0 400 160"></svg>
+      <div class="curve-caption">PROFIT MARGIN vs. % HUMAN WORKFORCE — 30% IS THE LEGAL FLOOR</div>
+    </div>
+
+    <div class="slider-row">
+      <input type="range" id="humanSlider" min="30" max="100" value="30" step="1">
+      <div class="slider-labels"><span>30% (legal minimum)</span><span>100% (fully human)</span></div>
+    </div>
+
+    <div class="flag-row" id="flagRow">
+      <div class="flag-item"><div class="flag-emoji">🇨🇳</div><div class="flag-bar-track"><div class="flag-bar-fill" id="flagChina"></div></div><div class="flag-lbl">China</div></div>
+      <div class="flag-item"><div class="flag-emoji">🇪🇺</div><div class="flag-bar-track"><div class="flag-bar-fill" id="flagEU"></div></div><div class="flag-lbl">Europe</div></div>
+      <div class="flag-item"><div class="flag-emoji">🇷🇺</div><div class="flag-bar-track"><div class="flag-bar-fill" id="flagRussia"></div></div><div class="flag-lbl">Russia</div></div>
+    </div>
+
+    <div class="warn-box" id="warnBox">Past this point, Cognition Labs stops being competitive. Hollis's letter said this exact thing would happen.</div>
+
+    <div class="btn-row">
+      <button class="btn btn-continue" id="lockBtn">Lock In This Ratio →</button>
+    </div>
+  </div>
+
+  <div id="end-panel" style="display:none">
+    <div class="end-card">
+      <div class="end-title" id="endTitle"></div>
+      <p class="end-narrative" id="endNarrative"></p>
+      <p style="color:var(--ash);font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem">Reward</p>
+      <div class="end-sats" id="endSats">+0 ⚡</div>
+      <div class="btn-row" style="margin-top:1.2rem">
+        <button class="btn btn-claim" id="claimBtn">Claim Reward →</button>
+      </div>
+    </div>
+    <div style="text-align:center"><a href="index.html" class="btn-hub">← Back to Vault</a></div>
+  </div>
+
+</div>
+
+<script src="wallet.js"></script>
+<script>
+(function(){
+  var hubSats = document.getElementById('hub-sats');
+  function updateHubSats(){ hubSats.textContent = TOR.fmt(TOR.getSats()) + ' ⚡'; }
+  updateHubSats();
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+  // ================= PHASE 1: CROSSWORD =================
+  var GRID = [
+    "KDG..CC",
+    "ERI.HAH",
+    "YEFRASA",
+    "SATOSHI",
+    ".M.BH.N",
+    "...O...",
+    "...T..."
+  ];
+  var ROWS = 7, COLS = 7;
+
+  var WORDS = [
+    { num: 1, dir: 'down', word: 'KEYS',    row:0, col:0, clue: "Lose these and lose everything in cold storage." },
+    { num: 2, dir: 'down', word: 'DREAM',   row:0, col:1, clue: "What Pharaoh had twice, and Joey had once, at a desk not unlike this one." },
+    { num: 3, dir: 'down', word: 'GIFT',    row:0, col:2, clue: "Christmas, 2003 — wrapped in newspaper, given freely." },
+    { num: 4, dir: 'down', word: 'CASH',    row:0, col:5, clue: "What Jake's company still pays out, dignity included, even for a day like today." },
+    { num: 5, dir: 'down', word: 'CHAIN',   row:0, col:6, clue: "Block after block, the record nobody can quietly edit." },
+    { num: 6, dir: 'down', word: 'HASH',    row:1, col:4, clue: "Run anything through SHA-256 and you get one of these." },
+    { num: 7, dir: 'down', word: 'ROBOT',   row:2, col:3, clue: "Orange, wind-up, and worth more than it looked." },
+    { num: 8, dir: 'across', word: 'SATOSHI', row:3, col:0, clue: "The smallest unit of Bitcoin — and the name behind the whole idea." }
+  ];
+
+  var cellRefs = {}; // "r-c" -> input element
+  var xgrid = document.getElementById('xgrid');
+
+  function isBlack(r,c){ return GRID[r][c] === '.'; }
+
+  function buildGrid(){
+    for(var r=0;r<ROWS;r++){
+      for(var c=0;c<COLS;c++){
+        var cell = document.createElement('div');
+        if(isBlack(r,c)){
+          cell.className = 'xcell black';
+        } else {
+          cell.className = 'xcell';
+          var num = WORDS.find(function(w){ return w.row===r && w.col===c; });
+          if(num){
+            var numEl = document.createElement('div');
+            numEl.className = 'xnum';
+            numEl.textContent = num.num;
+            cell.appendChild(numEl);
+          }
+          var input = document.createElement('input');
+          input.maxLength = 1;
+          input.dataset.r = r; input.dataset.c = c;
+          input.addEventListener('input', function(e){
+            var el = e.target;
+            el.value = el.value.toUpperCase().replace(/[^A-Z]/g,'').slice(0,1);
+            el.classList.remove('correct','incorrect');
+            if(el.value){ advance(parseInt(el.dataset.r,10), parseInt(el.dataset.c,10)); }
+          });
+          input.addEventListener('keydown', function(e){
+            var r0 = parseInt(e.target.dataset.r,10), c0 = parseInt(e.target.dataset.c,10);
+            if(e.key === 'ArrowRight') focusCell(r0, c0+1);
+            else if(e.key === 'ArrowLeft') focusCell(r0, c0-1);
+            else if(e.key === 'ArrowDown') focusCell(r0+1, c0);
+            else if(e.key === 'ArrowUp') focusCell(r0-1, c0);
+            else if(e.key === 'Backspace' && !e.target.value){ retreat(r0, c0); }
+          });
+          cell.appendChild(input);
+          cellRefs[r+'-'+c] = input;
+        }
+        xgrid.appendChild(cell);
+      }
+    }
+  }
+
+  function focusCell(r,c){
+    if(r<0||r>=ROWS||c<0||c>=COLS) return;
+    var inp = cellRefs[r+'-'+c];
+    if(inp) inp.focus();
+  }
+  // row 3 (the SATOSHI spine) advances across; everything else advances down
+  function advance(r,c){
+    if(r===3) focusCell(r,c+1);
+    else focusCell(r+1,c);
+  }
+  function retreat(r,c){
+    if(r===3) focusCell(r,c-1);
+    else focusCell(r-1,c);
+  }
+
+  function renderClues(){
+    var acrossEl = document.getElementById('clues-across');
+    var downEl = document.getElementById('clues-down');
+    WORDS.filter(function(w){ return w.dir==='across'; }).forEach(function(w){
+      var li = document.createElement('li');
+      li.innerHTML = '<b>' + w.num + '.</b>' + w.clue;
+      acrossEl.appendChild(li);
+    });
+    WORDS.filter(function(w){ return w.dir==='down'; }).forEach(function(w){
+      var li = document.createElement('li');
+      li.innerHTML = '<b>' + w.num + '.</b>' + w.clue;
+      downEl.appendChild(li);
+    });
+  }
+
+  var xMistakes = 0;
+  document.getElementById('checkBtn').onclick = function(){
+    var allCorrect = true;
+    var anyWrong = false;
+    for(var r=0;r<ROWS;r++){
+      for(var c=0;c<COLS;c++){
+        if(isBlack(r,c)) continue;
+        var inp = cellRefs[r+'-'+c];
+        var expected = GRID[r][c];
+        if(!inp.value){ allCorrect = false; continue; }
+        if(inp.value === expected){
+          inp.classList.add('correct'); inp.classList.remove('incorrect');
+        } else {
+          inp.classList.add('incorrect'); inp.classList.remove('correct');
+          allCorrect = false; anyWrong = true;
+        }
+      }
+    }
+    var msg = document.getElementById('xmsg');
+    if(allCorrect){
+      msg.textContent = '✓ Solved.';
+      msg.className = 'msg-box good';
+      document.getElementById('toPhase2Btn').style.display = 'inline-block';
+      document.getElementById('checkBtn').disabled = true;
+    } else {
+      if(anyWrong) xMistakes++;
+      msg.textContent = 'Not quite — check the highlighted letters.';
+      msg.className = 'msg-box bad';
+    }
+  };
+
+  document.getElementById('toPhase2Btn').onclick = function(){
+    document.getElementById('phase1-panel').style.display = 'none';
+    document.getElementById('phase2-panel').style.display = 'block';
+    initPhase2();
+  };
+
+  // ================= PHASE 2: BOARDROOM =================
+  var TOTAL_JOBS = 1100;
+  function profitAt(x){ return 80 - 2*x; } // x = % human workforce
+
+  var slider = document.getElementById('humanSlider');
+  var curveSvg = document.getElementById('curveSvg');
+
+  function drawCurve(x){
+    var w=400, h=160, padL=34, padR=14, padT=14, padB=14;
+    var xMin=30, xMax=100;
+    var yMax=25, yMin=-70; // visible profit range
+    function sx(px){ return padL + (w-padL-padR) * (px-xMin)/(xMax-xMin); }
+    function sy(py){ return padT + (h-padT-padB) * (yMax-py)/(yMax-yMin); }
+
+    var pts = [];
+    for(var px=xMin; px<=70; px+=2){
+      pts.push(sx(px) + ',' + sy(clamp(profitAt(px), yMin, yMax)));
+    }
+    var zeroY = sy(0);
+
+    var hazardX = sx(70);
+
+    var svg = '';
+    svg += '<rect x="'+hazardX+'" y="'+padT+'" width="'+(w-padR-hazardX)+'" height="'+(h-padT-padB)+'" fill="rgba(217,83,79,0.10)"/>';
+    svg += '<line x1="'+padL+'" y1="'+zeroY+'" x2="'+(w-padR)+'" y2="'+zeroY+'" stroke="#7a6e62" stroke-width="1" stroke-dasharray="3,3"/>';
+    svg += '<text x="'+(w-padR)+'" y="'+(zeroY-4)+'" text-anchor="end" font-size="8" fill="#7a6e62" font-family="IBM Plex Mono, monospace">BREAKEVEN</text>';
+    svg += '<polyline points="'+pts.join(' ')+'" fill="none" stroke="#c9a84c" stroke-width="2.5"/>';
+
+    var markerX = sx(clamp(x,30,100));
+    var markerY = sy(clamp(profitAt(x), yMin, yMax));
+    var markerColor = profitAt(x) >= 0 ? '#54c97a' : '#d9534f';
+    svg += '<line x1="'+markerX+'" y1="'+padT+'" x2="'+markerX+'" y2="'+(h-padB)+'" stroke="'+markerColor+'" stroke-width="1.5" stroke-dasharray="2,2"/>';
+    svg += '<circle cx="'+markerX+'" cy="'+markerY+'" r="5" fill="'+markerColor+'" stroke="#1a1410" stroke-width="1.5"/>';
+
+    svg += '<text x="'+padL+'" y="'+(h-2)+'" font-size="8" fill="#7a6e62" font-family="IBM Plex Mono, monospace">30%</text>';
+    svg += '<text x="'+(w-padR)+'" y="'+(h-2)+'" text-anchor="end" font-size="8" fill="#7a6e62" font-family="IBM Plex Mono, monospace">100%</text>';
+
+    curveSvg.innerHTML = svg;
+  }
+
+  function updatePhase2(){
+    var x = parseInt(slider.value, 10);
+    var profit = profitAt(x);
+    var humanJobs = Math.round(x/100 * TOTAL_JOBS);
+    var automatedJobs = TOTAL_JOBS - humanJobs;
+
+    document.getElementById('pctHuman').textContent = x + '%';
+    var profitEl = document.getElementById('profitVal');
+    profitEl.textContent = (profit>=0?'+':'') + profit + '%';
+    profitEl.className = 'stat-val ' + (profit>=0 ? 'good' : 'bad');
+    document.getElementById('jobsAtRisk').textContent = automatedJobs;
+
+    var offshoreRisk = clamp((x-30)/40, 0, 1); // 0 at x=30, 1 at x=70+
+    document.getElementById('flagChina').style.width = Math.round(offshoreRisk*100) + '%';
+    document.getElementById('flagEU').style.width = Math.round(offshoreRisk*85) + '%';
+    document.getElementById('flagRussia').style.width = Math.round(offshoreRisk*60) + '%';
+
+    var warnBox = document.getElementById('warnBox');
+    warnBox.classList.toggle('show', x >= 65);
+
+    drawCurve(x);
+  }
+
+  slider.addEventListener('input', updatePhase2);
+
+  function initPhase2(){
+    slider.value = 30;
+    updatePhase2();
+  }
+
+  document.getElementById('lockBtn').onclick = function(){
+    var x = parseInt(slider.value, 10);
+    var profit = profitAt(x);
+    finishGame(x, profit);
+  };
+
+  function finishGame(x, profit){
+    document.getElementById('phase2-panel').style.display = 'none';
+    document.getElementById('end-panel').style.display = 'block';
+
+    var titleEl = document.getElementById('endTitle');
+    var narrEl = document.getElementById('endNarrative');
+    var sats;
+
+    if(x >= 70){
+      titleEl.textContent = 'The Board Votes to Relocate';
+      narrEl.textContent = 'Hollis was right about this part. At ' + x + '% human, Cognition Labs can\'t compete — and the board doesn\'t vote to keep losing money out of principle. Six months later the plant is in Shenzhen. All eleven hundred jobs are gone, not four hundred. The Humanity Act protected nobody, because there was nothing left in the country to protect.';
+      sats = 15;
+    } else if(x === 30){
+      titleEl.textContent = 'The Act Passes';
+      narrEl.textContent = 'Thirty percent, real work, pay and benefits — exactly what Jake asked for, and the most the company can afford to give. The margin holds at +20%. Four hundred jobs stay automated, but seven hundred people keep their footing, and Cognition Labs stays exactly as competitive as it needs to be. History, for once, was kind to them.';
+      sats = clamp(Math.round(80 + profit*3.5), 40, 250);
+    } else if(profit >= 0){
+      titleEl.textContent = 'Above the Floor, Under the Ceiling';
+      narrEl.textContent = 'You kept ' + x + '% of the workforce human — more than the law required. The company still turns a profit, margin at ' + (profit>=0?'+':'') + profit + '%, but it left money on the table that the Act would have allowed you to keep. Generous. Not optimal.';
+      sats = clamp(Math.round(80 + profit*3.5), 40, 250);
+    } else {
+      titleEl.textContent = 'A Company Running at a Loss';
+      narrEl.textContent = 'At ' + x + '% human, Cognition Labs is underwater — margin at ' + profit + '%. Nobody loses their job today. But a company that loses money quarter after quarter doesn\'t get to keep making that choice forever, and Hollis\'s letter is still sitting in the record.';
+      sats = clamp(Math.round(80 + profit*3.5), 40, 250);
+    }
+
+    document.getElementById('endSats').textContent = '+' + sats + ' ⚡';
+
+    var claimBtn = document.getElementById('claimBtn');
+    claimBtn.disabled = false;
+    claimBtn.onclick = function(){
+      TOR.earn(sats, 'The Humanity Act');
+      TOR.markDone('humanity-act');
+      TOR.toast(sats);
+      updateHubSats();
+      claimBtn.textContent = 'Claimed ✓';
+      claimBtn.disabled = true;
+    };
+  }
+
+  document.getElementById('beginBtn').onclick = function(){
+    document.getElementById('intro-panel').style.display = 'none';
+    document.getElementById('phase1-panel').style.display = 'block';
+  };
+
+  buildGrid();
+  renderClues();
+})();
+</script>
+</body>
+</html>
