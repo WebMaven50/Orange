@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Tower of Twenty-One — The Orange Robot</title>
+  <meta name="description" content="A Vault scene from The Orange Robot: a Tower of Hanoi puzzle, and the same doubling math behind Bitcoin's halving schedule and its 21 million cap." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="https://theorangerobot.com/games/tower-of-21.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;1,400&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --ink:#0d0b09; --rust:#b5541a; --rust-glow:#e06820;
+      --parchment:#f0e8d8; --parchment2:#c8b89a;
+      --smoke:#1a1410; --smoke2:#241d16; --smoke3:#2e2519;
+      --ash:#7a6e62; --key-gold:#c9a84c; --white:#f5f0e8;
+      --green:#54c97a; --green-dim:#1f8a4d; --red:#d9534f;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--ink);color:var(--parchment);font-family:'EB Garamond',serif;min-height:100vh}
+    nav{padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--smoke3)}
+    .nav-logo{font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.2em;color:var(--key-gold);text-decoration:none}
+    .nav-back{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.15em;color:var(--ash);text-decoration:none}
+    .nav-back:hover{color:var(--white)}
+    .sats-bar{background:var(--smoke2);border-bottom:1px solid var(--smoke3);padding:0.6rem 2rem;display:flex;align-items:center;gap:0.6rem}
+    .sats-bar span{font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--key-gold);letter-spacing:0.1em}
+    .sats-bar label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.15em;text-transform:uppercase}
+    .container{max-width:760px;margin:0 auto;padding:2rem 1.5rem}
+    .eyebrow{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:0.25em;color:var(--rust);text-transform:uppercase;margin-bottom:0.8rem}
+    h1{font-family:'Cinzel',serif;font-size:clamp(1.6rem,5vw,2.4rem);font-weight:400;color:var(--white);margin-bottom:0.5rem}
+    .lede{font-style:italic;color:var(--parchment2);margin-bottom:2rem;font-size:1.05rem}
+
+    .card{background:var(--smoke2);border:1px solid var(--smoke3);padding:1.6rem;margin-bottom:1.2rem}
+    .card p{margin-bottom:1rem;line-height:1.6;color:var(--parchment2)}
+    .card p:last-of-type{margin-bottom:1.4rem}
+    .rules{font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--ash);letter-spacing:0.03em;line-height:1.9;margin-bottom:1.4rem}
+    .rules b{color:var(--key-gold)}
+
+    .diff-row{display:flex;gap:0.6rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.4rem}
+    .diff-btn{font-family:'Cinzel',serif;font-size:0.75rem;letter-spacing:0.08em;text-transform:uppercase;background:var(--smoke3);border:1px solid var(--ash);color:var(--parchment2);padding:0.7rem 1.2rem;cursor:pointer;transition:background 0.15s;text-align:center}
+    .diff-btn small{display:block;font-family:'IBM Plex Mono',monospace;font-size:0.6rem;color:var(--ash);letter-spacing:0.05em;margin-top:0.3rem;text-transform:none}
+    .diff-btn:hover{border-color:var(--rust)}
+    .diff-btn.active{background:var(--rust);color:var(--white);border-color:var(--rust)}
+    .diff-btn.active small{color:rgba(255,255,255,0.7)}
+
+    .stat-row{display:flex;justify-content:center;gap:1.2rem;margin-bottom:1.1rem;flex-wrap:wrap}
+    .stat-box{text-align:center;background:var(--smoke3);border:1px solid var(--smoke3);padding:0.6rem 1.2rem;min-width:90px}
+    .stat-val{font-family:'Cinzel',serif;font-size:1.3rem;color:var(--key-gold);display:block}
+    .stat-lbl{font-family:'IBM Plex Mono',monospace;font-size:0.58rem;color:var(--ash);letter-spacing:0.12em;text-transform:uppercase}
+
+    .tower-wrap{display:flex;justify-content:center;gap:2.5rem;margin-bottom:1.2rem;padding:1.2rem 1rem 0.8rem;background:var(--smoke3);border:1px solid var(--smoke3)}
+    .peg-col{display:flex;flex-direction:column;align-items:center;cursor:pointer;flex:1;max-width:200px}
+    .peg-stack{display:flex;flex-direction:column-reverse;align-items:center;justify-content:flex-start;height:190px;position:relative;width:100%}
+    .peg-rod{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:6px;height:170px;background:var(--ash);z-index:0;border-radius:3px}
+    .peg-base{width:90%;height:8px;background:var(--ash);border-radius:2px;margin-top:2px}
+    .peg-label{font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.5rem}
+    .peg-col.selected .peg-label{color:var(--key-gold)}
+    .disk{height:22px;border-radius:4px;margin-bottom:3px;z-index:1;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ink);display:flex;align-items:center;justify-content:center;font-weight:600;box-shadow:0 2px 4px rgba(0,0,0,0.3);transition:transform 0.1s}
+    .peg-col.selected .disk:last-child{transform:translateY(-8px);box-shadow:0 0 12px rgba(201,168,76,0.6)}
+
+    .msg-box{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:0.8rem;color:var(--parchment2);min-height:1.4em;margin-bottom:1rem}
+    .msg-box.bad{color:var(--red)}
+
+    .btn-row{display:flex;gap:0.7rem;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+    .btn{font-family:'Cinzel',serif;font-size:0.74rem;letter-spacing:0.08em;text-transform:uppercase;
+      padding:0.7rem 1.3rem;border:none;cursor:pointer;color:var(--white);transition:background 0.2s}
+    .btn-continue{background:var(--rust);padding:0.75rem 1.8rem}
+    .btn-continue:hover{background:var(--rust-glow)}
+    .btn-again{background:#3c4252}
+    .btn-again:hover{background:#5a6273}
+    .btn-claim{background:var(--green-dim);padding:0.85rem 2rem;font-size:0.78rem}
+    .btn-claim:hover:not(:disabled){background:#27b86b}
+    .btn:disabled{opacity:0.45;cursor:not-allowed}
+    a.btn-hub{display:inline-block;text-decoration:none;background:var(--smoke3);color:var(--parchment2);font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:0.15em;text-transform:uppercase;padding:0.6rem 1.4rem;margin-top:1rem}
+    a.btn-hub:hover{color:var(--white)}
+
+    .end-card{background:var(--smoke2);border:1px solid var(--smoke3);padding:1.8rem;text-align:center;margin-bottom:1.2rem}
+    .end-title{font-family:'Cinzel',serif;font-size:1.4rem;color:var(--white);margin-bottom:0.8rem}
+    .end-narrative{color:var(--parchment2);line-height:1.7;font-style:italic;margin-bottom:1.2rem}
+    .end-sats{font-family:'Cinzel',serif;font-size:1.1rem;color:var(--key-gold)}
+
+    .lb-widget{background:var(--smoke2);border:1px solid var(--smoke3);padding:1.2rem;margin-bottom:1.2rem}
+    .lb-widget-title{font-family:'Cinzel',serif;font-size:0.85rem;letter-spacing:0.1em;color:var(--key-gold);text-align:center;margin-bottom:0.8rem}
+    .lb-header,.lb-row{display:grid;grid-template-columns:2em 1fr 4.5em 4.5em;gap:0.4rem;padding:0.35rem 0.2rem;font-family:'IBM Plex Mono',monospace;font-size:0.74rem}
+    .lb-header{color:var(--ash);letter-spacing:0.08em;border-bottom:1px solid var(--smoke3);margin-bottom:0.2rem}
+    .lb-row{color:var(--parchment2)}
+    .lb-row.lb-top3{color:var(--key-gold);font-weight:600}
+    .lb-rank{text-align:center}
+    .lb-score,.lb-sats{text-align:right}
+    .lb-empty{text-align:center;font-size:0.78rem;color:var(--ash);padding:0.6rem 0}
+  </style>
+</head>
+<body>
+<nav>
+  <a href="index.html" class="nav-logo">The Vault</a>
+  <a href="index.html" class="nav-back">← Back to Hub</a>
+</nav>
+<div class="sats-bar">
+  <label>Total Sats:</label>
+  <span id="hub-sats">0 ⚡</span>
+</div>
+<div class="container">
+  <p class="eyebrow">The Orange Robot · Game 14</p>
+  <h1>The Tower of Twenty-One</h1>
+  <p class="lede">Twenty-one floors, and today only the top of the tower is unlocked to move. One key at a time. Never a bigger lock resting on a smaller one. Move the whole stack across, and the vault is yours.</p>
+
+  <div id="intro-panel" class="card">
+    <p>This is a real Tower of Hanoi puzzle. It has a well-known optimal solution — the minimum number of moves for a stack of <em>n</em> disks is exactly 2ⁿ − 1. Every extra disk doubles the work, plus one more move. That's the same doubling math behind Bitcoin's halving schedule, and the reason the supply cap lands on 21 million instead of some round number — powers of two, not powers of ten.</p>
+    <div class="rules">
+      <b>Move</b> one disk at a time — click a peg to lift its top disk, click another peg to place it.<br>
+      <b>Rule</b> — a disk can never be placed on a smaller one.<br>
+      <b>Goal</b> — move the entire stack to the third peg.
+    </div>
+    <div class="diff-row" id="diffRow"></div>
+    <div class="btn-row">
+      <button class="btn btn-continue" id="beginBtn">Enter the Tower →</button>
+    </div>
+  </div>
+
+  <div id="game-panel" style="display:none">
+    <div class="stat-row">
+      <div class="stat-box"><span class="stat-val" id="stopwatch">0:00</span><span class="stat-lbl">Time</span></div>
+      <div class="stat-box"><span class="stat-val" id="moveCount">0</span><span class="stat-lbl">Moves</span></div>
+      <div class="stat-box"><span class="stat-val" id="optimalCount">0</span><span class="stat-lbl">Optimal</span></div>
+    </div>
+
+    <div class="tower-wrap">
+      <div class="peg-col" id="peg0" data-peg="0">
+        <div class="peg-label">Old Vault</div>
+        <div class="peg-stack" id="pegstack0"><div class="peg-rod"></div></div>
+        <div class="peg-base"></div>
+      </div>
+      <div class="peg-col" id="peg1" data-peg="1">
+        <div class="peg-label">Relay</div>
+        <div class="peg-stack" id="pegstack1"><div class="peg-rod"></div></div>
+        <div class="peg-base"></div>
+      </div>
+      <div class="peg-col" id="peg2" data-peg="2">
+        <div class="peg-label">New Vault</div>
+        <div class="peg-stack" id="pegstack2"><div class="peg-rod"></div></div>
+        <div class="peg-base"></div>
+      </div>
+    </div>
+
+    <div class="msg-box" id="gameMsg"></div>
+    <div class="btn-row">
+      <button class="btn btn-again" id="resetBtn">Reset Tower</button>
+    </div>
+  </div>
+
+  <div id="end-panel" style="display:none">
+    <div class="end-card">
+      <div class="end-title">The Vault Is Yours</div>
+      <p class="end-narrative" id="endNarrative"></p>
+      <div class="stat-row">
+        <div class="stat-box"><span class="stat-val" id="endMoves">0</span><span class="stat-lbl">Moves Used</span></div>
+        <div class="stat-box"><span class="stat-val" id="endOptimal">0</span><span class="stat-lbl">Optimal</span></div>
+        <div class="stat-box"><span class="stat-val" id="endEff">0%</span><span class="stat-lbl">Efficiency</span></div>
+        <div class="stat-box"><span class="stat-val" id="endTime">0:00</span><span class="stat-lbl">Time</span></div>
+      </div>
+      <p style="color:var(--ash);font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem">Reward</p>
+      <div class="end-sats" id="endSats">+0 ⚡</div>
+      <div class="btn-row" style="margin-top:1.2rem">
+        <button class="btn btn-claim" id="claimBtn">Claim Reward →</button>
+      </div>
+    </div>
+
+    <div class="lb-widget">
+      <div class="lb-widget-title">🏆 Best Efficiency — Tower of Twenty-One</div>
+      <div id="lbContainer"><div class="lb-empty">Loading…</div></div>
+      <div class="btn-row" style="margin-top:0.9rem">
+        <button class="btn btn-continue" id="saveScoreBtn">Save My Score</button>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-again" id="playAgainBtn">Play Again</button>
+    </div>
+    <div style="text-align:center"><a href="index.html" class="btn-hub">← Back to Vault</a></div>
+  </div>
+
+</div>
+
+<script src="wallet.js"></script>
+<script src="leaderboard.js"></script>
+<script>
+(function(){
+  var hubSats = document.getElementById('hub-sats');
+  function updateHubSats(){ hubSats.textContent = TOR.fmt(TOR.getSats()) + ' ⚡'; }
+  updateHubSats();
+
+  var LB_GAME = 'towerof21';
+  var DIFFS = [
+    { n: 5, label: 'Apprentice', sub: '5 keys · 31 moves min' },
+    { n: 6, label: 'Journeyman', sub: '6 keys · 63 moves min' },
+    { n: 7, label: 'Master', sub: '7 keys · 127 moves min' }
+  ];
+  var N = 6;
+
+  var pegs = [[],[],[]];
+  var selected = null;
+  var moves = 0;
+  var startTime = null, timerId = null;
+  var solved = false;
+
+  function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  function fmtTime(s){
+    s = Math.max(0, Math.round(s));
+    var m = Math.floor(s/60), sec = s%60;
+    return m + ':' + (sec<10?'0':'') + sec;
+  }
+
+  var DISK_COLORS = ['#e06820','#c9a84c','#b5541a','#d98c3a','#e0a94a','#c47a2e','#f0c674'];
+
+  function diskColor(size){
+    return DISK_COLORS[(size-1) % DISK_COLORS.length];
+  }
+
+  function initDiffButtons(){
+    var row = document.getElementById('diffRow');
+    row.innerHTML = '';
+    DIFFS.forEach(function(d){
+      var b = document.createElement('button');
+      b.className = 'diff-btn' + (d.n === N ? ' active' : '');
+      b.innerHTML = d.label + '<small>' + d.sub + '</small>';
+      b.onclick = function(){
+        N = d.n;
+        Array.prototype.forEach.call(row.children, function(el){ el.classList.remove('active'); });
+        b.classList.add('active');
+      };
+      row.appendChild(b);
+    });
+  }
+  initDiffButtons();
+
+  function setupPuzzle(){
+    pegs = [[],[],[]];
+    for(var i=N;i>=1;i--) pegs[0].push(i);
+    selected = null;
+    moves = 0;
+    solved = false;
+    document.getElementById('moveCount').textContent = '0';
+    document.getElementById('optimalCount').textContent = (Math.pow(2,N)-1);
+    document.getElementById('gameMsg').textContent = '';
+    render();
+  }
+
+  function render(){
+    for(var p=0;p<3;p++){
+      var stackEl = document.getElementById('pegstack'+p);
+      stackEl.innerHTML = '<div class="peg-rod"></div>';
+      pegs[p].forEach(function(size){
+        var d = document.createElement('div');
+        d.className = 'disk';
+        var widthPct = 35 + (size/N)*60;
+        d.style.width = widthPct + '%';
+        d.style.background = diskColor(size);
+        d.textContent = size;
+        stackEl.appendChild(d);
+      });
+      var colEl = document.getElementById('peg'+p);
+      colEl.classList.toggle('selected', selected === p);
+    }
+  }
+
+  function onPegClick(p){
+    if(solved) return;
+    var msg = document.getElementById('gameMsg');
+    msg.textContent = '';
+    msg.className = 'msg-box';
+    if(selected === null){
+      if(pegs[p].length === 0) return;
+      selected = p;
+      render();
+      return;
+    }
+    if(selected === p){
+      selected = null;
+      render();
+      return;
+    }
+    var srcTop = pegs[selected][pegs[selected].length-1];
+    var dstTop = pegs[p].length ? pegs[p][pegs[p].length-1] : Infinity;
+    if(srcTop > dstTop){
+      msg.textContent = 'Can\'t rest a bigger lock on a smaller one.';
+      msg.className = 'msg-box bad';
+      selected = null;
+      render();
+      return;
+    }
+    pegs[selected].pop();
+    pegs[p].push(srcTop);
+    moves++;
+    document.getElementById('moveCount').textContent = moves;
+    selected = null;
+    render();
+    if(pegs[2].length === N){
+      solved = true;
+      finishGame();
+    }
+  }
+
+  document.getElementById('peg0').onclick = function(){ onPegClick(0); };
+  document.getElementById('peg1').onclick = function(){ onPegClick(1); };
+  document.getElementById('peg2').onclick = function(){ onPegClick(2); };
+
+  document.getElementById('resetBtn').onclick = function(){
+    setupPuzzle();
+  };
+
+  var stopwatchEl = document.getElementById('stopwatch');
+  function startStopwatch(){
+    startTime = Date.now();
+    timerId = setInterval(function(){
+      stopwatchEl.textContent = fmtTime((Date.now()-startTime)/1000);
+    }, 250);
+  }
+  function stopStopwatch(){
+    clearInterval(timerId);
+    return (Date.now()-startTime)/1000;
+  }
+
+  document.getElementById('beginBtn').onclick = function(){
+    document.getElementById('intro-panel').style.display = 'none';
+    document.getElementById('game-panel').style.display = 'block';
+    setupPuzzle();
+    startStopwatch();
+  };
+
+  document.getElementById('playAgainBtn').onclick = function(){
+    document.getElementById('end-panel').style.display = 'none';
+    document.getElementById('game-panel').style.display = 'block';
+    setupPuzzle();
+    startStopwatch();
+  };
+
+  var finalElapsed = 0, finalSats = 0, finalEff = 0;
+
+  function finishGame(){
+    finalElapsed = stopStopwatch();
+    var optimal = Math.pow(2,N)-1;
+    finalEff = optimal / moves; // <=1
+    document.getElementById('game-panel').style.display = 'none';
+    document.getElementById('end-panel').style.display = 'block';
+
+    var narr = document.getElementById('endNarrative');
+    if(moves === optimal){
+      narr.textContent = 'Perfect. Every move counted — the minimum possible, ' + optimal + ' moves for ' + N + ' keys. That\'s the theoretical floor: 2^' + N + ' − 1.';
+    } else {
+      narr.textContent = 'Solved in ' + moves + ' moves against a ' + optimal + '-move optimum — ' + Math.round(finalEff*100) + '% efficient. The recursive trick: move the top n−1 keys out of the way, move the biggest key, then move the n−1 back on top.';
+    }
+
+    document.getElementById('endMoves').textContent = moves;
+    document.getElementById('endOptimal').textContent = optimal;
+    document.getElementById('endEff').textContent = Math.round(finalEff*100) + '%';
+    document.getElementById('endTime').textContent = fmtTime(finalElapsed);
+
+    finalSats = clamp(Math.round(60 + finalEff*140 - finalElapsed/10), 30, 200);
+    document.getElementById('endSats').textContent = '+' + finalSats + ' ⚡';
+
+    var claimBtn = document.getElementById('claimBtn');
+    claimBtn.disabled = false;
+    claimBtn.textContent = 'Claim Reward →';
+    claimBtn.onclick = function(){
+      TOR.earn(finalSats, 'The Tower of Twenty-One');
+      TOR.markDone('tower-of-21');
+      TOR.toast(finalSats);
+      updateHubSats();
+      claimBtn.textContent = 'Claimed ✓';
+      claimBtn.disabled = true;
+    };
+
+    var lbContainer = document.getElementById('lbContainer');
+    function refreshBoard(){
+      if(typeof LB === 'undefined') return;
+      LB.fetchTop(LB_GAME, 5).then(function(entries){
+        LB.renderBoard(lbContainer, entries, { scoreLabel: 'EFFICIENCY' });
+      });
+    }
+    refreshBoard();
+
+    var saved = false;
+    var saveBtn = document.getElementById('saveScoreBtn');
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save My Score';
+    saveBtn.onclick = function(){
+      if(saved || typeof LB === 'undefined') return;
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'SAVING…';
+      LB.promptInitials().then(function(initials){
+        if(!initials){
+          saveBtn.disabled = false;
+          saveBtn.textContent = 'Save My Score';
+          return;
+        }
+        var scoreVal = Math.max(1, Math.round(finalEff*1000 - finalElapsed));
+        LB.submitScore(LB_GAME, initials, scoreVal, finalSats).then(function(){
+          saved = true;
+          saveBtn.textContent = 'SAVED AS ' + initials + ' ✓';
+          refreshBoard();
+        });
+      });
+    };
+  }
+})();
+</script>
+</body>
+</html>
