@@ -236,11 +236,13 @@
           <div class="live-updated" id="live-updated">Connecting…</div>
         </div>
         <div class="live-range-picker" id="live-range-picker">
-          <button class="live-range-btn" data-days="7">7D</button>
-          <button class="live-range-btn active" data-days="30">30D</button>
-          <button class="live-range-btn" data-days="90">90D</button>
-          <button class="live-range-btn" data-days="365">1Y</button>
-          <button class="live-range-btn" data-days="0">All</button>
+          <button class="live-range-btn" data-range="1H">1H</button>
+          <button class="live-range-btn" data-range="1D">1D</button>
+          <button class="live-range-btn active" data-range="7D">7D</button>
+          <button class="live-range-btn" data-range="30D">30D</button>
+          <button class="live-range-btn" data-range="90D">90D</button>
+          <button class="live-range-btn" data-range="1Y">1Y</button>
+          <button class="live-range-btn" data-range="ALL">All</button>
         </div>
       </div>
       <div class="live-chart-wrap">
@@ -442,36 +444,41 @@
 <script src="wallet.js"></script>
 <script src="leaderboard.js"></script>
 <script>
-// ── LIVE BITCOIN CHART (mempool.space, no API key required) ──
+// ── LIVE BITCOIN CHART (mempool.space for 1D+, CoinGecko for 1H intraday) ──
 (function() {
-  var HISTORY_URL   = 'https://mempool.space/api/v1/historical-price?currency=USD';
-  var CURRENT_URL    = 'https://mempool.space/api/v1/prices';
-  var POLL_MS         = 60000;
-  var RANGE_KEY       = 'tor_chart_range';
-  var DEFAULT_DAYS   = 30;
+  var HISTORY_URL    = 'https://mempool.space/api/v1/historical-price?currency=USD';
+  var CURRENT_URL     = 'https://mempool.space/api/v1/prices';
+  var COINGECKO_URL   = 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1';
+  var POLL_MS          = 60000;
+  var RANGE_KEY        = 'tor_chart_range';
+  var DEFAULT_RANGE   = '7D';
+  var RANGE_DAYS = { '1D': 1, '7D': 7, '30D': 30, '90D': 90, '1Y': 365, 'ALL': 0 };
 
-  var allHistory = [];  // full dataset ever fetched, oldest -> newest, [{t,p}, ...]
-  var points     = [];  // currently displayed window, derived from allHistory
-  var basePrice  = null;
-  var windowDays = DEFAULT_DAYS;
-  var failCount  = 0;
+  var allHistory  = [];  // full mempool.space dataset, oldest -> newest, [{t,p}, ...]
+  var points      = [];  // currently displayed window
+  var basePrice   = null;
+  var range        = DEFAULT_RANGE; // '1H' | '1D' | '7D' | '30D' | '90D' | '1Y' | 'ALL'
+  var failCount   = 0;
+  var oneHourFailCount = 0;
 
   function loadSavedRange() {
     try {
-      var saved = parseInt(localStorage.getItem(RANGE_KEY), 10);
-      if (!isNaN(saved)) windowDays = saved; // 0 == "All"
+      var saved = localStorage.getItem(RANGE_KEY);
+      if (saved && (saved === '1H' || RANGE_DAYS.hasOwnProperty(saved))) range = saved;
     } catch (e) { /* localStorage unavailable — fine, use default */ }
   }
 
-  function saveRange(days) {
-    try { localStorage.setItem(RANGE_KEY, String(days)); } catch (e) {}
+  function saveRange(r) {
+    try { localStorage.setItem(RANGE_KEY, r); } catch (e) {}
   }
 
-  function rangeLabel(days) {
-    if (days === 7) return '7d';
-    if (days === 30) return '30d';
-    if (days === 90) return '90d';
-    if (days === 365) return '1y';
+  function rangeLabel(r) {
+    if (r === '1H') return '1h';
+    if (r === '1D') return '24h';
+    if (r === '7D') return '7d';
+    if (r === '30D') return '30d';
+    if (r === '90D') return '90d';
+    if (r === '1Y') return '1y';
     return 'all-time';
   }
 
@@ -490,7 +497,7 @@
     if (basePrice) {
       var pct = ((current - basePrice) / basePrice) * 100;
       var sign = pct >= 0 ? '+' : '';
-      changeEl.textContent = sign + pct.toFixed(2) + '% · ' + rangeLabel(windowDays);
+      changeEl.textContent = sign + pct.toFixed(2) + '% · ' + rangeLabel(range);
       changeEl.className = 'live-change ' + (pct >= 0 ? 'up' : 'down');
     }
     var now = new Date();
@@ -500,6 +507,7 @@
 
   function applyWindow() {
     if (!allHistory.length) { points = []; return; }
+    var windowDays = RANGE_DAYS[range];
     var windowed;
     if (windowDays === 0) {
       windowed = allHistory.slice(); // "All"
@@ -510,6 +518,26 @@
     }
     points = windowed;
     basePrice = points.length ? points[0].p : null;
+  }
+
+  function loadOneHour(cb) {
+    fetch(COINGECKO_URL).then(function(r) {
+      if (!r.ok) throw new Error('coingecko fetch failed');
+      return r.json();
+    }).then(function(data) {
+      oneHourFailCount = 0;
+      var raw = (data && data.prices) || [];
+      var mapped = raw.map(function(p) { return { t: Math.round(p[0] / 1000), p: p[1] }; });
+      points = mapped.slice(-12); // last ~60 minutes at 5-minute resolution
+      basePrice = points.length ? points[0].p : null;
+      if (cb) cb();
+    }).catch(function() {
+      oneHourFailCount++;
+      if (oneHourFailCount >= 3 && points.length === 0) {
+        setError('Live 1H price unavailable right now — try another range.');
+      }
+      if (cb) cb();
+    });
   }
 
   function drawChart() {
@@ -572,6 +600,13 @@
   }
 
   function refreshDisplay() {
+    if (range === '1H') {
+      loadOneHour(function() {
+        if (points.length) updatePriceUI(points[points.length - 1].p);
+        drawChart();
+      });
+      return;
+    }
     applyWindow();
     if (points.length) updatePriceUI(points[points.length - 1].p);
     drawChart();
@@ -580,18 +615,18 @@
   function setActiveButton() {
     var btns = document.querySelectorAll('.live-range-btn');
     for (var i = 0; i < btns.length; i++) {
-      var d = parseInt(btns[i].getAttribute('data-days'), 10);
-      btns[i].className = 'live-range-btn' + (d === windowDays ? ' active' : '');
+      var r = btns[i].getAttribute('data-range');
+      btns[i].className = 'live-range-btn' + (r === range ? ' active' : '');
     }
   }
 
   function onRangeClick(e) {
     var btn = e.target.closest ? e.target.closest('.live-range-btn') : e.target;
     if (!btn || !btn.getAttribute) return;
-    var days = parseInt(btn.getAttribute('data-days'), 10);
-    if (isNaN(days) || days === windowDays) return;
-    windowDays = days;
-    saveRange(days);
+    var r = btn.getAttribute('data-range');
+    if (!r || r === range) return;
+    range = r;
+    saveRange(r);
     setActiveButton();
     refreshDisplay();
   }
@@ -613,6 +648,10 @@
   }
 
   function pollCurrent() {
+    if (range === '1H') {
+      refreshDisplay();
+      return;
+    }
     fetch(CURRENT_URL).then(function(r) {
       if (!r.ok) throw new Error('price fetch failed');
       return r.json();
