@@ -39,7 +39,7 @@
 
     /* crossword */
     .xword-wrap{display:flex;justify-content:center;margin-bottom:1.2rem}
-    .xword-grid{display:grid;grid-template-columns:repeat(7,minmax(30px,42px));grid-template-rows:repeat(7,minmax(30px,42px));gap:2px;background:var(--smoke3)}
+    .xword-grid{display:grid;grid-template-columns:repeat(7,minmax(30px,42px));grid-template-rows:repeat(6,minmax(30px,42px));gap:2px;background:var(--smoke3)}
     .xcell{position:relative;background:var(--parchment);display:flex;align-items:center;justify-content:center}
     .xcell.black{background:var(--ink)}
     .xcell input{width:100%;height:100%;border:none;background:transparent;text-align:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:1.1rem;color:var(--ink);text-transform:uppercase;outline:none}
@@ -142,27 +142,36 @@
       <button class="btn btn-check" id="checkBtn">Check Answers</button>
       <button class="btn btn-continue hidden" id="toPhase2Btn" style="display:none">Continue to the Boardroom →</button>
     </div>
+    <div class="btn-row">
+      <button class="btn btn-check" id="skipBtn" style="opacity:0.7">I'm too lazy — take me to the boardroom</button>
+    </div>
   </div>
 
   <!-- PHASE 2: BOARDROOM -->
   <div id="phase2-panel" style="display:none">
     <p class="phase-label">Phase Two · The Boardroom</p>
-    <p style="text-align:center;color:var(--parchment2);font-size:0.9rem;margin-bottom:1.2rem">You set the ratio. Below thirty percent human isn't legal — the Act won't let you. Above it, the company survives longer, but the number in the corner tells you how.</p>
+    <p style="text-align:center;color:var(--parchment2);font-size:0.9rem;margin-bottom:1.2rem">You set the ratio, anywhere from fully automated to fully human. Thirty percent is what the Act asks for — not a wall, just the line Jake says is the most the company can carry. The rest of the curve is yours to explore.</p>
 
     <div class="stat-row">
-      <div class="stat-box"><span class="stat-val" id="pctHuman">30%</span><span class="stat-lbl">Human Workforce</span></div>
-      <div class="stat-box"><span class="stat-val" id="profitVal">+20%</span><span class="stat-lbl">Profit Margin</span></div>
-      <div class="stat-box"><span class="stat-val" id="jobsAtRisk">770</span><span class="stat-lbl">Jobs Automated</span></div>
+      <div class="stat-box"><span class="stat-val" id="pctHuman">0%</span><span class="stat-lbl">Human Workforce</span></div>
+      <div class="stat-box"><span class="stat-val" id="profitVal">+80%</span><span class="stat-lbl">Profit Margin</span></div>
+      <div class="stat-box"><span class="stat-val" id="unemployedPct">100%</span><span class="stat-lbl">Unemployed</span></div>
+      <div class="stat-box"><span class="stat-val" id="jobsAtRisk">1100</span><span class="stat-lbl">Jobs Automated</span></div>
     </div>
 
     <div class="curve-wrap">
-      <svg class="curve-svg" id="curveSvg" viewBox="0 0 400 160"></svg>
-      <div class="curve-caption">PROFIT MARGIN vs. % HUMAN WORKFORCE — 30% IS THE LEGAL FLOOR</div>
+      <svg class="curve-svg" id="curveSvg" viewBox="0 0 400 170"></svg>
+      <div class="curve-caption">PROFIT MARGIN vs. % HUMAN WORKFORCE — GOLD LINE MARKS THE ACT'S 30%</div>
     </div>
 
     <div class="slider-row">
-      <input type="range" id="humanSlider" min="30" max="100" value="30" step="1">
-      <div class="slider-labels"><span>30% (legal minimum)</span><span>100% (fully human)</span></div>
+      <input type="range" id="humanSlider" min="0" max="100" value="0" step="1">
+      <div class="slider-labels"><span>0% (fully automated)</span><span>100% (fully human)</span></div>
+    </div>
+
+    <div class="curve-wrap" id="reservesWrap" style="display:none;padding:0.7rem 1rem">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:var(--ash);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3rem">Cash Reserves</div>
+      <div class="flag-bar-track" style="height:12px"><div class="flag-bar-fill" id="reservesFill" style="width:100%;background:#54c97a"></div></div>
     </div>
 
     <div class="flag-row" id="flagRow">
@@ -182,6 +191,16 @@
     <div class="end-card">
       <div class="end-title" id="endTitle"></div>
       <p class="end-narrative" id="endNarrative"></p>
+      <div id="foldAftermath" style="display:none">
+        <div class="stat-row">
+          <div class="stat-box"><span class="stat-val bad">100%</span><span class="stat-lbl">Unemployed (US)</span></div>
+        </div>
+        <div class="flag-row">
+          <div class="flag-item"><div class="flag-emoji">🇨🇳</div><div class="flag-bar-track"><div class="flag-bar-fill" style="width:100%;background:#54c97a"></div></div><div class="flag-lbl">China</div></div>
+          <div class="flag-item"><div class="flag-emoji">🇪🇺</div><div class="flag-bar-track"><div class="flag-bar-fill" style="width:100%;background:#54c97a"></div></div><div class="flag-lbl">Europe</div></div>
+          <div class="flag-item"><div class="flag-emoji">🇷🇺</div><div class="flag-bar-track"><div class="flag-bar-fill" style="width:100%;background:#54c97a"></div></div><div class="flag-lbl">Russia</div></div>
+        </div>
+      </div>
       <p style="color:var(--ash);font-family:'IBM Plex Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem">Reward</p>
       <div class="end-sats" id="endSats">+0 ⚡</div>
       <div class="btn-row" style="margin-top:1.2rem">
@@ -203,25 +222,20 @@
 
   // ================= PHASE 1: CROSSWORD =================
   var GRID = [
-    "KDG..CC",
-    "ERI.HAH",
-    "YEFRASA",
     "SATOSHI",
-    ".M.BH.N",
-    "...O...",
-    "...T..."
+    "E.W.E..",
+    "E.E.C..",
+    "D.L.R..",
+    "..V.E..",
+    "..E.T.."
   ];
-  var ROWS = 7, COLS = 7;
+  var ROWS = 6, COLS = 7;
 
   var WORDS = [
-    { num: 1, dir: 'down', word: 'KEYS',    row:0, col:0, clue: "Lose these and lose everything in cold storage." },
-    { num: 2, dir: 'down', word: 'DREAM',   row:0, col:1, clue: "What Pharaoh had twice, and Joey had once, at a desk not unlike this one." },
-    { num: 3, dir: 'down', word: 'GIFT',    row:0, col:2, clue: "Christmas, 2003 — wrapped in newspaper, given freely." },
-    { num: 4, dir: 'down', word: 'CASH',    row:0, col:5, clue: "What Jake's company still pays out, dignity included, even for a day like today." },
-    { num: 5, dir: 'down', word: 'CHAIN',   row:0, col:6, clue: "Block after block, the record nobody can quietly edit." },
-    { num: 6, dir: 'down', word: 'HASH',    row:1, col:4, clue: "Run anything through SHA-256 and you get one of these." },
-    { num: 7, dir: 'down', word: 'ROBOT',   row:2, col:3, clue: "Orange, wind-up, and worth more than it looked." },
-    { num: 8, dir: 'across', word: 'SATOSHI', row:3, col:0, clue: "The smallest unit of Bitcoin — and the name behind the whole idea." }
+    { num: 1, dir: 'across', word: 'SATOSHI', row:0, col:0, clue: "The smallest unit of Bitcoin — and the name behind the whole idea." },
+    { num: 1, dir: 'down',   word: 'SEED',    row:0, col:0, clue: "What you write down twelve times over and never photograph." },
+    { num: 2, dir: 'down',   word: 'TWELVE',  row:0, col:2, clue: "The number of words in a proper seed phrase — ask the vault upstairs." },
+    { num: 3, dir: 'down',   word: 'SECRET',  row:0, col:4, clue: "Not a lie, exactly — just something true that isn't told." }
   ];
 
   var cellRefs = {}; // "r-c" -> input element
@@ -274,13 +288,13 @@
     var inp = cellRefs[r+'-'+c];
     if(inp) inp.focus();
   }
-  // row 3 (the SATOSHI spine) advances across; everything else advances down
+  // row 0 (the SATOSHI spine) advances across; everything else advances down
   function advance(r,c){
-    if(r===3) focusCell(r,c+1);
+    if(r===0) focusCell(r,c+1);
     else focusCell(r+1,c);
   }
   function retreat(r,c){
-    if(r===3) focusCell(r,c-1);
+    if(r===0) focusCell(r,c-1);
     else focusCell(r-1,c);
   }
 
@@ -335,45 +349,87 @@
     document.getElementById('phase2-panel').style.display = 'block';
     initPhase2();
   };
+  document.getElementById('skipBtn').onclick = function(){
+    document.getElementById('phase1-panel').style.display = 'none';
+    document.getElementById('phase2-panel').style.display = 'block';
+    initPhase2();
+  };
 
   // ================= PHASE 2: BOARDROOM =================
   var TOTAL_JOBS = 1100;
+  var UNCOMPETITIVE_AT = 40;   // breakeven, per the chapter
+  var BANKRUPT_AT = 50;        // losing money, per the chapter
+  var RESERVES_DEPLETE_PER_TICK = 100/70;  // ~14s to zero at 200ms/tick
+  var RESERVES_REGEN_PER_TICK = 100/140;   // recovery is slower than the slide into trouble
   function profitAt(x){ return 80 - 2*x; } // x = % human workforce
 
   var slider = document.getElementById('humanSlider');
   var curveSvg = document.getElementById('curveSvg');
+  var reserves = 100;
+  var reservesTimerId = null;
+  var folded = false;
 
   function drawCurve(x){
-    var w=400, h=160, padL=34, padR=14, padT=14, padB=14;
-    var xMin=30, xMax=100;
-    var yMax=25, yMin=-70; // visible profit range
+    var w=400, h=170, padL=34, padR=14, padT=14, padB=14;
+    var xMin=0, xMax=100;
+    var yMax=85, yMin=-90; // visible profit range, covers the full 0-100 domain
     function sx(px){ return padL + (w-padL-padR) * (px-xMin)/(xMax-xMin); }
     function sy(py){ return padT + (h-padT-padB) * (yMax-py)/(yMax-yMin); }
 
     var pts = [];
-    for(var px=xMin; px<=70; px+=2){
+    for(var px=xMin; px<=xMax; px+=2){
       pts.push(sx(px) + ',' + sy(clamp(profitAt(px), yMin, yMax)));
     }
     var zeroY = sy(0);
-
-    var hazardX = sx(70);
+    var bankruptX = sx(BANKRUPT_AT);
+    var uncompetitiveX = sx(UNCOMPETITIVE_AT);
+    var floorX = sx(30);
 
     var svg = '';
-    svg += '<rect x="'+hazardX+'" y="'+padT+'" width="'+(w-padR-hazardX)+'" height="'+(h-padT-padB)+'" fill="rgba(217,83,79,0.10)"/>';
+    svg += '<rect x="'+uncompetitiveX+'" y="'+padT+'" width="'+(bankruptX-uncompetitiveX)+'" height="'+(h-padT-padB)+'" fill="rgba(201,168,76,0.10)"/>';
+    svg += '<rect x="'+bankruptX+'" y="'+padT+'" width="'+(w-padR-bankruptX)+'" height="'+(h-padT-padB)+'" fill="rgba(217,83,79,0.12)"/>';
     svg += '<line x1="'+padL+'" y1="'+zeroY+'" x2="'+(w-padR)+'" y2="'+zeroY+'" stroke="#7a6e62" stroke-width="1" stroke-dasharray="3,3"/>';
     svg += '<text x="'+(w-padR)+'" y="'+(zeroY-4)+'" text-anchor="end" font-size="8" fill="#7a6e62" font-family="IBM Plex Mono, monospace">BREAKEVEN</text>';
+    svg += '<line x1="'+floorX+'" y1="'+padT+'" x2="'+floorX+'" y2="'+(h-padB)+'" stroke="#c9a84c" stroke-width="1" stroke-dasharray="2,2"/>';
+    svg += '<text x="'+floorX+'" y="'+(padT+9)+'" text-anchor="middle" font-size="8" fill="#c9a84c" font-family="IBM Plex Mono, monospace">ACT LINE</text>';
     svg += '<polyline points="'+pts.join(' ')+'" fill="none" stroke="#c9a84c" stroke-width="2.5"/>';
 
-    var markerX = sx(clamp(x,30,100));
+    var markerX = sx(clamp(x,0,100));
     var markerY = sy(clamp(profitAt(x), yMin, yMax));
     var markerColor = profitAt(x) >= 0 ? '#54c97a' : '#d9534f';
     svg += '<line x1="'+markerX+'" y1="'+padT+'" x2="'+markerX+'" y2="'+(h-padB)+'" stroke="'+markerColor+'" stroke-width="1.5" stroke-dasharray="2,2"/>';
     svg += '<circle cx="'+markerX+'" cy="'+markerY+'" r="5" fill="'+markerColor+'" stroke="#1a1410" stroke-width="1.5"/>';
 
-    svg += '<text x="'+padL+'" y="'+(h-2)+'" font-size="8" fill="#7a6e62" font-family="IBM Plex Mono, monospace">30%</text>';
+    svg += '<text x="'+padL+'" y="'+(h-2)+'" font-size="8" fill="#7a6e62" font-family="IBM Plex Mono, monospace">0%</text>';
     svg += '<text x="'+(w-padR)+'" y="'+(h-2)+'" text-anchor="end" font-size="8" fill="#7a6e62" font-family="IBM Plex Mono, monospace">100%</text>';
 
     curveSvg.innerHTML = svg;
+  }
+
+  function updateReservesBar(){
+    var bar = document.getElementById('reservesFill');
+    var wrap = document.getElementById('reservesWrap');
+    if(!bar) return;
+    bar.style.width = Math.round(reserves) + '%';
+    bar.style.background = reserves > 40 ? '#54c97a' : '#d9534f';
+    wrap.style.display = reserves < 100 || parseInt(slider.value,10) >= BANKRUPT_AT ? 'block' : 'none';
+  }
+
+  function reservesTick(){
+    if(folded) return;
+    var x = parseInt(slider.value, 10);
+    if(x >= BANKRUPT_AT){
+      reserves = clamp(reserves - RESERVES_DEPLETE_PER_TICK, 0, 100);
+      if(reserves <= 0){
+        folded = true;
+        clearInterval(reservesTimerId);
+        finishGame(x, profitAt(x), true);
+        return;
+      }
+    } else {
+      reserves = clamp(reserves + RESERVES_REGEN_PER_TICK, 0, 100);
+    }
+    updateReservesBar();
   }
 
   function updatePhase2(){
@@ -387,14 +443,24 @@
     profitEl.textContent = (profit>=0?'+':'') + profit + '%';
     profitEl.className = 'stat-val ' + (profit>=0 ? 'good' : 'bad');
     document.getElementById('jobsAtRisk').textContent = automatedJobs;
+    var unemployedEl = document.getElementById('unemployedPct');
+    if(unemployedEl) unemployedEl.textContent = (100-x) + '%';
 
-    var offshoreRisk = clamp((x-30)/40, 0, 1); // 0 at x=30, 1 at x=70+
+    var offshoreRisk = clamp((x-30)/40, 0, 1); // 0 at the Act's line, 1 well into bankrupt territory
     document.getElementById('flagChina').style.width = Math.round(offshoreRisk*100) + '%';
     document.getElementById('flagEU').style.width = Math.round(offshoreRisk*85) + '%';
     document.getElementById('flagRussia').style.width = Math.round(offshoreRisk*60) + '%';
 
     var warnBox = document.getElementById('warnBox');
-    warnBox.classList.toggle('show', x >= 65);
+    if(x >= BANKRUPT_AT){
+      warnBox.textContent = 'PENDING BANKRUPTCY — CHAPTER 11 REORGANIZATION. Slide back below 50% before reserves run out.';
+      warnBox.classList.add('show');
+    } else if(x >= UNCOMPETITIVE_AT){
+      warnBox.textContent = 'UNCOMPETITIVE. Margins are gone — Hollis\'s letter warned about exactly this.';
+      warnBox.classList.add('show');
+    } else {
+      warnBox.classList.remove('show');
+    }
 
     drawCurve(x);
   }
@@ -402,40 +468,58 @@
   slider.addEventListener('input', updatePhase2);
 
   function initPhase2(){
-    slider.value = 30;
+    slider.value = 0;
+    reserves = 100;
+    folded = false;
     updatePhase2();
+    updateReservesBar();
+    if(reservesTimerId) clearInterval(reservesTimerId);
+    reservesTimerId = setInterval(reservesTick, 200);
   }
 
   document.getElementById('lockBtn').onclick = function(){
     var x = parseInt(slider.value, 10);
     var profit = profitAt(x);
-    finishGame(x, profit);
+    if(reservesTimerId){ clearInterval(reservesTimerId); reservesTimerId = null; }
+    if(x >= BANKRUPT_AT){
+      folded = true;
+      finishGame(x, profit, true);
+    } else {
+      finishGame(x, profit, false);
+    }
   };
 
-  function finishGame(x, profit){
+  function finishGame(x, profit, isFold){
+    if(reservesTimerId){ clearInterval(reservesTimerId); reservesTimerId = null; }
     document.getElementById('phase2-panel').style.display = 'none';
     document.getElementById('end-panel').style.display = 'block';
 
     var titleEl = document.getElementById('endTitle');
     var narrEl = document.getElementById('endNarrative');
+    var aftermath = document.getElementById('foldAftermath');
     var sats;
 
-    if(x >= 70){
-      titleEl.textContent = 'The Board Votes to Relocate';
-      narrEl.textContent = 'Hollis was right about this part. At ' + x + '% human, Cognition Labs can\'t compete — and the board doesn\'t vote to keep losing money out of principle. Six months later the plant is in Shenzhen. All eleven hundred jobs are gone, not four hundred. The Humanity Act protected nobody, because there was nothing left in the country to protect.';
+    if(isFold){
+      titleEl.textContent = 'Chapter 7 — The Doors Close';
+      narrEl.textContent = 'Hollis was right about this part. At ' + x + '% human, Cognition Labs couldn\'t hold — reserves ran out before the ratio came back down. Chapter 11 reorganization becomes Chapter 7 liquidation. Six months later the plant is in Shenzhen. All eleven hundred jobs are gone, not four hundred. The Humanity Act protected nobody, because there was nothing left in the country to protect.';
+      aftermath.style.display = 'block';
       sats = 15;
-    } else if(x === 30){
-      titleEl.textContent = 'The Act Passes';
-      narrEl.textContent = 'Thirty percent, real work, pay and benefits — exactly what Jake asked for, and the most the company can afford to give. The margin holds at +20%. Four hundred jobs stay automated, but seven hundred people keep their footing, and Cognition Labs stays exactly as competitive as it needs to be. History, for once, was kind to them.';
-      sats = clamp(Math.round(80 + profit*3.5), 40, 250);
-    } else if(profit >= 0){
-      titleEl.textContent = 'Above the Floor, Under the Ceiling';
-      narrEl.textContent = 'You kept ' + x + '% of the workforce human — more than the law required. The company still turns a profit, margin at ' + (profit>=0?'+':'') + profit + '%, but it left money on the table that the Act would have allowed you to keep. Generous. Not optimal.';
-      sats = clamp(Math.round(80 + profit*3.5), 40, 250);
     } else {
-      titleEl.textContent = 'A Company Running at a Loss';
-      narrEl.textContent = 'At ' + x + '% human, Cognition Labs is underwater — margin at ' + profit + '%. Nobody loses their job today. But a company that loses money quarter after quarter doesn\'t get to keep making that choice forever, and Hollis\'s letter is still sitting in the record.';
-      sats = clamp(Math.round(80 + profit*3.5), 40, 250);
+      aftermath.style.display = 'none';
+      sats = clamp(Math.round(200 - Math.abs(x-30)*4), 20, 200);
+      if(x === 30){
+        titleEl.textContent = 'The Act Passes';
+        narrEl.textContent = 'Thirty percent, real work, pay and benefits — exactly what Jake asked for, and the most the company can afford to give. The margin holds at +20%. Four hundred jobs stay automated, but seven hundred people keep their footing, and Cognition Labs stays exactly as competitive as it needs to be. History, for once, was kind to them.';
+      } else if(x < 30){
+        titleEl.textContent = 'Nobody Made You Stop';
+        narrEl.textContent = 'At ' + x + '% human, the margin is healthy — ' + (profit>=0?'+':'') + profit + '%. Without the Act holding the line, there was nothing stopping the number from going lower. ' + (100-x) + '% of the old workforce is unemployed. The company is fine. Not everyone in it is.';
+      } else if(profit >= 0){
+        titleEl.textContent = 'Above the Floor, Under the Ceiling';
+        narrEl.textContent = 'You kept ' + x + '% of the workforce human — more than the law required. The company still turns a profit, margin at +' + profit + '%, but it left money on the table that the Act would have allowed you to keep. Generous. Not optimal.';
+      } else {
+        titleEl.textContent = 'Running It Close';
+        narrEl.textContent = 'At ' + x + '% human, Cognition Labs is underwater — margin at ' + profit + '%. Nobody lost their job today, and you pulled the ratio back before reserves ran dry. But Hollis\'s letter is still sitting in the record, and the company can\'t run this hot for long.';
+      }
     }
 
     document.getElementById('endSats').textContent = '+' + sats + ' ⚡';
