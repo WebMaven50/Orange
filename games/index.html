@@ -93,7 +93,7 @@
     .live-range-btn:hover { color: var(--white); border-color: var(--ash); }
     .live-range-btn.active { color: var(--ink); background: var(--key-gold); border-color: var(--key-gold); }
     .live-updated { font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; color: var(--ash); margin-top: 0.15rem; }
-    .live-chart-wrap { width: 100%; height: 160px; position: relative; }
+    .live-chart-wrap { width: 100%; height: 190px; position: relative; }
     .live-chart-wrap canvas { width: 100%; height: 100%; display: block; }
     .live-error { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--ash); font-style: italic; padding: 1.5rem 0; text-align: center; }
 
@@ -540,6 +540,32 @@
     });
   }
 
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function fmtAxisPrice(n) {
+    if (n >= 1000) return '$' + (n/1000).toFixed(1) + 'k';
+    return '$' + Math.round(n);
+  }
+
+  function fmtAxisTime(t, r) {
+    var d = new Date(t * 1000);
+    if (r === '1H') {
+      var h = d.getHours(), m = d.getMinutes();
+      var h12 = h % 12; if (h12 === 0) h12 = 12;
+      return h12 + ':' + (m < 10 ? '0' : '') + m;
+    }
+    if (r === '1D') {
+      var h2 = d.getHours();
+      var ampm = h2 >= 12 ? 'PM' : 'AM';
+      var h12b = h2 % 12; if (h12b === 0) h12b = 12;
+      return h12b + ampm;
+    }
+    if (r === '7D' || r === '30D' || r === '90D') {
+      return MONTHS[d.getMonth()] + ' ' + d.getDate();
+    }
+    return MONTHS[d.getMonth()] + " '" + String(d.getFullYear()).slice(-2);
+  }
+
   function drawChart() {
     var canvas = document.getElementById('live-chart');
     if (!canvas || points.length < 2) return;
@@ -557,22 +583,50 @@
     var pad = (max - min) * 0.12 || max * 0.05;
     min -= pad; max += pad;
 
-    var padTop = 8, padBottom = 8;
-    function x(i) { return (i / (points.length - 1)) * W; }
-    function y(p) { return padTop + (1 - (p - min) / (max - min)) * (H - padTop - padBottom); }
+    var padTop = 10, padBottom = 20, padLeft = 52, padRight = 6;
+    var plotW = W - padLeft - padRight, plotH = H - padTop - padBottom;
+    function x(i) { return padLeft + (i / (points.length - 1)) * plotW; }
+    function y(p) { return padTop + (1 - (p - min) / (max - min)) * plotH; }
+
+    // ── y-axis gridlines + price labels ──
+    ctx.font = "10px 'IBM Plex Mono', monospace";
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'right';
+    var gridLevels = [max - pad, (min + pad + max - pad) / 2, min + pad];
+    gridLevels.forEach(function(level) {
+      var gy = y(level);
+      ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padLeft, gy);
+      ctx.lineTo(W - padRight, gy);
+      ctx.stroke();
+      ctx.fillStyle = 'rgba(200,184,154,0.55)';
+      ctx.fillText(fmtAxisPrice(level), padLeft - 8, gy);
+    });
+
+    // ── x-axis time/date labels ──
+    var n = points.length;
+    var tickIdx = [0, Math.round((n-1)/3), Math.round(2*(n-1)/3), n-1];
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(200,184,154,0.55)';
+    tickIdx.forEach(function(idx, k) {
+      ctx.textAlign = k === 0 ? 'left' : (k === tickIdx.length - 1 ? 'right' : 'center');
+      ctx.fillText(fmtAxisTime(points[idx].t, range), x(idx), H - padBottom + 5);
+    });
 
     var rising = prices[prices.length - 1] >= prices[0];
     var lineColor = rising ? '#4caf7d' : '#c0392b';
 
-    var grad = ctx.createLinearGradient(0, 0, 0, H);
+    var grad = ctx.createLinearGradient(0, 0, 0, H - padBottom);
     grad.addColorStop(0, rising ? 'rgba(76,175,125,0.28)' : 'rgba(192,57,43,0.24)');
     grad.addColorStop(1, 'rgba(76,175,125,0)');
 
     ctx.beginPath();
     ctx.moveTo(x(0), y(prices[0]));
     for (var i = 1; i < prices.length; i++) ctx.lineTo(x(i), y(prices[i]));
-    ctx.lineTo(x(prices.length - 1), H);
-    ctx.lineTo(x(0), H);
+    ctx.lineTo(x(prices.length - 1), H - padBottom);
+    ctx.lineTo(x(0), H - padBottom);
     ctx.closePath();
     ctx.fillStyle = grad;
     ctx.fill();
