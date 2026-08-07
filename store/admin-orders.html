@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://orange-robot-store.victor-cb4.workers.dev; frame-src 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orders — Orange Robot Store</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
+  :root{
+    --ink:#0d0b09; --smoke:#1a1410; --smoke2:#241d16; --smoke3:#2e2519;
+    --ash:#7a6e62; --key-gold:#c9a84c; --rust-glow:#e06820; --white:#f5f0e8;
+    --green:#4caf50; --amber:#e0a020;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--ink); color:var(--white); font-family:'Inter', sans-serif; padding: 1.5rem; }
+  h1{ font-family:'Cinzel', serif; color:var(--key-gold); font-size:1.4rem; text-align:center; }
+
+  .login-box{ max-width:320px; margin:4rem auto; text-align:center; }
+  .login-box input{
+    width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--smoke3);
+    background:var(--smoke2); color:var(--white); font-size:1rem; margin-bottom:0.8rem;
+  }
+  .login-box button{
+    width:100%; padding:0.8rem; border:none; border-radius:8px; background:var(--key-gold);
+    color:#1a1204; font-weight:700; cursor:pointer; font-family:'Cinzel', serif;
+  }
+  .err{ color:#d9534f; font-size:0.85rem; margin-top:0.6rem; }
+
+  #dashboard{ display:none; max-width:900px; margin:0 auto; }
+  .summary{ display:flex; gap:0.8rem; margin: 1.2rem 0 1.6rem; flex-wrap:wrap; }
+  .summary .box{ flex:1; min-width:120px; background:var(--smoke2); border:1px solid var(--smoke3); border-radius:8px; padding:0.8rem; text-align:center; }
+  .summary .box .n{ font-family:'IBM Plex Mono', monospace; font-size:1.3rem; font-weight:700; color:var(--key-gold); }
+  .summary .box .l{ font-size:0.7rem; color:var(--ash); text-transform:uppercase; letter-spacing:0.05em; }
+
+  table{ width:100%; border-collapse:collapse; font-size:0.85rem; }
+  th{ text-align:left; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ash); padding:0.5rem; border-bottom:1px solid var(--smoke3); }
+  td{ padding:0.6rem 0.5rem; border-bottom:1px solid var(--smoke3); vertical-align:top; }
+  .status-pill{ padding:2px 8px; border-radius:20px; font-size:0.72rem; font-weight:700; }
+  .status-paid{ background:rgba(76,175,80,0.15); color:var(--green); }
+  .status-pending{ background:rgba(224,160,32,0.15); color:var(--amber); }
+  .status-refunded{ background:rgba(217,83,79,0.15); color:#d9534f; }
+  .ship-addr{ font-size:0.78rem; color:var(--ash); white-space:pre-line; }
+  .ship-btn{
+    padding:5px 10px; border-radius:6px; border:1px solid var(--rust-glow); background:transparent;
+    color:var(--rust-glow); font-size:0.75rem; cursor:pointer;
+  }
+  .ship-btn:disabled{ border-color:var(--smoke3); color:var(--ash); cursor:default; }
+  .icon-btn{
+    padding:4px 8px; border-radius:6px; border:1px solid var(--smoke3); background:transparent;
+    color:var(--ash); font-size:0.72rem; cursor:pointer; margin-left:4px;
+  }
+  .icon-btn:hover{ border-color:var(--ash); color:var(--white); }
+  .icon-btn.danger:hover{ border-color:#d9534f; color:#d9534f; }
+  .action-cell{ display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
+  .refresh-btn{
+    display:inline-block; margin: 0 0.4rem 1rem; padding:0.5rem 1.2rem; border-radius:8px; border:1px solid var(--smoke3);
+    background:var(--smoke2); color:var(--white); cursor:pointer; font-family:'Inter', sans-serif;
+  }
+  .check-btn{
+    display:inline-block; margin: 0 0.4rem 1rem; padding:0.5rem 1.2rem; border-radius:8px; border:1px solid var(--rust-glow);
+    background:transparent; color:var(--rust-glow); cursor:pointer; font-family:'Inter', sans-serif;
+  }
+  .check-btn:disabled{ opacity:0.5; cursor:default; }
+  .btn-row{ text-align:center; }
+  .auto-badge{ font-size:0.65rem; color:var(--ash); }
+  .search-row{ text-align:center; margin-bottom:1.2rem; }
+  .search-row input{
+    width:100%; max-width:360px; padding:0.6rem 0.9rem; border-radius:8px; border:1px solid var(--smoke3);
+    background:var(--smoke2); color:var(--white); font-family:'IBM Plex Mono', monospace; font-size:0.85rem;
+  }
+  .tag{ display:inline-block; padding:1px 7px; border-radius:12px; font-size:0.65rem; font-weight:700; letter-spacing:0.03em; margin-left:6px; }
+  .tag-test{ background:rgba(224,160,32,0.18); color:var(--amber); }
+  .tag-promo{ background:rgba(201,168,76,0.18); color:var(--key-gold); }
+  .download-count{ font-size:0.68rem; color:var(--ash); margin-top:0.2rem; }
+</style>
+</head>
+<body>
+
+<h1>🤖 Orange Robot — Orders</h1>
+<div style="text-align:center; margin-bottom:1rem;">
+  <a href="admin-settings.html" style="color:var(--ash); font-size:0.8rem; text-decoration:none;">⚙ Prices &amp; Shipping Settings</a>
+  &nbsp;·&nbsp;
+  <a href="admin-downloads.html" style="color:var(--ash); font-size:0.8rem; text-decoration:none;">⬇ Download Log</a>
+</div>
+
+<div class="login-box" id="loginBox">
+  <input type="password" id="pwInput" placeholder="Admin password" />
+  <button id="loginBtn">VIEW ORDERS</button>
+  <div class="err" id="loginErr"></div>
+</div>
+
+<div id="dashboard">
+  <div class="btn-row">
+    <button class="refresh-btn" id="refreshBtn">↻ Refresh</button>
+    <button class="check-btn" id="checkBtn">⛓ Check for Payments Now</button>
+  </div>
+  <div class="btn-row" id="checkStatus" style="font-size:0.8rem;color:var(--ash);margin-bottom:0.8rem;"></div>
+  <div class="search-row">
+    <input type="text" id="searchInput" placeholder="Search by order ID or transaction ID…" />
+  </div>
+  <div class="summary" id="summary"></div>
+  <table>
+    <thead>
+      <tr><th>Order</th><th>Format</th><th>Status</th><th>Amount</th><th>Contact / Shipping</th><th>Action</th></tr>
+    </thead>
+    <tbody id="ordersBody"></tbody>
+  </table>
+</div>
+
+<script>
+  // ⚠️ Replace with your deployed store worker URL after `wrangler deploy`.
+  const API_BASE = 'https://orange-robot-store.victor-cb4.workers.dev';
+  let PASSWORD = '';
+
+  const loginBox = document.getElementById('loginBox');
+  const dashboard = document.getElementById('dashboard');
+  const loginErr = document.getElementById('loginErr');
+
+  document.getElementById('loginBtn').addEventListener('click', async ()=>{
+    PASSWORD = document.getElementById('pwInput').value;
+    const ok = await loadOrders();
+    if(ok){
+      loginBox.style.display = 'none';
+      dashboard.style.display = 'block';
+    }
+  });
+  document.getElementById('refreshBtn').addEventListener('click', loadOrders);
+  document.getElementById('checkBtn').addEventListener('click', checkPayments);
+
+  let allOrders = [];
+  document.getElementById('searchInput').addEventListener('input', ()=>{
+    renderTable(filteredOrders());
+  });
+  function filteredOrders(){
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    if(!q) return allOrders;
+    return allOrders.filter(o =>
+      (o.id || '').toLowerCase().includes(q) ||
+      (o.txid || '').toLowerCase().includes(q) ||
+      (o.matchedTxid || '').toLowerCase().includes(q) ||
+      (o.mempoolTxid || '').toLowerCase().includes(q)
+    );
+  }
+
+  async function checkPayments(){
+    const btn = document.getElementById('checkBtn');
+    const statusEl = document.getElementById('checkStatus');
+    btn.disabled = true;
+    statusEl.textContent = 'Checking the blockchain…';
+    try{
+      const res = await fetch(API_BASE + '/admin/check-payments', {
+        method: 'POST',
+        headers: { 'X-Admin-Password': PASSWORD }
+      });
+      const data = await res.json();
+      if(!res.ok){
+        statusEl.textContent = data.error || 'Check failed.';
+      } else {
+        statusEl.textContent = data.verified > 0
+          ? `✓ Verified ${data.verified} order${data.verified===1?'':'s'} (checked ${data.checked} pending).`
+          : `No new payments found (checked ${data.checked} pending).`;
+      }
+      await loadOrders();
+    } catch(e){
+      statusEl.textContent = 'Could not reach the store worker.';
+    }
+    btn.disabled = false;
+  }
+
+  async function loadOrders(){
+    try{
+      const res = await fetch(API_BASE + '/admin/orders', {
+        headers: { 'X-Admin-Password': PASSWORD }
+      });
+      if(res.status === 401){
+        loginErr.textContent = 'Wrong password.';
+        return false;
+      }
+      const data = await res.json();
+      allOrders = data.orders || [];
+      renderSummary(allOrders);
+      renderTable(filteredOrders());
+      return true;
+    } catch(e){
+      loginErr.textContent = 'Could not reach the store worker.';
+      return false;
+    }
+  }
+
+  function renderSummary(orders){
+    const paid = orders.filter(o=>o.status==='paid' && !o.refunded);
+    const pendingVerify = orders.filter(o=>o.status!=='paid');
+    const pendingShip = paid.filter(o=>o.format==='physical' && !o.shipped);
+    const totalUsd = paid.reduce((s,o)=>s+(o.amountUsd||0),0);
+
+    document.getElementById('summary').innerHTML = `
+      <div class="box"><div class="n">${orders.length}</div><div class="l">Total Orders</div></div>
+      <div class="box"><div class="n">${pendingVerify.length}</div><div class="l">Awaiting Verification</div></div>
+      <div class="box"><div class="n">${pendingShip.length}</div><div class="l">Awaiting Shipment</div></div>
+      <div class="box"><div class="n">$${totalUsd.toFixed(2)}</div><div class="l">Total Revenue (verified, minus refunds)</div></div>
+    `;
+  }
+
+  function renderTable(orders){
+    const body = document.getElementById('ordersBody');
+    body.innerHTML = orders.map(o=>{
+      const date = new Date(o.createdAt).toLocaleString();
+      const ip = o.ip ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--ash);margin-top:0.15rem;">${o.ip}</div>` : '';
+      const contact = o.format === 'physical'
+        ? `<div class="ship-addr">${o.shipping?.name||''}\n${o.shipping?.address||''}\n${o.shipping?.city||''}, ${o.shipping?.region||''} ${o.shipping?.postal||''}\n${o.shipping?.country||''}${o.email ? '\n'+o.email : ''}</div>`
+        : (o.email || '<span style="color:var(--ash)">—</span>');
+      const txid = o.txid ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--ash);word-break:break-all;margin-top:0.3rem;">TX given: ${o.txid}</div>` : '';
+      const mempoolSeen = o.mempoolSeen && o.status !== 'paid' ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--amber);word-break:break-all;margin-top:0.2rem;">⏳ seen in mempool: ${o.mempoolTxid}</div>` : '';
+      const matched = o.matchedTxid ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--green);word-break:break-all;margin-top:0.2rem;">✓ matched: ${o.matchedTxid}</div>` : '';
+      const tracking = o.trackingNumber ? `<div style="font-size:0.72rem;color:var(--ash);margin-top:0.3rem;">📦 ${o.trackingCarrier ? o.trackingCarrier+': ' : ''}${o.trackingNumber}</div>` : '';
+      const refundNote = o.refunded ? `<div style="font-size:0.72rem;color:#d9534f;margin-top:0.3rem;">Refunded${o.refundNote ? ': '+o.refundNote : ''}</div>` : '';
+      const badges = (o.isTest ? '<span class="tag tag-test">TEST</span>' : '') + (o.isPromoRedemption ? '<span class="tag tag-promo">PROMO</span>' : '');
+      const promoNote = o.isPromoRedemption && o.promoCode ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);word-break:break-all;margin-top:0.2rem;">code: ${o.promoCode.slice(0,10)}…</div>` : '';
+      const isDigitalDelivery = o.format === 'digital' || o.format === 'audiobook';
+      const downloadCount = isDigitalDelivery ? `<div class="download-count">⬇ ${o.downloadCount || 0} of ${o.isTest ? '∞' : 5} downloads used</div>` : '';
+
+      let statusLabel, statusClass;
+      if(o.refunded){ statusLabel = 'refunded'; statusClass = 'refunded'; }
+      else if(o.status === 'paid'){ statusLabel = o.autoVerified ? 'paid (auto)' : 'paid (manual)'; statusClass = 'paid'; }
+      else { statusLabel = 'unverified'; statusClass = 'pending'; }
+
+      let primaryAction = '';
+      if(!o.refunded){
+        if(o.status !== 'paid'){
+          primaryAction = `<button class="ship-btn" onclick="markPaid('${o.id}')">Mark Paid</button>`;
+        } else if(o.format === 'physical'){
+          primaryAction = o.shipped
+            ? '<span style="color:var(--green);font-size:0.78rem;">✓ Shipped</span>'
+            : `<button class="ship-btn" onclick="markShipped('${o.id}')">Mark Shipped</button>`;
+        } else {
+          primaryAction = '<span style="color:var(--ash);font-size:0.78rem;">n/a</span>';
+        }
+      }
+
+      const secondaryActions = `
+        <div>
+          ${!o.refunded && o.status === 'paid' && o.autoVerified ? `<button class="icon-btn" onclick="undoMatch('${o.id}')">↺ Undo Match</button>` : ''}
+          ${!o.refunded && o.status === 'paid' ? `<button class="icon-btn" onclick="logRefund('${o.id}')">↩ Refund</button>` : ''}
+          ${isDigitalDelivery && (o.downloadCount || 0) > 0 ? `<button class="icon-btn" onclick="resetDownloads('${o.id}')">↻ Reset Downloads</button>` : ''}
+          <button class="icon-btn danger" onclick="deleteOrder('${o.id}')">🗑 Delete</button>
+        </div>`;
+
+      return `<tr>
+        <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;">${o.id}</span>${badges}<br/><span style="color:var(--ash);font-size:0.72rem;">${date}</span>${ip}${txid}${mempoolSeen}${matched}${promoNote}${downloadCount}${tracking}${refundNote}</td>
+        <td>${o.format}</td>
+        <td><span class="status-pill status-${statusClass}">${statusLabel}</span></td>
+        <td style="font-family:'IBM Plex Mono',monospace;">$${(o.amountUsd||0).toFixed(2)}${o.estimatedTax > 0 ? `<div style="font-size:0.65rem;color:var(--ash);font-family:'Inter',sans-serif;">incl. $${o.estimatedTax.toFixed(2)} est. tax</div>` : ''}</td>
+        <td>${contact}</td>
+        <td><div class="action-cell">${primaryAction}${secondaryActions}</div></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--ash);padding:2rem;">No orders yet.</td></tr>';
+  }
+
+  window.markPaid = async function(id){
+    await fetch(API_BASE + '/admin/verify/' + id, {
+      method: 'POST',
+      headers: { 'X-Admin-Password': PASSWORD }
+    });
+    loadOrders();
+  };
+
+  window.markShipped = async function(id){
+    const trackingNumber = prompt('Tracking number (optional, leave blank to skip):') || '';
+    let trackingCarrier = '';
+    if(trackingNumber.trim()){
+      trackingCarrier = prompt('Carrier (optional, e.g. USPS, UPS, FedEx):') || '';
+    }
+    await fetch(API_BASE + '/admin/ship/' + id, {
+      method: 'POST',
+      headers: { 'X-Admin-Password': PASSWORD, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trackingNumber, trackingCarrier })
+    });
+    loadOrders();
+  };
+
+  window.undoMatch = async function(id){
+    if(!confirm("Undo this auto-match? This resets the order back to unverified, in case the blockchain check matched the wrong transaction.")) return;
+    await fetch(API_BASE + '/admin/unverify/' + id, {
+      method: 'POST',
+      headers: { 'X-Admin-Password': PASSWORD }
+    });
+    loadOrders();
+  };
+
+  window.resetDownloads = async function(id){
+    if(!confirm("Reset this order's download count back to 0? Only do this after you've confirmed with the buyer (by TXID) that this is legitimate.")) return;
+    await fetch(API_BASE + '/admin/reset-downloads/' + id, {
+      method: 'POST',
+      headers: { 'X-Admin-Password': PASSWORD }
+    });
+    loadOrders();
+  };
+
+  window.deleteOrder = async function(id){
+    if(!confirm('Delete this order permanently? This cannot be undone.')) return;
+    await fetch(API_BASE + '/admin/delete/' + id, {
+      method: 'POST',
+      headers: { 'X-Admin-Password': PASSWORD }
+    });
+    loadOrders();
+  };
+
+  window.logRefund = async function(id){
+    if(!confirm("This just logs the refund for your own records — you still need to send the Bitcoin back yourself from your wallet. Continue?")) return;
+    const note = prompt('Optional note (e.g. reason, amount sent back):') || '';
+    await fetch(API_BASE + '/admin/refund/' + id, {
+      method: 'POST',
+      headers: { 'X-Admin-Password': PASSWORD, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note })
+    });
+    loadOrders();
+  };
+</script>
+</body>
+</html>

@@ -432,6 +432,28 @@
       margin-top: 0.5rem;
     }
 
+    /* ── SECRET LINK ── */
+    .secret-link {
+      display: inline-block;
+      margin-top: 1.2rem;
+      font-family: 'Cinzel', serif;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      color: var(--key-gold);
+      text-decoration: none;
+      opacity: 0.85;
+      transition: opacity 0.2s, text-shadow 0.3s;
+      animation: secret-pulse 3s ease-in-out infinite;
+    }
+    .secret-link:hover {
+      opacity: 1;
+      text-shadow: 0 0 12px rgba(201,168,76,0.6);
+    }
+    @keyframes secret-pulse {
+      0%, 100% { text-shadow: 0 0 4px rgba(201,168,76,0.2); }
+      50% { text-shadow: 0 0 12px rgba(201,168,76,0.5); }
+    }
+
     /* ── BITCOIN WALLET ── */
     .wallet-section {
       background: var(--smoke);
@@ -700,6 +722,7 @@
 
     @media (prefers-reduced-motion: reduce) {
       .ember { animation: none; }
+      .secret-link { animation: none; }
       * { transition: none !important; }
     }
   </style>
@@ -731,7 +754,7 @@
       <p class="hero-tagline">Some keys unlock more than machines.</p>
       <div class="cta-group">
   <a href="https://www.amazon.com/dp/B0H63B2DP6" class="btn-primary" target="_blank" rel="noopener">Order on Amazon</a>
-  <a href="https://webmaven50.github.io/OrangeRobotStore/buy.html" class="btn-secondary">₿ Buy with Bitcoin</a>
+  <a href="/store/buy.html" class="btn-secondary">₿ Buy with Bitcoin</a>
   <a href="#book" class="btn-secondary">Learn More</a>
 </div>
     </div>
@@ -760,6 +783,8 @@
           <p><em>The Orange Robot</em> is a modern retelling of the biblical story of Joseph, reimagined for an age of artificial intelligence, robotics, and Bitcoin. Long before Bitcoiners talked about being "orange pilled," Joey learns the hard way what it means to hold your own keys — that self-custody is a discipline of faith and patience, years before the coins he quietly mined in 2009 are ever worth discovering.</p>
           <br>
           <a href="https://www.amazon.com/dp/B0H63B2DP6" class="btn-primary" target="_blank" rel="noopener">Get the Book</a>
+          <br>
+          <a href="#games" class="secret-link">🔑 Reveal the secret hidden inside →</a>
         </div>
       </div>
     </div>

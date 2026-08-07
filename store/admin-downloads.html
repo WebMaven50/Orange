@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://orange-robot-store.victor-cb4.workers.dev; frame-src 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Downloads — Orange Robot Store</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
+  :root{
+    --ink:#0d0b09; --smoke:#1a1410; --smoke2:#241d16; --smoke3:#2e2519;
+    --ash:#7a6e62; --key-gold:#c9a84c; --rust-glow:#e06820; --white:#f5f0e8;
+    --green:#4caf50;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--ink); color:var(--white); font-family:'Inter', sans-serif; padding: 1.5rem; }
+  h1{ font-family:'Cinzel', serif; color:var(--key-gold); font-size:1.4rem; text-align:center; }
+  .nav{ text-align:center; margin-bottom:1rem; }
+  .nav a{ color:var(--ash); font-size:0.8rem; text-decoration:none; margin:0 0.5rem; }
+  .nav a:hover{ color:var(--key-gold); }
+
+  .login-box{ max-width:320px; margin:4rem auto; text-align:center; }
+  .login-box input{
+    width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--smoke3);
+    background:var(--smoke2); color:var(--white); font-size:1rem; margin-bottom:0.8rem;
+  }
+  .login-box button{
+    width:100%; padding:0.8rem; border:none; border-radius:8px; background:var(--key-gold);
+    color:#1a1204; font-weight:700; cursor:pointer; font-family:'Cinzel', serif;
+  }
+  .err{ color:#d9534f; font-size:0.85rem; margin-top:0.6rem; }
+
+  #dashboard{ display:none; max-width:900px; margin:0 auto; }
+  .search-row{ text-align:center; margin-bottom:1.2rem; }
+  .search-row input{
+    width:100%; max-width:360px; padding:0.6rem 0.9rem; border-radius:8px; border:1px solid var(--smoke3);
+    background:var(--smoke2); color:var(--white); font-family:'IBM Plex Mono', monospace; font-size:0.85rem;
+  }
+  .summary{ display:flex; gap:0.8rem; margin: 0 0 1.6rem; flex-wrap:wrap; }
+  .summary .box{ flex:1; min-width:120px; background:var(--smoke2); border:1px solid var(--smoke3); border-radius:8px; padding:0.8rem; text-align:center; }
+  .summary .box .n{ font-family:'IBM Plex Mono', monospace; font-size:1.3rem; font-weight:700; color:var(--key-gold); }
+  .summary .box .l{ font-size:0.7rem; color:var(--ash); text-transform:uppercase; letter-spacing:0.05em; }
+
+  .section-title{ font-family:'Cinzel', serif; color:var(--key-gold); font-size:1.05rem; margin:2rem 0 0.8rem; }
+  table{ width:100%; border-collapse:collapse; font-size:0.82rem; }
+  th{ text-align:left; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ash); padding:0.5rem; border-bottom:1px solid var(--smoke3); }
+  td{ padding:0.55rem 0.5rem; border-bottom:1px solid var(--smoke3); vertical-align:top; font-family:'IBM Plex Mono', monospace; font-size:0.78rem; }
+  .copy-btn{
+    padding:1px 7px; border-radius:6px; border:1px solid var(--smoke3); background:transparent;
+    color:var(--ash); font-size:0.65rem; cursor:pointer; margin-left:6px; font-family:'Inter', sans-serif;
+  }
+  .copy-btn:hover{ border-color:var(--ash); color:var(--white); }
+  .empty-note{ text-align:center; color:var(--ash); padding:2rem; }
+</style>
+</head>
+<body>
+
+<h1>🤖 Orange Robot — Downloads</h1>
+<div class="nav">
+  <a href="admin-orders.html">← Orders</a>
+  <a href="admin-settings.html">Settings</a>
+</div>
+
+<div class="login-box" id="loginBox">
+  <input type="password" id="pwInput" placeholder="Admin password" />
+  <button id="loginBtn">VIEW DOWNLOADS</button>
+  <div class="err" id="loginErr"></div>
+</div>
+
+<div id="dashboard">
+  <div class="search-row">
+    <input type="text" id="searchInput" placeholder="Search by order ID or IP address…" />
+  </div>
+  <div class="summary" id="summary"></div>
+
+  <div class="section-title">📖 Ebook Downloads</div>
+  <table>
+    <thead><tr><th>Timestamp</th><th>Order</th><th>IP Address</th></tr></thead>
+    <tbody id="epubBody"></tbody>
+  </table>
+
+  <div class="section-title">🎧 Audiobook Downloads</div>
+  <table>
+    <thead><tr><th>Timestamp</th><th>Order</th><th>IP Address</th></tr></thead>
+    <tbody id="audiobookBody"></tbody>
+  </table>
+</div>
+
+<script>
+  const API_BASE = 'https://orange-robot-store.victor-cb4.workers.dev';
+  let PASSWORD = '';
+  let epubLog = [];
+  let audiobookLog = [];
+
+  const loginBox = document.getElementById('loginBox');
+  const dashboard = document.getElementById('dashboard');
+  const loginErr = document.getElementById('loginErr');
+
+  document.getElementById('loginBtn').addEventListener('click', async ()=>{
+    PASSWORD = document.getElementById('pwInput').value;
+    const ok = await loadDownloads();
+    if(ok){
+      loginBox.style.display = 'none';
+      dashboard.style.display = 'block';
+    }
+  });
+
+  document.getElementById('searchInput').addEventListener('input', renderTables);
+
+  async function loadDownloads(){
+    try{
+      const [epubRes, audiobookRes] = await Promise.all([
+        fetch(API_BASE + '/admin/epub', { headers: { 'X-Admin-Password': PASSWORD } }),
+        fetch(API_BASE + '/admin/audiobook', { headers: { 'X-Admin-Password': PASSWORD } }),
+      ]);
+      if(epubRes.status === 401 || audiobookRes.status === 401){
+        loginErr.textContent = 'Wrong password.';
+        return false;
+      }
+      if(!epubRes.ok || !audiobookRes.ok){
+        loginErr.textContent = 'Could not reach the store worker.';
+        return false;
+      }
+      const epubData = await epubRes.json();
+      const audiobookData = await audiobookRes.json();
+      epubLog = epubData.recentDownloads || [];
+      audiobookLog = audiobookData.recentDownloads || [];
+      document.getElementById('summary').innerHTML = `
+        <div class="box"><div class="n">${epubData.downloadCount || 0}</div><div class="l">Ebook Downloads</div></div>
+        <div class="box"><div class="n">${audiobookData.downloadCount || 0}</div><div class="l">Audiobook Downloads</div></div>
+      `;
+      renderTables();
+      return true;
+    } catch(e){
+      loginErr.textContent = 'Could not reach the store worker.';
+      return false;
+    }
+  }
+
+  function matchesSearch(entry, q){
+    if(!q) return true;
+    return (entry.orderId || '').toLowerCase().includes(q) || (entry.ip || '').toLowerCase().includes(q);
+  }
+
+  function renderRows(log){
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    const filtered = log.filter(e => matchesSearch(e, q));
+    if(filtered.length === 0){
+      return '<tr><td colspan="3" class="empty-note">No downloads yet.</td></tr>';
+    }
+    return filtered.map(e => {
+      const time = new Date(e.timestamp).toLocaleString();
+      const orderId = e.orderId || '—';
+      const ip = e.ip || 'unknown';
+      return `<tr>
+        <td>${time}</td>
+        <td>${orderId}${orderId !== '—' ? `<button class="copy-btn" data-copy="${orderId}">copy</button>` : ''}</td>
+        <td>${ip}${ip !== 'unknown' ? `<button class="copy-btn" data-copy="${ip}">copy</button>` : ''}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderTables(){
+    document.getElementById('epubBody').innerHTML = renderRows(epubLog);
+    document.getElementById('audiobookBody').innerHTML = renderRows(audiobookLog);
+    document.querySelectorAll('.copy-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        navigator.clipboard?.writeText(btn.dataset.copy).catch(()=>{});
+        const orig = btn.textContent;
+        btn.textContent = 'copied';
+        setTimeout(()=>{ btn.textContent = orig; }, 1200);
+      });
+    });
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://orange-robot-store.victor-cb4.workers.dev; frame-src 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Settings — Orange Robot Store</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
+  :root{
+    --ink:#0d0b09; --smoke:#1a1410; --smoke2:#241d16; --smoke3:#2e2519;
+    --ash:#7a6e62; --key-gold:#c9a84c; --rust-glow:#e06820; --white:#f5f0e8;
+    --green:#4caf50;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--ink); color:var(--white); font-family:'Inter', sans-serif; padding: 1.5rem; }
+  h1{ font-family:'Cinzel', serif; color:var(--key-gold); font-size:1.4rem; text-align:center; margin-bottom:0.3rem; }
+  .nav{ text-align:center; margin-bottom:1.5rem; }
+  .nav a{ color:var(--ash); font-size:0.8rem; text-decoration:none; }
+  .nav a:hover{ color:var(--key-gold); }
+
+  .login-box{ max-width:320px; margin:4rem auto; text-align:center; }
+  .login-box input{
+    width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--smoke3);
+    background:var(--smoke2); color:var(--white); font-size:1rem; margin-bottom:0.8rem;
+  }
+  .login-box button{
+    width:100%; padding:0.8rem; border:none; border-radius:8px; background:var(--key-gold);
+    color:#1a1204; font-weight:700; cursor:pointer; font-family:'Cinzel', serif;
+  }
+  .err{ color:#d9534f; font-size:0.85rem; margin-top:0.6rem; }
+
+  #dashboard{ display:none; max-width:420px; margin:0 auto; }
+  .card{ background:var(--smoke2); border:1px solid var(--smoke3); border-radius:10px; padding:1.4rem; }
+  .field{ margin-bottom:1.1rem; }
+  .field label{
+    display:block; font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase;
+    color:var(--ash); margin-bottom:0.4rem;
+  }
+  .field .dollar-input{ position:relative; }
+  .field .dollar-input span{
+    position:absolute; left:0.8rem; top:50%; transform:translateY(-50%); color:var(--ash);
+  }
+  .field input{
+    width:100%; padding:0.7rem 0.8rem 0.7rem 1.6rem; border-radius:7px; border:1px solid var(--smoke3);
+    background:var(--smoke); color:var(--white); font-family:'IBM Plex Mono', monospace; font-size:1rem;
+  }
+  .field input:focus{ outline:none; border-color:var(--rust-glow); }
+  .save-btn{
+    width:100%; padding:0.85rem; border:none; border-radius:8px; background:var(--key-gold);
+    color:#1a1204; font-weight:700; cursor:pointer; font-family:'Cinzel', serif; letter-spacing:0.03em;
+  }
+  .save-btn:disabled{ opacity:0.5; cursor:default; }
+  .msg{ text-align:center; font-size:0.85rem; margin-top:0.9rem; min-height:1.2em; }
+  .msg.ok{ color:var(--green); }
+  .msg.error{ color:#d9534f; }
+  .hint{ font-size:0.75rem; color:var(--ash); text-align:center; margin-bottom:1.4rem; line-height:1.5; }
+  .progress-wrap{ display:none; margin-bottom:0.9rem; }
+  .progress-track{ width:100%; height:8px; border-radius:4px; background:var(--smoke); overflow:hidden; }
+  .progress-bar{ height:100%; width:0%; background:var(--key-gold); transition:width 0.2s; }
+  .progress-text{ font-size:0.72rem; color:var(--ash); text-align:center; margin-top:0.4rem; }
+</style>
+</head>
+<body>
+
+<h1>🤖 Orange Robot — Settings</h1>
+<div class="nav"><a href="admin-orders.html">← Back to Orders</a> &nbsp;·&nbsp; <a href="admin-downloads.html">⬇ Download Log</a></div>
+
+<div class="login-box" id="loginBox">
+  <form id="loginForm" autocomplete="on">
+    <input type="text" name="username" autocomplete="username" value="admin" style="display:none" aria-hidden="true" tabindex="-1" />
+    <input type="password" id="pwInput" name="password" placeholder="Admin password" autocomplete="current-password" />
+    <button id="loginBtn" type="submit">UNLOCK</button>
+  </form>
+  <div class="err" id="loginErr"></div>
+</div>
+
+<div id="dashboard">
+  <div class="hint">Changes apply immediately to the live buy page — no redeploy needed.</div>
+  <div class="card">
+    <div class="field">
+      <label>Digital (EPUB) price</label>
+      <div class="dollar-input"><span>$</span><input type="number" step="0.01" min="0" id="priceDigital" /></div>
+    </div>
+    <div class="field">
+      <label>Physical (paperback) price</label>
+      <div class="dollar-input"><span>$</span><input type="number" step="0.01" min="0" id="pricePhysical" /></div>
+    </div>
+    <div class="field">
+      <label>Audiobook price</label>
+      <div class="dollar-input"><span>$</span><input type="number" step="0.01" min="0" id="priceAudiobook" /></div>
+    </div>
+    <div class="field">
+      <label>US shipping</label>
+      <div class="dollar-input"><span>$</span><input type="number" step="0.01" min="0" id="shippingUs" /></div>
+    </div>
+    <div class="field">
+      <label>International shipping</label>
+      <div class="dollar-input"><span>$</span><input type="number" step="0.01" min="0" id="shippingIntl" /></div>
+    </div>
+    <div class="field">
+      <label>Bitcoin receive address</label>
+      <input type="text" id="walletAddress" style="padding-left:0.8rem; font-family:'IBM Plex Mono', monospace; font-size:0.85rem;" />
+    </div>
+    <button class="save-btn" id="saveBtn">SAVE CHANGES</button>
+    <div class="msg" id="saveMsg"></div>
+  </div>
+
+  <div class="card" style="margin-top:1.2rem;">
+    <div class="field">
+      <label>Ebook file (EPUB)</label>
+      <div id="epubInfo" style="font-family:'IBM Plex Mono', monospace; font-size:0.78rem; color:var(--ash); margin-bottom:0.9rem; line-height:1.6;">Loading…</div>
+      <input type="file" id="epubFile" accept=".epub" style="width:100%; margin-bottom:0.8rem; color:var(--white); font-size:0.85rem;" />
+    </div>
+    <button class="save-btn" id="uploadEpubBtn" type="button">UPLOAD NEW EPUB</button>
+    <div class="msg" id="epubMsg"></div>
+  </div>
+
+  <div class="card" style="margin-top:1.2rem;">
+    <div class="field">
+      <label>Audiobook preview clip</label>
+      <div id="audiobookPreviewInfo" style="font-family:'IBM Plex Mono', monospace; font-size:0.78rem; color:var(--ash); margin-bottom:0.9rem; line-height:1.6;">Loading…</div>
+      <input type="file" id="audiobookPreviewFile" accept="audio/*" style="width:100%; margin-bottom:0.8rem; color:var(--white); font-size:0.85rem;" />
+    </div>
+    <button class="save-btn" id="uploadAudiobookPreviewBtn" type="button">UPLOAD NEW PREVIEW</button>
+    <div class="msg" id="audiobookPreviewMsg"></div>
+  </div>
+
+  <div class="card" style="margin-top:1.2rem;">
+    <div class="field">
+      <label>Audiobook (full)</label>
+      <div id="audiobookInfo" style="font-family:'IBM Plex Mono', monospace; font-size:0.78rem; color:var(--ash); margin-bottom:0.9rem; line-height:1.6;">Loading…</div>
+      <input type="file" id="audiobookFile" accept="audio/*" style="width:100%; margin-bottom:0.8rem; color:var(--white); font-size:0.85rem;" />
+    </div>
+    <div class="progress-wrap" id="audiobookProgressWrap">
+      <div class="progress-track"><div class="progress-bar" id="audiobookProgressBar"></div></div>
+      <div class="progress-text" id="audiobookProgressText"></div>
+    </div>
+    <button class="save-btn" id="uploadAudiobookBtn" type="button">UPLOAD NEW AUDIOBOOK</button>
+    <div class="msg" id="audiobookMsg"></div>
+  </div>
+
+  <div class="card" style="margin-top:1.2rem;">
+    <div class="field">
+      <label>Create a test order (no real payment, instant download, doesn't email anyone)</label>
+      <select id="testOrderFormat" style="width:100%; padding:0.7rem 0.8rem; border-radius:7px; border:1px solid var(--smoke3); background:var(--smoke); color:var(--white); font-family:'Inter', sans-serif; font-size:0.95rem;">
+        <option value="digital">Digital (EPUB)</option>
+        <option value="audiobook">Audiobook</option>
+        <option value="physical">Physical</option>
+      </select>
+    </div>
+    <button class="save-btn" id="createTestOrderBtn" type="button">CREATE TEST ORDER</button>
+    <div class="msg" id="testOrderMsg"></div>
+    <div id="testOrderResult" style="margin-top:0.9rem; font-size:0.82rem; line-height:1.6; display:none;"></div>
+  </div>
+
+  <div class="card" style="margin-top:1.2rem;">
+    <div class="field">
+      <label>Generate a promo code (for influencers — free download, no payment)</label>
+      <input type="number" id="promoMaxRedemptions" min="1" max="1000" value="10" style="width:100%; padding:0.7rem 0.8rem; border-radius:7px; border:1px solid var(--smoke3); background:var(--smoke); color:var(--white); font-family:'IBM Plex Mono', monospace; font-size:1rem;" />
+    </div>
+    <button class="save-btn" id="createPromoBtn" type="button">GENERATE CODE</button>
+    <div class="msg" id="promoMsg"></div>
+    <div id="promoNewCode" style="margin-top:0.9rem; padding:0.8rem; background:var(--smoke); border-radius:7px; font-family:'IBM Plex Mono', monospace; font-size:0.76rem; color:var(--key-gold); word-break:break-all; display:none;"></div>
+
+    <div style="margin-top:1.4rem;">
+      <div style="font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase; color:var(--ash); margin-bottom:0.6rem;">Existing codes</div>
+      <div id="promoList" style="font-size:0.78rem; line-height:1.8;">Loading…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ⚠️ Same worker URL as buy.html / admin-orders.html.
+  const API_BASE = 'https://orange-robot-store.victor-cb4.workers.dev';
+  let PASSWORD = '';
+
+  function copyBtnHtml(text){
+    return `<button class="copy-btn" data-copy="${text.replace(/"/g, '&quot;')}" style="padding:1px 8px;border-radius:6px;border:1px solid var(--smoke3);background:transparent;color:var(--ash);font-size:0.68rem;cursor:pointer;margin-left:6px;font-family:'Inter',sans-serif;">copy</button>`;
+  }
+  function attachCopyButtons(container){
+    container.querySelectorAll('.copy-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        navigator.clipboard?.writeText(btn.dataset.copy).catch(()=>{});
+        const orig = btn.textContent;
+        btn.textContent = 'copied';
+        setTimeout(()=>{ btn.textContent = orig; }, 1200);
+      });
+    });
+  }
+
+  const loginBox = document.getElementById('loginBox');
+  const dashboard = document.getElementById('dashboard');
+  const loginErr = document.getElementById('loginErr');
+  const saveMsg = document.getElementById('saveMsg');
+  const dollarFieldIds = ['priceDigital', 'pricePhysical', 'priceAudiobook', 'shippingUs', 'shippingIntl'];
+  const fieldIds = [...dollarFieldIds, 'walletAddress'];
+
+  document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    PASSWORD = document.getElementById('pwInput').value;
+    const ok = await loadSettings();
+    if(ok){
+      loginBox.style.display = 'none';
+      dashboard.style.display = 'block';
+      loadEpubInfo();
+      loadAudiobookPreviewInfo();
+      loadAudiobookInfo();
+      loadPromoList();
+    }
+  });
+
+  async function loadSettings(){
+    try{
+      const res = await fetch(API_BASE + '/admin/settings', {
+        headers: { 'X-Admin-Password': PASSWORD }
+      });
+      if(res.status === 401){
+        loginErr.textContent = 'Wrong password.';
+        return false;
+      }
+      if(!res.ok){
+        loginErr.textContent = 'Could not reach the store worker.';
+        return false;
+      }
+      const s = await res.json();
+      dollarFieldIds.forEach(id => { document.getElementById(id).value = (s[id] ?? 0).toFixed(2); });
+      document.getElementById('walletAddress').value = s.walletAddress ?? '';
+      return true;
+    } catch(e){
+      loginErr.textContent = 'Could not reach the store worker.';
+      return false;
+    }
+  }
+
+  document.getElementById('saveBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    saveMsg.textContent = 'Saving…';
+    saveMsg.className = 'msg';
+
+    const body = {};
+    for(const id of dollarFieldIds){
+      const v = document.getElementById(id).value;
+      if(v !== '') body[id] = parseFloat(v);
+    }
+    const addr = document.getElementById('walletAddress').value.trim();
+    if(addr) body.walletAddress = addr;
+
+    try{
+      const res = await fetch(API_BASE + '/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if(res.status === 401){
+        saveMsg.textContent = 'Wrong password — refresh and log in again.';
+        saveMsg.className = 'msg error';
+      } else if(!res.ok){
+        saveMsg.textContent = data.error || 'Something went wrong.';
+        saveMsg.className = 'msg error';
+      } else {
+        dollarFieldIds.forEach(id => { document.getElementById(id).value = data.settings[id].toFixed(2); });
+        document.getElementById('walletAddress').value = data.settings.walletAddress ?? '';
+        saveMsg.textContent = '✓ Saved — live on the site now.';
+        saveMsg.className = 'msg ok';
+      }
+    } catch(e){
+      saveMsg.textContent = 'Could not reach the store worker.';
+      saveMsg.className = 'msg error';
+    }
+    btn.disabled = false;
+  });
+
+  async function loadEpubInfo(){
+    const el = document.getElementById('epubInfo');
+    try{
+      const res = await fetch(API_BASE + '/admin/epub', { headers: { 'X-Admin-Password': PASSWORD } });
+      if(!res.ok){ el.textContent = 'Could not load file info.'; return; }
+      const data = await res.json();
+      if(!data.exists){
+        el.textContent = 'No file uploaded yet.';
+        return;
+      }
+      const sizeMb = (data.sizeBytes / (1024*1024)).toFixed(2);
+      const uploaded = data.uploadedAt ? new Date(data.uploadedAt).toLocaleString() : 'unknown';
+      const last = data.recentDownloads[0] ? new Date(data.recentDownloads[0].timestamp).toLocaleString() : 'never';
+      el.innerHTML = `Current file: ${sizeMb} MB<br>Uploaded: ${uploaded}<br>Downloaded ${data.downloadCount} time${data.downloadCount === 1 ? '' : 's'} — last: ${last}`;
+    } catch(e){
+      el.textContent = 'Could not reach the store worker.';
+    }
+  }
+
+  document.getElementById('uploadEpubBtn').addEventListener('click', async ()=>{
+    const fileInput = document.getElementById('epubFile');
+    const file = fileInput.files[0];
+    const msg = document.getElementById('epubMsg');
+    if(!file){
+      msg.textContent = 'Choose a file first.';
+      msg.className = 'msg error';
+      return;
+    }
+    if(!confirm('This replaces the live download for everyone immediately. Continue?')) return;
+
+    const btn = document.getElementById('uploadEpubBtn');
+    btn.disabled = true;
+    msg.textContent = 'Uploading…';
+    msg.className = 'msg';
+    try{
+      const bytes = await file.arrayBuffer();
+      const res = await fetch(API_BASE + '/admin/upload-epub', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/epub+zip', 'X-Admin-Password': PASSWORD },
+        body: bytes,
+      });
+      const data = await res.json();
+      if(res.status === 401){
+        msg.textContent = 'Wrong password — refresh and log in again.';
+        msg.className = 'msg error';
+      } else if(!res.ok){
+        msg.textContent = data.error || 'Something went wrong.';
+        msg.className = 'msg error';
+      } else {
+        msg.textContent = '✓ Uploaded — live now.';
+        msg.className = 'msg ok';
+        fileInput.value = '';
+        loadEpubInfo();
+      }
+    } catch(e){
+      msg.textContent = 'Could not reach the store worker.';
+      msg.className = 'msg error';
+    }
+    btn.disabled = false;
+  });
+
+  async function loadAudiobookPreviewInfo(){
+    const el = document.getElementById('audiobookPreviewInfo');
+    try{
+      const res = await fetch(API_BASE + '/admin/audiobook-preview', { headers: { 'X-Admin-Password': PASSWORD } });
+      if(!res.ok){ el.textContent = 'Could not load file info.'; return; }
+      const data = await res.json();
+      if(!data.exists){
+        el.textContent = 'No preview uploaded yet.';
+        return;
+      }
+      const sizeMb = (data.sizeBytes / (1024*1024)).toFixed(2);
+      const uploaded = data.uploadedAt ? new Date(data.uploadedAt).toLocaleString() : 'unknown';
+      el.innerHTML = `Current preview: ${sizeMb} MB<br>Uploaded: ${uploaded}<br>Played ${data.playCount} time${data.playCount === 1 ? '' : 's'}`;
+    } catch(e){
+      el.textContent = 'Could not reach the store worker.';
+    }
+  }
+
+  document.getElementById('uploadAudiobookPreviewBtn').addEventListener('click', async ()=>{
+    const fileInput = document.getElementById('audiobookPreviewFile');
+    const file = fileInput.files[0];
+    const msg = document.getElementById('audiobookPreviewMsg');
+    if(!file){
+      msg.textContent = 'Choose a file first.';
+      msg.className = 'msg error';
+      return;
+    }
+    if(!confirm('This replaces the live preview clip for everyone immediately. Continue?')) return;
+
+    const btn = document.getElementById('uploadAudiobookPreviewBtn');
+    btn.disabled = true;
+    msg.textContent = 'Uploading…';
+    msg.className = 'msg';
+    try{
+      const bytes = await file.arrayBuffer();
+      const res = await fetch(API_BASE + '/admin/upload-audiobook-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': file.type || 'audio/mpeg', 'X-Admin-Password': PASSWORD },
+        body: bytes,
+      });
+      const data = await res.json();
+      if(res.status === 401){
+        msg.textContent = 'Wrong password — refresh and log in again.';
+        msg.className = 'msg error';
+      } else if(!res.ok){
+        msg.textContent = data.error || 'Something went wrong.';
+        msg.className = 'msg error';
+      } else {
+        msg.textContent = '✓ Uploaded — live now.';
+        msg.className = 'msg ok';
+        fileInput.value = '';
+        loadAudiobookPreviewInfo();
+      }
+    } catch(e){
+      msg.textContent = 'Could not reach the store worker.';
+      msg.className = 'msg error';
+    }
+    btn.disabled = false;
+  });
+
+  async function loadAudiobookInfo(){
+    const el = document.getElementById('audiobookInfo');
+    try{
+      const res = await fetch(API_BASE + '/admin/audiobook', { headers: { 'X-Admin-Password': PASSWORD } });
+      if(!res.ok){ el.textContent = 'Could not load file info.'; return; }
+      const data = await res.json();
+      if(!data.exists){
+        el.textContent = 'No file uploaded yet.';
+        return;
+      }
+      const sizeMb = (data.sizeBytes / (1024*1024)).toFixed(1);
+      const uploaded = data.uploadedAt ? new Date(data.uploadedAt).toLocaleString() : 'unknown';
+      const last = data.recentDownloads[0] ? new Date(data.recentDownloads[0].timestamp).toLocaleString() : 'never';
+      el.innerHTML = `Current file: ${sizeMb} MB<br>Uploaded: ${uploaded}<br>Downloaded ${data.downloadCount} time${data.downloadCount === 1 ? '' : 's'} — last: ${last}`;
+    } catch(e){
+      el.textContent = 'Could not reach the store worker.';
+    }
+  }
+
+  const AUDIOBOOK_CHUNK_SIZE = 20 * 1024 * 1024;
+
+  document.getElementById('uploadAudiobookBtn').addEventListener('click', async ()=>{
+    const fileInput = document.getElementById('audiobookFile');
+    const file = fileInput.files[0];
+    const msg = document.getElementById('audiobookMsg');
+    const progressWrap = document.getElementById('audiobookProgressWrap');
+    const progressBar = document.getElementById('audiobookProgressBar');
+    const progressText = document.getElementById('audiobookProgressText');
+    if(!file){
+      msg.textContent = 'Choose a file first.';
+      msg.className = 'msg error';
+      return;
+    }
+    if(!confirm('This replaces the live audiobook download for everyone immediately. Large files can take a while — keep this tab open until it finishes. Continue?')) return;
+
+    const btn = document.getElementById('uploadAudiobookBtn');
+    btn.disabled = true;
+    msg.textContent = '';
+    msg.className = 'msg';
+    progressWrap.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressText.textContent = 'Starting upload…';
+
+    let uploadId = null;
+    try{
+      const startRes = await fetch(API_BASE + '/admin/audiobook-upload/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
+        body: JSON.stringify({ contentType: file.type || 'audio/mpeg' }),
+      });
+      if(startRes.status === 401) throw new Error('Wrong password — refresh and log in again.');
+      const startData = await startRes.json();
+      if(!startRes.ok) throw new Error(startData.error || 'Could not start upload.');
+      uploadId = startData.uploadId;
+
+      const totalParts = Math.ceil(file.size / AUDIOBOOK_CHUNK_SIZE);
+      const parts = [];
+      for(let i = 0; i < totalParts; i++){
+        const partNumber = i + 1;
+        const start = i * AUDIOBOOK_CHUNK_SIZE;
+        const end = Math.min(start + AUDIOBOOK_CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+        const partRes = await fetch(API_BASE + '/admin/audiobook-upload/part?uploadId=' + encodeURIComponent(uploadId) + '&partNumber=' + partNumber, {
+          method: 'POST',
+          headers: { 'X-Admin-Password': PASSWORD },
+          body: chunk,
+        });
+        const partData = await partRes.json();
+        if(!partRes.ok) throw new Error(partData.error || ('Part ' + partNumber + ' failed.'));
+        parts.push({ partNumber: partData.partNumber, etag: partData.etag });
+
+        const pct = Math.round((partNumber / totalParts) * 100);
+        progressBar.style.width = pct + '%';
+        progressText.textContent = `Uploading… ${pct}% (part ${partNumber} of ${totalParts})`;
+      }
+
+      progressText.textContent = 'Finishing up…';
+      const completeRes = await fetch(API_BASE + '/admin/audiobook-upload/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
+        body: JSON.stringify({ uploadId, parts }),
+      });
+      const completeData = await completeRes.json();
+      if(!completeRes.ok) throw new Error(completeData.error || 'Could not complete upload.');
+
+      msg.textContent = '✓ Uploaded — live now.';
+      msg.className = 'msg ok';
+      fileInput.value = '';
+      progressWrap.style.display = 'none';
+      loadAudiobookInfo();
+    } catch(e){
+      msg.textContent = e.message || 'Upload failed.';
+      msg.className = 'msg error';
+      progressWrap.style.display = 'none';
+      if(uploadId){
+        try{
+          await fetch(API_BASE + '/admin/audiobook-upload/abort', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
+            body: JSON.stringify({ uploadId }),
+          });
+        } catch(abortErr){ /* best effort cleanup */ }
+      }
+    }
+    btn.disabled = false;
+  });
+
+  document.getElementById('createTestOrderBtn').addEventListener('click', async ()=>{
+    const format = document.getElementById('testOrderFormat').value;
+    const msg = document.getElementById('testOrderMsg');
+    const resultEl = document.getElementById('testOrderResult');
+    const btn = document.getElementById('createTestOrderBtn');
+    btn.disabled = true;
+    msg.textContent = 'Creating…';
+    msg.className = 'msg';
+    resultEl.style.display = 'none';
+    try{
+      const res = await fetch(API_BASE + '/admin/test-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
+        body: JSON.stringify({ format }),
+      });
+      const data = await res.json();
+      if(res.status === 401){
+        msg.textContent = 'Wrong password — refresh and log in again.';
+        msg.className = 'msg error';
+      } else if(!res.ok){
+        msg.textContent = data.error || 'Something went wrong.';
+        msg.className = 'msg error';
+      } else {
+        msg.textContent = '✓ Test order created.';
+        msg.className = 'msg ok';
+        let downloadHtml;
+        if(format === 'digital' || format === 'audiobook'){
+          const path = format === 'audiobook' ? '/download/audiobook' : '/download/epub';
+          const url = API_BASE + path + '?order=' + encodeURIComponent(data.orderId);
+          downloadHtml = `<br><a href="${url}" style="color:var(--rust-glow);word-break:break-all;">${url}</a>${copyBtnHtml(url)}`;
+        } else {
+          downloadHtml = '<br>Physical test order — find it in Orders to test the "Mark Shipped" flow.';
+        }
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = `Order ID: <span style="font-family:'IBM Plex Mono',monospace;">${data.orderId}</span>${copyBtnHtml(data.orderId)}${downloadHtml}`;
+        attachCopyButtons(resultEl);
+      }
+    } catch(e){
+      msg.textContent = 'Could not reach the store worker.';
+      msg.className = 'msg error';
+    }
+    btn.disabled = false;
+  });
+
+  async function loadPromoList(){
+    const el = document.getElementById('promoList');
+    try{
+      const res = await fetch(API_BASE + '/admin/promo/list', { headers: { 'X-Admin-Password': PASSWORD } });
+      if(!res.ok){ el.textContent = 'Could not load codes.'; return; }
+      const data = await res.json();
+      if(!data.promos || data.promos.length === 0){
+        el.textContent = 'No codes yet.';
+        return;
+      }
+      el.innerHTML = data.promos.map(p => {
+        const short = p.code.slice(0, 8) + '…' + p.code.slice(-4);
+        const exhausted = p.redeemedCount >= p.maxRedemptions;
+        const status = !p.active
+          ? '<span style="color:#d9534f;">deactivated</span>'
+          : exhausted
+            ? '<span style="color:var(--ash);">exhausted</span>'
+            : '<span style="color:var(--green);">active</span>';
+        const deactivateBtn = p.active
+          ? `<button onclick="deactivatePromo('${p.code}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--smoke3);background:transparent;color:var(--ash);font-size:0.7rem;cursor:pointer;margin-left:6px;">deactivate</button>`
+          : '';
+        return `<div style="padding:0.5rem 0;border-bottom:1px solid var(--smoke3);">
+          <span style="font-family:'IBM Plex Mono',monospace;">${short}</span>${copyBtnHtml(p.code)} — ${p.redeemedCount}/${p.maxRedemptions} redeemed — ${status}${deactivateBtn}
+        </div>`;
+      }).join('');
+      attachCopyButtons(el);
+    } catch(e){
+      el.textContent = 'Could not reach the store worker.';
+    }
+  }
+
+  document.getElementById('createPromoBtn').addEventListener('click', async ()=>{
+    const maxRedemptions = parseInt(document.getElementById('promoMaxRedemptions').value, 10) || 10;
+    const msg = document.getElementById('promoMsg');
+    const newCodeEl = document.getElementById('promoNewCode');
+    const btn = document.getElementById('createPromoBtn');
+    btn.disabled = true;
+    msg.textContent = 'Generating…';
+    msg.className = 'msg';
+    newCodeEl.style.display = 'none';
+    try{
+      const res = await fetch(API_BASE + '/admin/promo/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
+        body: JSON.stringify({ maxRedemptions }),
+      });
+      const data = await res.json();
+      if(res.status === 401){
+        msg.textContent = 'Wrong password — refresh and log in again.';
+        msg.className = 'msg error';
+      } else if(!res.ok){
+        msg.textContent = data.error || 'Something went wrong.';
+        msg.className = 'msg error';
+      } else {
+        msg.textContent = '✓ Code created — copy it now and send it to your influencer.';
+        msg.className = 'msg ok';
+        newCodeEl.style.display = 'block';
+        newCodeEl.innerHTML = `${data.promo.code}${copyBtnHtml(data.promo.code)}`;
+        attachCopyButtons(newCodeEl);
+        loadPromoList();
+      }
+    } catch(e){
+      msg.textContent = 'Could not reach the store worker.';
+      msg.className = 'msg error';
+    }
+    btn.disabled = false;
+  });
+
+  window.deactivatePromo = async function(code){
+    if(!confirm('Deactivate this code? It will stop working immediately.')) return;
+    await fetch(API_BASE + '/admin/promo/deactivate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
+      body: JSON.stringify({ code }),
+    });
+    loadPromoList();
+  };
+</script>
+</body>
+</html>

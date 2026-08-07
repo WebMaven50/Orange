@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; media-src 'self' https://orange-robot-store.victor-cb4.workers.dev; connect-src 'self' https://orange-robot-store.victor-cb4.workers.dev https://api.coingecko.com; frame-src 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buy The Orange Robot</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --ink:        #0d0b09;
+    --rust:       #b5541a;
+    --rust-dim:   #7a3810;
+    --rust-glow:  #e06820;
+    --parchment:  #f0e8d8;
+    --parchment2: #c8b89a;
+    --smoke:      #1a1410;
+    --smoke2:     #241d16;
+    --smoke3:     #2e2519;
+    --ash:        #7a6e62;
+    --key-gold:   #c9a84c;
+    --white:      #f5f0e8;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background: var(--ink);
+    color: var(--white);
+    font-family:'EB Garamond', Georgia, serif;
+  }
+  .wrap{ max-width:720px; margin:0 auto; padding:2.5rem 1.4rem 4rem; }
+
+  .back-link{ font-family:'Inter', sans-serif; font-size:0.8rem; color:var(--ash); text-decoration:none; }
+  .back-link:hover{ color:var(--key-gold); }
+
+  h1{
+    font-family:'Cinzel', serif; font-weight:700;
+    font-size: clamp(1.8rem, 5vw, 2.6rem);
+    color: var(--key-gold);
+    text-align:center;
+    margin: 1.4rem 0 0.4rem;
+    letter-spacing:0.02em;
+  }
+  .subtitle{
+    text-align:center; color:var(--parchment2); font-style:italic;
+    font-size:1.1rem; margin-bottom:2.4rem;
+  }
+
+  .options{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:1rem; margin-bottom:2rem; }
+  @media (max-width:720px){ .options{ grid-template-columns: 1fr 1fr; } }
+  @media (max-width:420px){ .options{ grid-template-columns: 1fr; } }
+
+  .preview-box{
+    background: var(--smoke2); border:1px solid var(--smoke3); border-radius:10px;
+    padding:1.2rem 1.4rem; margin-bottom:1.6rem; text-align:center;
+  }
+  .preview-label{
+    font-family:'Cinzel', serif; font-size:0.85rem; letter-spacing:0.04em;
+    color:var(--key-gold); margin-bottom:0.5rem;
+  }
+  .preview-box audio{ width:100%; max-width:420px; }
+  .preview-unavailable{
+    font-family:'Inter', sans-serif; font-size:0.82rem; color:var(--ash); font-style:italic;
+  }
+
+  .option-card{
+    background: var(--smoke2); border:1px solid var(--smoke3); border-radius:10px;
+    padding:1.6rem 1.3rem; text-align:center; cursor:pointer; transition: border-color .15s;
+  }
+  .option-card:hover{ border-color: var(--rust-glow); }
+  .option-card.selected{ border-color: var(--key-gold); background: var(--smoke3); }
+  .option-icon{ font-size:2.2rem; margin-bottom:0.6rem; }
+  .option-title{ font-family:'Cinzel', serif; font-size:1rem; letter-spacing:0.04em; color:var(--white); margin-bottom:0.3rem; }
+  .option-price{ font-family:'IBM Plex Mono', monospace; font-size:1.3rem; color:var(--key-gold); font-weight:700; }
+  .option-desc{ font-family:'Inter', sans-serif; font-size:0.78rem; color:var(--ash); margin-top:0.4rem; }
+
+  .form-card{
+    background: var(--smoke2); border:1px solid var(--smoke3); border-radius:10px;
+    padding:1.6rem; margin-bottom:1.5rem; display:none;
+  }
+  .form-card.visible{ display:block; }
+  .form-row{ margin-bottom:0.9rem; }
+  .form-row label{
+    display:block; font-family:'Inter', sans-serif; font-size:0.72rem; letter-spacing:0.05em;
+    text-transform:uppercase; color:var(--ash); margin-bottom:0.35rem;
+  }
+  .form-row input, .form-row select{
+    width:100%; padding:0.65rem 0.8rem; border-radius:7px; border:1px solid var(--smoke3);
+    background: var(--smoke); color:var(--white); font-family:'Inter', sans-serif; font-size:0.95rem;
+  }
+  .form-row input:focus, .form-row select:focus{ outline:none; border-color: var(--rust-glow); }
+  .form-grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+
+  .btc-note{
+    font-family:'Inter', sans-serif; font-size:0.75rem; color:var(--ash);
+    text-align:center; margin-bottom:1.2rem; line-height:1.5;
+  }
+  .btc-note b{ color:var(--parchment2); }
+
+  /* payment panel */
+  .pay-panel{
+    background: var(--smoke); border:1px solid var(--rust-dim); border-radius:10px;
+    padding:1.3rem; margin-bottom:1.2rem; text-align:center;
+  }
+  .pay-panel .amt{ font-family:'IBM Plex Mono', monospace; font-size:1.4rem; color:var(--key-gold); font-weight:700; margin-bottom:0.2rem; }
+  .pay-panel .amt-btc{ font-family:'IBM Plex Mono', monospace; font-size:0.95rem; color:var(--parchment2); margin-bottom:1rem; }
+  .qr-box{ background:#fff; padding:10px; border-radius:8px; display:inline-block; margin-bottom:1rem; line-height:0; }
+  .addr-row{ display:flex; gap:0.5rem; align-items:center; }
+  .addr-row input{
+    flex:1; font-family:'IBM Plex Mono', monospace; font-size:0.78rem; padding:0.6rem 0.7rem;
+    border-radius:7px; border:1px solid var(--smoke3); background:var(--smoke2); color:var(--parchment2);
+  }
+  .copy-btn{
+    padding:0.6rem 0.9rem; border-radius:7px; border:1px solid var(--rust-glow); background:transparent;
+    color:var(--rust-glow); font-family:'Inter', sans-serif; font-size:0.78rem; cursor:pointer; white-space:nowrap;
+  }
+  .copy-btn:active{ transform: scale(0.97); }
+  .pay-panel .hint{ font-family:'Inter', sans-serif; font-size:0.72rem; color:var(--ash); margin-top:0.9rem; line-height:1.5; }
+
+  .form-row.txid label{ text-transform:none; }
+
+  .pay-btn{
+    width:100%; padding:0.95rem; border:none; border-radius:9px;
+    background: linear-gradient(145deg, var(--rust-glow), var(--rust));
+    color:#1a0f04; font-family:'Cinzel', serif; font-weight:700; font-size:1rem;
+    letter-spacing:0.03em; cursor:pointer;
+  }
+  .pay-btn:disabled{ opacity:0.45; cursor:default; }
+  .pay-btn:active{ transform: scale(0.99); }
+
+  .status-msg{ text-align:center; font-family:'Inter', sans-serif; font-size:0.85rem; color:var(--ash); margin-top:0.8rem; min-height:1.2em; }
+  .status-msg.error{ color:#d9534f; }
+
+  /* success view */
+  .success-box{ display:none; text-align:center; padding:2rem 1.4rem; }
+  .success-box.visible{ display:block; }
+  .success-emoji{ font-size:3rem; margin-bottom:0.6rem; }
+  .success-title{ font-family:'Cinzel', serif; color:var(--key-gold); font-size:1.5rem; margin-bottom:0.6rem; }
+  .success-text{ color:var(--parchment2); font-size:1.05rem; margin-bottom:1.4rem; line-height:1.6; }
+  .download-btn{
+    display:inline-block; padding:0.9rem 2rem; border-radius:9px;
+    background: var(--key-gold); color:#1a1204; font-family:'Cinzel', serif; font-weight:700;
+    text-decoration:none; letter-spacing:0.03em;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back-link" href="https://theorangerobot.com">← Back to The Orange Robot</a>
+
+  <div id="pickerView">
+    <h1>Get The Orange Robot</h1>
+    <div class="subtitle">Self-custody, start to finish — pay directly, no middleman.</div>
+
+    <div class="preview-box" id="previewBox">
+      <div class="preview-label">🎧 Free Preview</div>
+      <audio id="previewAudio" controls preload="none" src="https://orange-robot-store.victor-cb4.workers.dev/preview/audiobook"></audio>
+      <div class="preview-unavailable" id="previewUnavailable" style="display:none;">Audiobook preview coming soon.</div>
+    </div>
+
+    <div class="options">
+      <div class="option-card" data-format="digital" id="cardDigital">
+        <div class="option-icon">📖</div>
+        <div class="option-title">DIGITAL COPY</div>
+        <div class="option-price" id="priceDigital">$3.99</div>
+        <div class="option-desc">Instant download after payment. EPUB format.</div>
+      </div>
+      <div class="option-card" data-format="audiobook" id="cardAudiobook">
+        <div class="option-icon">🎧</div>
+        <div class="option-title">AUDIOBOOK</div>
+        <div class="option-price" id="priceAudiobook">$5.99</div>
+        <div class="option-desc">Instant download after payment. MP3/M4B format.</div>
+      </div>
+      <div class="option-card" data-format="physical" id="cardPhysical">
+        <div class="option-icon">📦</div>
+        <div class="option-title">PHYSICAL COPY</div>
+        <div class="option-price" id="pricePhysical">$9.99</div>
+        <div class="option-desc">Ships worldwide via print-on-demand. Shipping calculated below.</div>
+      </div>
+    </div>
+
+    <div style="text-align:center; margin-bottom:1.6rem;">
+      <a href="redeem.html" style="font-family:'Inter', sans-serif; font-size:0.8rem; color:var(--ash); text-decoration:none;">Have a code? →</a>
+    </div>
+
+    <div class="form-card" id="digitalForm">
+      <div class="form-row">
+        <label>Email (optional — for your records, not required)</label>
+        <input type="email" id="digitalEmail" placeholder="you@example.com" />
+      </div>
+
+      <div class="pay-panel">
+        <div class="amt">Send <span id="digitalAmtUsd">$3.99</span></div>
+        <div class="amt-btc" id="digitalAmtBtc"></div>
+        <div class="qr-box"><div id="digitalQr"></div></div>
+        <div class="addr-row">
+          <input type="text" id="digitalAddr" readonly />
+          <button class="copy-btn" data-copy-target="digitalAddr">COPY</button>
+        </div>
+        <div class="hint">Scan with any Bitcoin wallet, or copy the address and send manually. Sending the exact amount helps us verify your payment quickly.</div>
+      </div>
+
+      <div class="form-row txid">
+        <label>Transaction ID (required — we use this to verify your payment before releasing the download)</label>
+        <input type="text" id="digitalTxid" placeholder="e.g. 4a5e1e4baab89f3a..." />
+      </div>
+
+      <button class="pay-btn" id="digitalPayBtn">I'VE SENT THE PAYMENT</button>
+      <div class="status-msg" id="digitalStatus"></div>
+    </div>
+
+    <div class="form-card" id="audiobookForm">
+      <div class="form-row">
+        <label>Email (optional — for your records, not required)</label>
+        <input type="email" id="audiobookEmail" placeholder="you@example.com" />
+      </div>
+
+      <div class="pay-panel">
+        <div class="amt">Send <span id="audiobookAmtUsd">$5.99</span></div>
+        <div class="amt-btc" id="audiobookAmtBtc"></div>
+        <div class="qr-box"><div id="audiobookQr"></div></div>
+        <div class="addr-row">
+          <input type="text" id="audiobookAddr" readonly />
+          <button class="copy-btn" data-copy-target="audiobookAddr">COPY</button>
+        </div>
+        <div class="hint">Scan with any Bitcoin wallet, or copy the address and send manually. Sending the exact amount helps us verify your payment quickly.</div>
+      </div>
+
+      <div class="form-row txid">
+        <label>Transaction ID (required — we use this to verify your payment before releasing the download)</label>
+        <input type="text" id="audiobookTxid" placeholder="e.g. 4a5e1e4baab89f3a..." />
+      </div>
+
+      <button class="pay-btn" id="audiobookPayBtn">I'VE SENT THE PAYMENT</button>
+      <div class="status-msg" id="audiobookStatus"></div>
+    </div>
+
+    <div class="form-card" id="physicalForm">
+      <div class="form-row"><label>Full Name</label><input type="text" id="shipName" /></div>
+      <div class="form-row"><label>Email (for shipping updates)</label><input type="email" id="shipEmail" /></div>
+      <div class="form-row"><label>Street Address</label><input type="text" id="shipAddress" /></div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>City</label><input type="text" id="shipCity" /></div>
+        <div class="form-row" id="regionUsWrap"><label>State</label>
+          <select id="shipRegionUs">
+            <option value="">Select a state…</option>
+          </select>
+        </div>
+        <div class="form-row" id="regionIntlWrap" style="display:none;"><label>Region / Province</label><input type="text" id="shipRegionIntl" /></div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-row"><label>Postal Code</label><input type="text" id="shipPostal" /></div>
+        <div class="form-row">
+          <label>Country</label>
+          <select id="shipCountry">
+            <option value="US">United States</option>
+            <option value="CA">Canada</option>
+            <option value="GB">United Kingdom</option>
+            <option value="AU">Australia</option>
+            <option value="OTHER">Other (international)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pay-panel">
+        <div class="amt">Send <span id="physicalAmtUsd">$15.94</span></div>
+        <div style="font-size:0.72rem;color:var(--ash);margin-bottom:0.6rem;" id="physicalBreakdown"></div>
+        <div class="amt-btc" id="physicalAmtBtc"></div>
+        <div class="qr-box"><div id="physicalQr"></div></div>
+        <div class="addr-row">
+          <input type="text" id="physicalAddr" readonly />
+          <button class="copy-btn" data-copy-target="physicalAddr">COPY</button>
+        </div>
+        <div class="hint">Scan with any Bitcoin wallet, or copy the address and send manually. Sending the exact amount helps us verify your payment quickly.</div>
+      </div>
+
+      <div class="form-row txid">
+        <label>Transaction ID (optional, but speeds up verification)</label>
+        <input type="text" id="physicalTxid" placeholder="e.g. 4a5e1e4baab89f3a..." />
+      </div>
+
+      <button class="pay-btn" id="physicalPayBtn">I'VE SENT THE PAYMENT</button>
+      <div class="status-msg" id="physicalStatus"></div>
+    </div>
+  </div>
+
+  <div class="success-box" id="successView">
+    <div class="success-emoji">🎉</div>
+    <div class="success-title" id="successTitle">Order received!</div>
+    <div class="success-text" id="successText"></div>
+    <div id="successAction"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ⚠️ Replace with your deployed store worker URL after `wrangler deploy`.
+  const API_BASE = 'https://orange-robot-store.victor-cb4.workers.dev';
+
+  // Fallback numbers only — as soon as /settings responds, these get overwritten
+  // with whatever's set in admin-settings.html.
+  let PRICE_DIGITAL = 3.99;
+  let PRICE_PHYSICAL = 9.99;
+  let PRICE_AUDIOBOOK = 5.99;
+  let SHIP_US = 5.95;
+  let SHIP_INTL = 12.95;
+  let WALLET_ADDRESS = '';
+  let BTC_USD_RATE = null; // fetched from CoinGecko; null means "unknown, show USD only"
+
+  const cardDigital = document.getElementById('cardDigital');
+  const cardAudiobook = document.getElementById('cardAudiobook');
+  const cardPhysical = document.getElementById('cardPhysical');
+  const digitalForm = document.getElementById('digitalForm');
+  const audiobookForm = document.getElementById('audiobookForm');
+  const physicalForm = document.getElementById('physicalForm');
+  const shipCountry = document.getElementById('shipCountry');
+
+  const allCards = [cardDigital, cardAudiobook, cardPhysical];
+  const allForms = [digitalForm, audiobookForm, physicalForm];
+  function selectFormat(card, form){
+    allCards.forEach(c=>c.classList.remove('selected'));
+    allForms.forEach(f=>f.classList.remove('visible'));
+    card.classList.add('selected');
+    form.classList.add('visible');
+  }
+  cardDigital.addEventListener('click', ()=> selectFormat(cardDigital, digitalForm));
+  cardAudiobook.addEventListener('click', ()=> selectFormat(cardAudiobook, audiobookForm));
+  cardPhysical.addEventListener('click', ()=> selectFormat(cardPhysical, physicalForm));
+
+  function btcAmountText(usd){
+    if(!BTC_USD_RATE) return '';
+    const btc = usd / BTC_USD_RATE;
+    return '≈ ' + btc.toFixed(8) + ' BTC (at current rate)';
+  }
+
+  function renderQr(containerId, addrInputId, amountUsd){
+    const el = document.getElementById(containerId);
+    el.innerHTML = '';
+    if(!WALLET_ADDRESS) return;
+    let uri = 'bitcoin:' + WALLET_ADDRESS;
+    if(BTC_USD_RATE){
+      const btc = (amountUsd / BTC_USD_RATE).toFixed(8);
+      uri += '?amount=' + btc;
+    }
+    // eslint-disable-next-line no-undef
+    new QRCode(el, { text: uri, width: 180, height: 180, colorDark: '#0d0b09', colorLight: '#ffffff' });
+    document.getElementById(addrInputId).value = WALLET_ADDRESS;
+  }
+
+  // Mirrors the server's tax table exactly, so the price shown here always
+  // matches what actually gets charged — the server recalculates
+  // independently at order time regardless, this is just for display.
+  const STATE_TAX_RATES = {
+    AL: 0.0929, AK: 0.0182, AZ: 0.0840, AR: 0.0948, CA: 0.0885,
+    CO: 0.0781, CT: 0.0635, DE: 0.0000, FL: 0.0702, GA: 0.0740,
+    HI: 0.0450, ID: 0.0602, IL: 0.0886, IN: 0.0700, IA: 0.0694,
+    KS: 0.0870, KY: 0.0600, LA: 0.1011, ME: 0.0550, MD: 0.0600,
+    MA: 0.0625, MI: 0.0600, MN: 0.0749, MS: 0.0707, MO: 0.0829,
+    MT: 0.0000, NE: 0.0694, NV: 0.0823, NH: 0.0000, NJ: 0.0660,
+    NM: 0.0772, NY: 0.0852, NC: 0.0698, ND: 0.0704, OH: 0.0724,
+    OK: 0.0895, OR: 0.0000, PA: 0.0634, RI: 0.0700, SC: 0.0746,
+    SD: 0.0640, TN: 0.0955, TX: 0.0820, UT: 0.0719, VT: 0.0624,
+    VA: 0.0575, WA: 0.0929, WV: 0.0650, WI: 0.0543, WY: 0.0536,
+    DC: 0.0600,
+  };
+  const STATE_NAME_TO_CODE = {
+    ALABAMA: 'AL', ALASKA: 'AK', ARIZONA: 'AZ', ARKANSAS: 'AR', CALIFORNIA: 'CA',
+    COLORADO: 'CO', CONNECTICUT: 'CT', DELAWARE: 'DE', FLORIDA: 'FL', GEORGIA: 'GA',
+    HAWAII: 'HI', IDAHO: 'ID', ILLINOIS: 'IL', INDIANA: 'IN', IOWA: 'IA',
+    KANSAS: 'KS', KENTUCKY: 'KY', LOUISIANA: 'LA', MAINE: 'ME', MARYLAND: 'MD',
+    MASSACHUSETTS: 'MA', MICHIGAN: 'MI', MINNESOTA: 'MN', MISSISSIPPI: 'MS', MISSOURI: 'MO',
+    MONTANA: 'MT', NEBRASKA: 'NE', NEVADA: 'NV', 'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ',
+    'NEW MEXICO': 'NM', 'NEW YORK': 'NY', 'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', OHIO: 'OH',
+    OKLAHOMA: 'OK', OREGON: 'OR', PENNSYLVANIA: 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
+    'SOUTH DAKOTA': 'SD', TENNESSEE: 'TN', TEXAS: 'TX', UTAH: 'UT', VERMONT: 'VT',
+    VIRGINIA: 'VA', WASHINGTON: 'WA', 'WEST VIRGINIA': 'WV', WISCONSIN: 'WI', WYOMING: 'WY',
+    'DISTRICT OF COLUMBIA': 'DC', 'WASHINGTON DC': 'DC',
+  };
+  function normalizeStateCode(input){
+    const cleaned = (input || '').trim().toUpperCase().replace(/\./g, '');
+    if(STATE_TAX_RATES.hasOwnProperty(cleaned)) return cleaned;
+    if(STATE_NAME_TO_CODE.hasOwnProperty(cleaned)) return STATE_NAME_TO_CODE[cleaned];
+    return null;
+  }
+  function estimateSalesTax(priceUsd, countryCode, stateInput){
+    if((countryCode || '').toUpperCase() !== 'US') return 0;
+    const code = normalizeStateCode(stateInput);
+    if(!code) return 0;
+    const rate = STATE_TAX_RATES[code];
+    if(!rate) return 0;
+    return Math.round(priceUsd * rate * 100) / 100;
+  }
+
+  function updateDigitalPanel(){
+    document.getElementById('digitalAmtUsd').textContent = '$' + PRICE_DIGITAL.toFixed(2);
+    document.getElementById('digitalAmtBtc').textContent = btcAmountText(PRICE_DIGITAL);
+    renderQr('digitalQr', 'digitalAddr', PRICE_DIGITAL);
+  }
+  function updateAudiobookPanel(){
+    document.getElementById('audiobookAmtUsd').textContent = '$' + PRICE_AUDIOBOOK.toFixed(2);
+    document.getElementById('audiobookAmtBtc').textContent = btcAmountText(PRICE_AUDIOBOOK);
+    renderQr('audiobookQr', 'audiobookAddr', PRICE_AUDIOBOOK);
+  }
+  function updatePhysicalPanel(){
+    const intl = shipCountry.value !== 'US';
+    const shippingFee = intl ? SHIP_INTL : SHIP_US;
+    const tax = estimateSalesTax(PRICE_PHYSICAL, shipCountry.value, currentRegion());
+    const total = PRICE_PHYSICAL + shippingFee + tax;
+
+    document.getElementById('physicalAmtUsd').textContent = '$' + total.toFixed(2);
+    document.getElementById('physicalBreakdown').textContent =
+      `Book $${PRICE_PHYSICAL.toFixed(2)} + Shipping $${shippingFee.toFixed(2)}` +
+      (tax > 0 ? ` + Est. sales tax $${tax.toFixed(2)}` : '');
+    document.getElementById('physicalAmtBtc').textContent = btcAmountText(total);
+    renderQr('physicalQr', 'physicalAddr', total);
+  }
+  // ── State dropdown (US) vs free-text region (international) ──
+  const US_STATES = [
+    ['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],
+    ['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['DC','District of Columbia'],
+    ['FL','Florida'],['GA','Georgia'],['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],
+    ['IN','Indiana'],['IA','Iowa'],['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],
+    ['ME','Maine'],['MD','Maryland'],['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],
+    ['MS','Mississippi'],['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],
+    ['NH','New Hampshire'],['NJ','New Jersey'],['NM','New Mexico'],['NY','New York'],
+    ['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],['OK','Oklahoma'],['OR','Oregon'],
+    ['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],['SD','South Dakota'],
+    ['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],['VA','Virginia'],
+    ['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming'],
+  ];
+  const shipRegionUs = document.getElementById('shipRegionUs');
+  const shipRegionIntl = document.getElementById('shipRegionIntl');
+  const regionUsWrap = document.getElementById('regionUsWrap');
+  const regionIntlWrap = document.getElementById('regionIntlWrap');
+
+  US_STATES.forEach(([code, name])=>{
+    const opt = document.createElement('option');
+    opt.value = code;
+    opt.textContent = name;
+    shipRegionUs.appendChild(opt);
+  });
+
+  // Single source of truth for "what region did the buyer give us", regardless
+  // of which of the two inputs is currently showing.
+  function currentRegion(){
+    return shipCountry.value === 'US'
+      ? shipRegionUs.value
+      : shipRegionIntl.value.trim();
+  }
+
+  function syncRegionFields(){
+    const isUs = shipCountry.value === 'US';
+    regionUsWrap.style.display = isUs ? '' : 'none';
+    regionIntlWrap.style.display = isUs ? 'none' : '';
+  }
+
+  shipCountry.addEventListener('change', ()=>{ syncRegionFields(); updatePhysicalPanel(); });
+  shipRegionUs.addEventListener('change', updatePhysicalPanel);
+  shipRegionIntl.addEventListener('input', updatePhysicalPanel);
+  syncRegionFields();
+
+  document.querySelectorAll('.copy-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const input = document.getElementById(btn.dataset.copyTarget);
+      input.select();
+      navigator.clipboard?.writeText(input.value).catch(()=>{});
+      const orig = btn.textContent;
+      btn.textContent = 'COPIED';
+      setTimeout(()=>{ btn.textContent = orig; }, 1500);
+    });
+  });
+
+  // Pull live prices + wallet address from the worker, then live BTC/USD rate.
+  (async function loadLiveSettings(){
+    try{
+      const res = await fetch(API_BASE + '/settings');
+      if(res.ok){
+        const s = await res.json();
+        if(typeof s.priceDigital === 'number') PRICE_DIGITAL = s.priceDigital;
+        if(typeof s.pricePhysical === 'number') PRICE_PHYSICAL = s.pricePhysical;
+        if(typeof s.priceAudiobook === 'number') PRICE_AUDIOBOOK = s.priceAudiobook;
+        if(typeof s.shippingUs === 'number') SHIP_US = s.shippingUs;
+        if(typeof s.shippingIntl === 'number') SHIP_INTL = s.shippingIntl;
+        if(typeof s.walletAddress === 'string') WALLET_ADDRESS = s.walletAddress;
+      }
+    } catch(e){ /* keep fallback numbers */ }
+
+    document.getElementById('priceDigital').textContent = '$' + PRICE_DIGITAL.toFixed(2);
+    document.getElementById('pricePhysical').textContent = '$' + PRICE_PHYSICAL.toFixed(2);
+    document.getElementById('priceAudiobook').textContent = '$' + PRICE_AUDIOBOOK.toFixed(2);
+
+    try{
+      const rateRes = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd');
+      if(rateRes.ok){
+        const rateData = await rateRes.json();
+        if(rateData?.bitcoin?.usd) BTC_USD_RATE = rateData.bitcoin.usd;
+      }
+    } catch(e){ /* show USD-only, that's fine */ }
+
+    updateDigitalPanel();
+    updateAudiobookPanel();
+    updatePhysicalPanel();
+  })();
+
+  const previewAudio = document.getElementById('previewAudio');
+  const previewUnavailable = document.getElementById('previewUnavailable');
+  previewAudio.addEventListener('error', ()=>{
+    previewAudio.style.display = 'none';
+    previewUnavailable.style.display = 'block';
+  });
+
+  async function submitOrder(format, payload, statusEl, btnEl){
+    btnEl.disabled = true;
+    statusEl.textContent = 'Recording your order…';
+    statusEl.className = 'status-msg';
+    try{
+      const res = await fetch(API_BASE + '/order', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if(!res.ok){
+        throw new Error(data.error || 'Something went wrong');
+      }
+      showSuccess(format, data.orderId, data.downloadReady);
+    } catch(e){
+      statusEl.textContent = 'Something went wrong: ' + e.message;
+      statusEl.className = 'status-msg error';
+      btnEl.disabled = false;
+    }
+  }
+
+  function showSuccess(format, orderId, downloadReady){
+    document.getElementById('pickerView').style.display = 'none';
+    const successView = document.getElementById('successView');
+    successView.classList.add('visible');
+    const statusLink = '<div style="margin-top:1.1rem; font-family:\'Inter\', sans-serif; font-size:0.78rem; color:var(--ash);">Order ID: <span style="font-family:\'IBM Plex Mono\', monospace;">' + orderId + '</span><br/>Didn\'t get an email, or want to check back later? <a href="order-status.html?order=' + encodeURIComponent(orderId) + '" style="color:var(--rust-glow);">Bookmark this status link</a>.</div>';
+    if(format === 'digital' || format === 'audiobook'){
+      const downloadPath = format === 'audiobook' ? '/download/audiobook' : '/download/epub';
+      const label = format === 'audiobook' ? 'audiobook' : 'book';
+      if(downloadReady){
+        document.getElementById('successTitle').textContent = 'Thanks for picking up a copy!';
+        document.getElementById('successText').textContent =
+          "We saw your payment show up — your download is ready right below. Enjoy the " + label + ".";
+        document.getElementById('successAction').innerHTML =
+          '<a class="download-btn" href="' + API_BASE + downloadPath + '?order=' + encodeURIComponent(orderId) + '" download>⬇ Download Your ' + (format === 'audiobook' ? 'Audiobook' : 'Book') + '</a>' + statusLink;
+      } else {
+        document.getElementById('successTitle').textContent = 'Order received!';
+        document.getElementById('successText').textContent =
+          "We haven't seen your payment show up on the network yet — as soon as we do (usually within a few minutes), we'll email you the download link.";
+        document.getElementById('successAction').innerHTML = statusLink;
+      }
+    } else {
+      document.getElementById('successTitle').textContent = 'Order received!';
+      document.getElementById('successText').textContent =
+        "Once we confirm your payment on the blockchain, we'll place the print order and ship it out. No further action needed on your end.";
+    }
+  }
+
+  document.getElementById('digitalPayBtn').addEventListener('click', ()=>{
+    const email = document.getElementById('digitalEmail').value.trim();
+    const txid = document.getElementById('digitalTxid').value.trim();
+    const statusEl = document.getElementById('digitalStatus');
+    if(!txid){
+      statusEl.textContent = 'Please enter the transaction ID from your Bitcoin wallet so we can verify your payment.';
+      statusEl.className = 'status-msg error';
+      return;
+    }
+    submitOrder('digital', { format:'digital', email, txid },
+      statusEl, document.getElementById('digitalPayBtn'));
+  });
+
+  document.getElementById('audiobookPayBtn').addEventListener('click', ()=>{
+    const email = document.getElementById('audiobookEmail').value.trim();
+    const txid = document.getElementById('audiobookTxid').value.trim();
+    const statusEl = document.getElementById('audiobookStatus');
+    if(!txid){
+      statusEl.textContent = 'Please enter the transaction ID from your Bitcoin wallet so we can verify your payment.';
+      statusEl.className = 'status-msg error';
+      return;
+    }
+    submitOrder('audiobook', { format:'audiobook', email, txid },
+      statusEl, document.getElementById('audiobookPayBtn'));
+  });
+
+  document.getElementById('physicalPayBtn').addEventListener('click', ()=>{
+    const shipping = {
+      name: document.getElementById('shipName').value.trim(),
+      address: document.getElementById('shipAddress').value.trim(),
+      city: document.getElementById('shipCity').value.trim(),
+      region: currentRegion(),
+      postal: document.getElementById('shipPostal').value.trim(),
+      country: shipCountry.value,
+    };
+    const email = document.getElementById('shipEmail').value.trim();
+    const txid = document.getElementById('physicalTxid').value.trim();
+    const statusEl = document.getElementById('physicalStatus');
+    if(!shipping.name || !shipping.address || !shipping.city || !shipping.postal){
+      statusEl.textContent = 'Please fill in your full shipping address.';
+      statusEl.className = 'status-msg error';
+      return;
+    }
+    if(shipCountry.value === 'US' && !shipping.region){
+      statusEl.textContent = 'Please select your state so we can calculate sales tax correctly.';
+      statusEl.className = 'status-msg error';
+      return;
+    }
+    submitOrder('physical', { format:'physical', email, shipping, txid },
+      statusEl, document.getElementById('physicalPayBtn'));
+  });
+})();
+</script>
+</body>
+</html>
