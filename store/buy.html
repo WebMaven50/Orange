@@ -131,6 +131,16 @@
   .pay-btn:active{ transform: scale(0.99); }
 
   .status-msg{ text-align:center; font-family:'Inter', sans-serif; font-size:0.85rem; color:var(--ash); margin-top:0.8rem; min-height:1.2em; }
+
+  .or-divider{ display:flex; align-items:center; gap:0.8rem; margin:1.4rem 0; font-family:'Inter', sans-serif; font-size:0.7rem; color:var(--ash); text-transform:uppercase; letter-spacing:0.08em; }
+  .or-divider::before, .or-divider::after{ content:''; flex:1; height:1px; background:var(--smoke3); }
+  .card-pay-btn{
+    width:100%; padding:0.95rem; border-radius:9px; cursor:pointer;
+    background:transparent; border:1px solid var(--key-gold); color:var(--key-gold);
+    font-family:'Cinzel', serif; font-weight:700; font-size:1rem; letter-spacing:0.03em;
+  }
+  .card-pay-btn:disabled{ opacity:0.45; cursor:default; }
+  .card-pay-btn:active{ transform: scale(0.99); }
   .status-msg.error{ color:#d9534f; }
 
   /* success view */
@@ -210,6 +220,10 @@
 
       <button class="pay-btn" id="digitalPayBtn">I'VE SENT THE PAYMENT</button>
       <div class="status-msg" id="digitalStatus"></div>
+
+      <div class="or-divider">or</div>
+      <button class="card-pay-btn" id="digitalCardBtn">PAY WITH CARD</button>
+      <div class="status-msg" id="digitalCardStatus"></div>
     </div>
 
     <div class="form-card" id="audiobookForm">
@@ -236,6 +250,10 @@
 
       <button class="pay-btn" id="audiobookPayBtn">I'VE SENT THE PAYMENT</button>
       <div class="status-msg" id="audiobookStatus"></div>
+
+      <div class="or-divider">or</div>
+      <button class="card-pay-btn" id="audiobookCardBtn">PAY WITH CARD</button>
+      <div class="status-msg" id="audiobookCardStatus"></div>
     </div>
 
     <div class="form-card" id="physicalForm">
@@ -284,6 +302,10 @@
 
       <button class="pay-btn" id="physicalPayBtn">I'VE SENT THE PAYMENT</button>
       <div class="status-msg" id="physicalStatus"></div>
+
+      <div class="or-divider">or</div>
+      <button class="card-pay-btn" id="physicalCardBtn">PAY WITH CARD</button>
+      <div class="status-msg" id="physicalCardStatus"></div>
     </div>
   </div>
 
@@ -611,6 +633,65 @@
     }
     submitOrder('physical', { format:'physical', email, shipping, txid },
       statusEl, document.getElementById('physicalPayBtn'));
+  });
+
+  async function startCardCheckout(payload, statusEl, btnEl){
+    btnEl.disabled = true;
+    statusEl.textContent = 'Redirecting to secure checkout…';
+    statusEl.className = 'status-msg';
+    try{
+      const res = await fetch(API_BASE + '/stripe/create-checkout-session', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if(!res.ok || !data.checkoutUrl){
+        throw new Error(data.error || 'Card payments are not available right now.');
+      }
+      window.location.href = data.checkoutUrl;
+    } catch(e){
+      statusEl.textContent = 'Something went wrong: ' + e.message;
+      statusEl.className = 'status-msg error';
+      btnEl.disabled = false;
+    }
+  }
+
+  document.getElementById('digitalCardBtn').addEventListener('click', ()=>{
+    const email = document.getElementById('digitalEmail').value.trim();
+    startCardCheckout({ format:'digital', email },
+      document.getElementById('digitalCardStatus'), document.getElementById('digitalCardBtn'));
+  });
+
+  document.getElementById('audiobookCardBtn').addEventListener('click', ()=>{
+    const email = document.getElementById('audiobookEmail').value.trim();
+    startCardCheckout({ format:'audiobook', email },
+      document.getElementById('audiobookCardStatus'), document.getElementById('audiobookCardBtn'));
+  });
+
+  document.getElementById('physicalCardBtn').addEventListener('click', ()=>{
+    const shipping = {
+      name: document.getElementById('shipName').value.trim(),
+      address: document.getElementById('shipAddress').value.trim(),
+      city: document.getElementById('shipCity').value.trim(),
+      region: currentRegion(),
+      postal: document.getElementById('shipPostal').value.trim(),
+      country: shipCountry.value,
+    };
+    const email = document.getElementById('shipEmail').value.trim();
+    const statusEl = document.getElementById('physicalCardStatus');
+    if(!shipping.name || !shipping.address || !shipping.city || !shipping.postal){
+      statusEl.textContent = 'Please fill in your full shipping address.';
+      statusEl.className = 'status-msg error';
+      return;
+    }
+    if(shipCountry.value === 'US' && !shipping.region){
+      statusEl.textContent = 'Please select your state so we can calculate sales tax correctly.';
+      statusEl.className = 'status-msg error';
+      return;
+    }
+    startCardCheckout({ format:'physical', email, shipping },
+      statusEl, document.getElementById('physicalCardBtn'));
   });
 })();
 </script>
