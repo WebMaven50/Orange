@@ -568,8 +568,11 @@
         document.getElementById('successTitle').textContent = 'Thanks for picking up a copy!';
         document.getElementById('successText').textContent =
           "We saw your payment show up — your download is ready right below. Enjoy the " + label + ".";
+        const helpLink = format === 'audiobook'
+          ? '<div style="margin-top:1rem;"><a href="listen-help.html" style="font-family:\'Inter\', sans-serif; font-size:0.8rem; color:var(--ash);">Not sure how to play it? See our listening guide →</a></div>'
+          : '';
         document.getElementById('successAction').innerHTML =
-          '<a class="download-btn" href="' + API_BASE + downloadPath + '?order=' + encodeURIComponent(orderId) + '" download>⬇ Download Your ' + (format === 'audiobook' ? 'Audiobook' : 'Book') + '</a>' + statusLink;
+          '<a class="download-btn" href="' + API_BASE + downloadPath + '?order=' + encodeURIComponent(orderId) + '" download>⬇ Download Your ' + (format === 'audiobook' ? 'Audiobook' : 'Book') + '</a>' + helpLink + statusLink;
       } else {
         document.getElementById('successTitle').textContent = 'Order received!';
         document.getElementById('successText').textContent =

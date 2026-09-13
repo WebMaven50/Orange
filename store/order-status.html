@@ -167,7 +167,10 @@
         pill.textContent = 'ready';
         pill.className = 'status-pill status-ready';
         text.textContent = "We've seen your payment — here's your " + label.toLowerCase() + ".";
-        action.innerHTML = '<a class="download-btn" href="' + API_BASE + downloadPath + '?order=' + encodeURIComponent(o.id) + '" download>⬇ Download Your ' + label + '</a>';
+        const helpLink = o.format === 'audiobook'
+          ? '<div style="margin-top:1rem;"><a href="listen-help.html" style="font-family:\'Inter\', sans-serif; font-size:0.8rem; color:var(--ash);">Not sure how to play it? See our listening guide →</a></div>'
+          : '';
+        action.innerHTML = '<a class="download-btn" href="' + API_BASE + downloadPath + '?order=' + encodeURIComponent(o.id) + '" download>⬇ Download Your ' + label + '</a>' + helpLink;
       } else {
         emoji.textContent = '⏳';
         title.textContent = 'Still waiting on payment';

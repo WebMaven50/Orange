@@ -157,6 +157,7 @@
   <div class="card" style="margin-top:1.2rem;">
     <div class="field">
       <label>Generate a promo code (for influencers — free download, no payment)</label>
+      <input type="text" id="promoLabel" placeholder="Who is this for? e.g. Jane — Instagram" style="width:100%; padding:0.7rem 0.8rem; border-radius:7px; border:1px solid var(--smoke3); background:var(--smoke); color:var(--white); font-family:'Inter', sans-serif; font-size:0.9rem; margin-bottom:0.6rem;" />
       <input type="number" id="promoMaxRedemptions" min="1" max="1000" value="10" style="width:100%; padding:0.7rem 0.8rem; border-radius:7px; border:1px solid var(--smoke3); background:var(--smoke); color:var(--white); font-family:'IBM Plex Mono', monospace; font-size:1rem;" />
     </div>
     <button class="save-btn" id="createPromoBtn" type="button">GENERATE CODE</button>
@@ -566,8 +567,12 @@
         const deactivateBtn = p.active
           ? `<button onclick="deactivatePromo('${p.code}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--smoke3);background:transparent;color:var(--ash);font-size:0.7rem;cursor:pointer;margin-left:6px;">deactivate</button>`
           : '';
+        const renameBtn = `<button onclick="renamePromo('${p.code}')" style="padding:2px 8px;border-radius:6px;border:1px solid var(--smoke3);background:transparent;color:var(--ash);font-size:0.7rem;cursor:pointer;margin-left:6px;">${p.label ? 'rename' : 'add name'}</button>`;
+        const labelHtml = p.label
+          ? `<div style="color:var(--key-gold); font-family:'Inter',sans-serif; font-size:0.82rem; margin-bottom:0.15rem;">${p.label}</div>`
+          : '';
         return `<div style="padding:0.5rem 0;border-bottom:1px solid var(--smoke3);">
-          <span style="font-family:'IBM Plex Mono',monospace;">${short}</span>${copyBtnHtml(p.code)} — ${p.redeemedCount}/${p.maxRedemptions} redeemed — ${status}${deactivateBtn}
+          ${labelHtml}<span style="font-family:'IBM Plex Mono',monospace;">${short}</span>${copyBtnHtml(p.code)} — ${p.redeemedCount}/${p.maxRedemptions} redeemed — ${status}${deactivateBtn}${renameBtn}
         </div>`;
       }).join('');
       attachCopyButtons(el);
@@ -577,6 +582,7 @@
   }
 
   document.getElementById('createPromoBtn').addEventListener('click', async ()=>{
+    const label = document.getElementById('promoLabel').value.trim();
     const maxRedemptions = parseInt(document.getElementById('promoMaxRedemptions').value, 10) || 10;
     const msg = document.getElementById('promoMsg');
     const newCodeEl = document.getElementById('promoNewCode');
@@ -589,7 +595,7 @@
       const res = await fetch(API_BASE + '/admin/promo/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
-        body: JSON.stringify({ maxRedemptions }),
+        body: JSON.stringify({ maxRedemptions, label }),
       });
       const data = await res.json();
       if(res.status === 401){
@@ -602,8 +608,10 @@
         msg.textContent = '✓ Code created — copy it now and send it to your influencer.';
         msg.className = 'msg ok';
         newCodeEl.style.display = 'block';
-        newCodeEl.innerHTML = `${data.promo.code}${copyBtnHtml(data.promo.code)}`;
+        const labelPrefix = data.promo.label ? `<div style="color:var(--white);font-family:'Inter',sans-serif;margin-bottom:0.3rem;">${data.promo.label}</div>` : '';
+        newCodeEl.innerHTML = `${labelPrefix}${data.promo.code}${copyBtnHtml(data.promo.code)}`;
         attachCopyButtons(newCodeEl);
+        document.getElementById('promoLabel').value = '';
         loadPromoList();
       }
     } catch(e){
@@ -619,6 +627,17 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
       body: JSON.stringify({ code }),
+    });
+    loadPromoList();
+  };
+
+  window.renamePromo = async function(code){
+    const newLabel = prompt('Who is this code for?');
+    if(newLabel === null) return;
+    await fetch(API_BASE + '/admin/promo/relabel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Admin-Password': PASSWORD },
+      body: JSON.stringify({ code, label: newLabel }),
     });
     loadPromoList();
   };

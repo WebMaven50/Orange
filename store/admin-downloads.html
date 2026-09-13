@@ -76,20 +76,20 @@
 
 <div id="dashboard">
   <div class="search-row">
-    <input type="text" id="searchInput" placeholder="Search by order ID or IP address…" />
+    <input type="text" id="searchInput" placeholder="Search by order ID, IP address, or promo name…" />
     <button class="export-btn" id="exportBtn">⬇ Export CSV</button>
   </div>
   <div class="summary" id="summary"></div>
 
   <div class="section-title">📖 Ebook Downloads</div>
   <table>
-    <thead><tr><th>Timestamp</th><th>Order</th><th>IP Address</th><th>Location</th></tr></thead>
+    <thead><tr><th>Timestamp</th><th>Order</th><th>IP Address</th><th>Location</th><th>Promo</th></tr></thead>
     <tbody id="epubBody"></tbody>
   </table>
 
   <div class="section-title">🎧 Audiobook Downloads</div>
   <table>
-    <thead><tr><th>Timestamp</th><th>Order</th><th>IP Address</th><th>Location</th></tr></thead>
+    <thead><tr><th>Timestamp</th><th>Order</th><th>IP Address</th><th>Location</th><th>Promo</th></tr></thead>
     <tbody id="audiobookBody"></tbody>
   </table>
 </div>
@@ -149,7 +149,7 @@
 
   function matchesSearch(entry, q){
     if(!q) return true;
-    return (entry.orderId || '').toLowerCase().includes(q) || (entry.ip || '').toLowerCase().includes(q);
+    return (entry.orderId || '').toLowerCase().includes(q) || (entry.ip || '').toLowerCase().includes(q) || (entry.promoLabel || '').toLowerCase().includes(q);
   }
 
   // --- IP geolocation (free, no-key lookup via geojs.io) ---
@@ -186,17 +186,19 @@
     const q = document.getElementById('searchInput').value.trim().toLowerCase();
     const filtered = log.filter(e => matchesSearch(e, q));
     if(filtered.length === 0){
-      return '<tr><td colspan="4" class="empty-note">No downloads yet.</td></tr>';
+      return '<tr><td colspan="5" class="empty-note">No downloads yet.</td></tr>';
     }
     return filtered.map(e => {
       const time = new Date(e.timestamp).toLocaleString();
       const orderId = e.orderId || '—';
       const ip = e.ip || 'unknown';
+      const promoLabel = e.promoLabel || '';
       return `<tr>
         <td>${time}</td>
         <td>${orderId}${orderId !== '—' ? `<button class="copy-btn" data-copy="${orderId}">copy</button>` : ''}</td>
         <td>${ip}${ip !== 'unknown' ? `<button class="copy-btn" data-copy="${ip}">copy</button>` : ''}</td>
         <td class="loc">${locationLabel(ip)}</td>
+        <td>${promoLabel || '—'}</td>
       </tr>`;
     }).join('');
   }

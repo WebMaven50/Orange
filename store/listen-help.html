@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; frame-src 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Listen to Your Audiobook — The Orange Robot</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
+
+  :root{
+    --ink:        #0d0b09;
+    --rust:       #b5541a;
+    --rust-glow:  #e06820;
+    --parchment2: #c8b89a;
+    --smoke:      #1a1410;
+    --smoke2:     #241d16;
+    --smoke3:     #2e2519;
+    --ash:        #7a6e62;
+    --key-gold:   #c9a84c;
+    --white:      #f5f0e8;
+  }
+  *{ box-sizing:border-box; }
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background: var(--ink);
+    color: var(--white);
+    font-family:'EB Garamond', Georgia, serif;
+  }
+  .wrap{ max-width:640px; margin:0 auto; padding:2.5rem 1.4rem 4rem; }
+
+  .back-link{ font-family:'Inter', sans-serif; font-size:0.8rem; color:var(--ash); text-decoration:none; }
+  .back-link:hover{ color:var(--key-gold); }
+
+  h1{
+    font-family:'Cinzel', serif; font-weight:700;
+    font-size: clamp(1.6rem, 5vw, 2.2rem);
+    color: var(--key-gold);
+    text-align:center;
+    margin: 1.4rem 0 0.4rem;
+    letter-spacing:0.02em;
+  }
+  .subtitle{
+    text-align:center; color:var(--parchment2); font-style:italic;
+    font-size:1rem; margin-bottom:2.4rem;
+  }
+
+  .card{
+    background: var(--smoke2); border:1px solid var(--smoke3); border-radius:10px;
+    padding:1.6rem; margin-bottom:1.3rem;
+  }
+  .card h2{
+    font-family:'Cinzel', serif; font-size:1.05rem; color:var(--white);
+    margin:0 0 0.3rem; letter-spacing:0.02em;
+  }
+  .card .platform-icon{ font-size:1.3rem; margin-right:0.4rem; }
+  .card p{ color:var(--parchment2); font-size:0.95rem; line-height:1.6; margin:0.6rem 0; }
+  .card ol{ color:var(--parchment2); font-size:0.92rem; line-height:1.7; margin:0.6rem 0 0.6rem 1.2rem; padding:0; }
+  .app-btn{
+    display:inline-block; margin-top:0.6rem; padding:0.65rem 1.3rem; border-radius:8px;
+    background: var(--key-gold); color:#1a1204; font-family:'Cinzel', serif; font-weight:700;
+    font-size:0.82rem; text-decoration:none; letter-spacing:0.02em;
+  }
+  .note{
+    font-family:'Inter', sans-serif; font-size:0.82rem; color:var(--ash);
+    background: var(--smoke); border-radius:8px; padding:0.9rem 1.1rem; margin-top:0.9rem; line-height:1.6;
+  }
+  .section-label{
+    font-family:'Cinzel', serif; font-size:0.7rem; letter-spacing:0.2em; text-transform:uppercase;
+    color:var(--rust); margin: 2rem 0 0.8rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back-link" href="buy.html">← Back to Buy</a>
+
+  <h1>How to Listen to Your Audiobook</h1>
+  <div class="subtitle">Your download is an M4B file — here's the easiest way to play it, whatever you're using.</div>
+
+  <div class="section-label">iPhone &amp; iPad</div>
+  <div class="card">
+    <h2><span class="platform-icon">📱</span>Use BookPlayer (free)</h2>
+    <p>Apple's own Books app can't import audiobook files you download yourself on an iPhone or iPad directly anymore — only ones synced from a Mac. The simplest fix is a free app called <strong>BookPlayer</strong>: it reads chapters, remembers your place, and supports bookmarks and speed control, all for free.</p>
+    <ol>
+      <li>Install BookPlayer from the App Store (link below).</li>
+      <li>Download the audiobook file from your order link.</li>
+      <li>Tap the downloaded file (or the "Download" banner in Safari), choose <strong>Share</strong>, then <strong>Copy to BookPlayer</strong> — or open BookPlayer first and tap <strong>Import Files</strong>.</li>
+      <li>It'll show up in your library with chapters, bookmarks, and a "resume where you left off" position, ready to go.</li>
+    </ol>
+    <a class="app-btn" href="https://apps.apple.com/us/app/bookplayer/id1138219998" target="_blank" rel="noopener">Get BookPlayer — App Store</a>
+  </div>
+
+  <div class="section-label">Android</div>
+  <div class="card">
+    <h2><span class="platform-icon">🤖</span>Use BookPlayer (free)</h2>
+    <p>Same app, same features, on Android — free and open source.</p>
+    <ol>
+      <li>Install BookPlayer from Google Play (link below).</li>
+      <li>Download the audiobook file.</li>
+      <li>Open it with BookPlayer directly from your Downloads/Files app, or open BookPlayer and import the file.</li>
+    </ol>
+    <a class="app-btn" href="https://play.google.com/store/apps/details?id=com.tortugapower.audiobookplayer" target="_blank" rel="noopener">Get BookPlayer — Google Play</a>
+  </div>
+
+  <div class="section-label">Mac &amp; Windows</div>
+  <div class="card">
+    <h2><span class="platform-icon">💻</span>Use VLC (free) or Apple Books</h2>
+    <p><strong>VLC Media Player</strong> is free, works on both Mac and Windows, and opens M4B files immediately with no conversion — just double-click the downloaded file, or drag it into VLC.</p>
+    <p>On a Mac, you can also add it to Apple's own <strong>Books</strong> app: open Books, choose <strong>File → Add to Library…</strong>, and select the downloaded file. From there it'll sync to Books on your iPhone/iPad too, if you'd rather use Apple's own app on mobile.</p>
+    <a class="app-btn" href="https://www.videolan.org/vlc/" target="_blank" rel="noopener">Get VLC — videolan.org</a>
+  </div>
+
+  <div class="section-label">One More Thing</div>
+  <div class="card">
+    <h2>Where did my download go?</h2>
+    <p>By default, browsers save downloads straight to your computer's <strong>Downloads</strong> folder without asking. If you'd rather be asked where to save each file (so you can choose the location yourself), that's a setting in your browser, not something we control:</p>
+    <div class="note">
+      <strong>Safari</strong> (Mac): Settings → General → "File download location" → "Ask for each download"<br><br>
+      <strong>Chrome</strong>: Settings → Downloads → turn on "Ask where to save each file before downloading"<br><br>
+      <strong>Safari (iPhone/iPad)</strong>: Settings app → Safari → Downloads → "Ask" instead of a fixed location
+    </div>
+  </div>
+
+  <p style="text-align:center; margin-top:2rem;">
+    <a class="back-link" href="mailto:indiepublishers@proton.me">Still stuck? Email us and we'll help you out →</a>
+  </p>
+</div>
+</body>
+</html>

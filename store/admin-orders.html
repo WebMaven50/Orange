@@ -97,7 +97,7 @@
   </div>
   <div class="btn-row" id="checkStatus" style="font-size:0.8rem;color:var(--ash);margin-bottom:0.8rem;"></div>
   <div class="search-row">
-    <input type="text" id="searchInput" placeholder="Search by order ID or transaction ID…" />
+    <input type="text" id="searchInput" placeholder="Search by order ID, transaction ID, or promo name…" />
   </div>
   <div class="summary" id="summary"></div>
   <table>
@@ -139,7 +139,9 @@
       (o.id || '').toLowerCase().includes(q) ||
       (o.txid || '').toLowerCase().includes(q) ||
       (o.matchedTxid || '').toLowerCase().includes(q) ||
-      (o.mempoolTxid || '').toLowerCase().includes(q)
+      (o.mempoolTxid || '').toLowerCase().includes(q) ||
+      (o.promoLabel || '').toLowerCase().includes(q) ||
+      (o.promoCode || '').toLowerCase().includes(q)
     );
   }
 
@@ -216,7 +218,7 @@
       const tracking = o.trackingNumber ? `<div style="font-size:0.72rem;color:var(--ash);margin-top:0.3rem;">📦 ${o.trackingCarrier ? o.trackingCarrier+': ' : ''}${o.trackingNumber}</div>` : '';
       const refundNote = o.refunded ? `<div style="font-size:0.72rem;color:#d9534f;margin-top:0.3rem;">Refunded${o.refundNote ? ': '+o.refundNote : ''}</div>` : '';
       const badges = (o.isTest ? '<span class="tag tag-test">TEST</span>' : '') + (o.isPromoRedemption ? '<span class="tag tag-promo">PROMO</span>' : '');
-      const promoNote = o.isPromoRedemption && o.promoCode ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.65rem;color:var(--ash);word-break:break-all;margin-top:0.2rem;">code: ${o.promoCode.slice(0,10)}…</div>` : '';
+      const promoNote = o.isPromoRedemption && o.promoCode ? `<div style="font-size:0.68rem;margin-top:0.2rem;">${o.promoLabel ? `<span style="color:var(--key-gold);">${o.promoLabel}</span> — ` : ''}<span style="font-family:'IBM Plex Mono',monospace;color:var(--ash);word-break:break-all;">code: ${o.promoCode.slice(0,10)}…</span></div>` : '';
       const isDigitalDelivery = o.format === 'digital' || o.format === 'audiobook';
       const downloadCount = isDigitalDelivery ? `<div class="download-count">⬇ ${o.downloadCount || 0} of ${o.isTest ? '∞' : 5} downloads used</div>` : '';
 

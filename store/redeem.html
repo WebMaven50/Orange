@@ -158,8 +158,11 @@
     const label = data.format === 'audiobook' ? 'Audiobook' : 'Book';
     const downloadPath = data.format === 'audiobook' ? '/download/audiobook' : '/download/epub';
     document.getElementById('resultText').textContent = "Enjoy the " + label.toLowerCase() + " — thanks for checking it out.";
+    const helpLink = data.format === 'audiobook'
+      ? '<div style="margin-top:1rem;"><a href="listen-help.html" style="font-family:\'Inter\', sans-serif; font-size:0.8rem; color:var(--ash);">Not sure how to play it? See our listening guide →</a></div>'
+      : '';
     document.getElementById('resultAction').innerHTML =
-      '<a class="download-btn" href="' + API_BASE + downloadPath + '?order=' + encodeURIComponent(data.orderId) + '" download>⬇ Download Your ' + label + '</a>';
+      '<a class="download-btn" href="' + API_BASE + downloadPath + '?order=' + encodeURIComponent(data.orderId) + '" download>⬇ Download Your ' + label + '</a>' + helpLink;
   }
 
   btn.addEventListener('click', redeem);
