@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; frame-src 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://orange-robot-store.victor-cb4.workers.dev; frame-src 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>How to Listen to Your Audiobook — The Orange Robot</title>
@@ -124,9 +124,54 @@
     <p><strong>On Chrome</strong> (any platform): Settings → Downloads → turn on "Ask where to save each file before downloading" — this one generally works as expected.</p>
   </div>
 
+  <div class="section-label">Ran Out of Downloads?</div>
+  <div class="card">
+    <h2>Get a fresh download link</h2>
+    <p>Every order comes with a few downloads to cover retries across your devices, but if you've used them all up trying to get it working, enter the email you used at checkout and we'll send you a fresh link — good for 3 more downloads over the next 30 days.</p>
+    <form id="bonusForm" onsubmit="return false;">
+      <input type="email" id="bonusEmail" placeholder="you@example.com" required
+        style="width:100%; box-sizing:border-box; padding:0.7rem 0.9rem; border-radius:8px; border:1px solid var(--smoke3); background:var(--smoke); color:var(--white); font-family:'Inter', sans-serif; font-size:0.9rem; margin-top:0.8rem;">
+      <button type="submit" id="bonusSubmitBtn" class="app-btn" style="border:none; cursor:pointer; margin-top:0.8rem; width:100%;">Send Me a Fresh Link</button>
+    </form>
+    <div id="bonusStatus" style="display:none; margin-top:0.9rem;"></div>
+  </div>
+
   <p style="text-align:center; margin-top:2rem;">
     <a class="back-link" href="mailto:indiepublishers@proton.me">Still stuck? Email us and we'll help you out →</a>
   </p>
 </div>
+
+<script>
+  const API_BASE = 'https://orange-robot-store.victor-cb4.workers.dev';
+  const bonusForm = document.getElementById('bonusForm');
+  const bonusEmail = document.getElementById('bonusEmail');
+  const bonusSubmitBtn = document.getElementById('bonusSubmitBtn');
+  const bonusStatus = document.getElementById('bonusStatus');
+
+  bonusForm.addEventListener('submit', async () => {
+    const email = bonusEmail.value.trim();
+    if (!email) return;
+    bonusSubmitBtn.disabled = true;
+    bonusStatus.style.display = 'block';
+    bonusStatus.textContent = 'Sending…';
+    bonusStatus.style.color = 'var(--parchment2)';
+    try {
+      const res = await fetch(API_BASE + '/support/request-more-downloads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+      bonusStatus.textContent = data.message || "If we found an order under that email, a fresh download link is on its way.";
+      bonusStatus.style.color = 'var(--key-gold)';
+      bonusForm.reset();
+    } catch (e) {
+      bonusStatus.textContent = e.message;
+      bonusStatus.style.color = '#e0a020';
+      bonusSubmitBtn.disabled = false;
+    }
+  });
+</script>
 </body>
 </html>
