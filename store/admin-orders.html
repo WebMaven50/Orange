@@ -235,21 +235,30 @@
     `;
   }
 
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function renderTable(orders){
     const body = document.getElementById('ordersBody');
     body.innerHTML = orders.map(o=>{
       const date = new Date(o.createdAt).toLocaleString();
-      const ip = o.ip ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--ash);margin-top:0.15rem;">${o.ip} <span style="color:var(--rust-glow,var(--ash));">— ${locationLabel(o.ip)}</span></div>` : '';
+      const ip = o.ip ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--ash);margin-top:0.15rem;">${escapeHtml(o.ip)} <span style="color:var(--rust-glow,var(--ash));">— ${escapeHtml(locationLabel(o.ip))}</span></div>` : '';
       const contact = o.format === 'physical'
-        ? `<div class="ship-addr">${o.shipping?.name||''}\n${o.shipping?.address||''}\n${o.shipping?.city||''}, ${o.shipping?.region||''} ${o.shipping?.postal||''}\n${o.shipping?.country||''}${o.email ? '\n'+o.email : ''}</div>`
-        : (o.email || '<span style="color:var(--ash)">—</span>');
-      const txid = o.txid ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--ash);word-break:break-all;margin-top:0.3rem;">TX given: ${o.txid}</div>` : '';
-      const mempoolSeen = o.mempoolSeen && o.status !== 'paid' ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--amber);word-break:break-all;margin-top:0.2rem;">⏳ seen in mempool: ${o.mempoolTxid}</div>` : '';
-      const matched = o.matchedTxid ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--green);word-break:break-all;margin-top:0.2rem;">✓ matched: ${o.matchedTxid}</div>` : '';
-      const tracking = o.trackingNumber ? `<div style="font-size:0.72rem;color:var(--ash);margin-top:0.3rem;">📦 ${o.trackingCarrier ? o.trackingCarrier+': ' : ''}${o.trackingNumber}</div>` : '';
-      const refundNote = o.refunded ? `<div style="font-size:0.72rem;color:#d9534f;margin-top:0.3rem;">Refunded${o.refundNote ? ': '+o.refundNote : ''}</div>` : '';
+        ? `<div class="ship-addr">${escapeHtml(o.shipping?.name||'')}\n${escapeHtml(o.shipping?.address||'')}\n${escapeHtml(o.shipping?.city||'')}, ${escapeHtml(o.shipping?.region||'')} ${escapeHtml(o.shipping?.postal||'')}\n${escapeHtml(o.shipping?.country||'')}${o.email ? '\n'+escapeHtml(o.email) : ''}</div>`
+        : (o.email ? escapeHtml(o.email) : '<span style="color:var(--ash)">—</span>');
+      const txid = o.txid ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--ash);word-break:break-all;margin-top:0.3rem;">TX given: ${escapeHtml(o.txid)}</div>` : '';
+      const mempoolSeen = o.mempoolSeen && o.status !== 'paid' ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--amber);word-break:break-all;margin-top:0.2rem;">⏳ seen in mempool: ${escapeHtml(o.mempoolTxid||'')}</div>` : '';
+      const matched = o.matchedTxid ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--green);word-break:break-all;margin-top:0.2rem;">✓ matched: ${escapeHtml(o.matchedTxid)}</div>` : '';
+      const tracking = o.trackingNumber ? `<div style="font-size:0.72rem;color:var(--ash);margin-top:0.3rem;">📦 ${o.trackingCarrier ? escapeHtml(o.trackingCarrier)+': ' : ''}${escapeHtml(o.trackingNumber)}</div>` : '';
+      const refundNote = o.refunded ? `<div style="font-size:0.72rem;color:#d9534f;margin-top:0.3rem;">Refunded${o.refundNote ? ': '+escapeHtml(o.refundNote) : ''}</div>` : '';
       const badges = (o.isTest ? '<span class="tag tag-test">TEST</span>' : '') + (o.isPromoRedemption ? '<span class="tag tag-promo">PROMO</span>' : '');
-      const promoNote = o.isPromoRedemption && o.promoCode ? `<div style="font-size:0.68rem;margin-top:0.2rem;">${o.promoLabel ? `<span style="color:var(--key-gold);">${o.promoLabel}</span> — ` : ''}<span style="font-family:'IBM Plex Mono',monospace;color:var(--ash);word-break:break-all;">code: ${o.promoCode.slice(0,10)}…</span></div>` : '';
+      const promoNote = o.isPromoRedemption && o.promoCode ? `<div style="font-size:0.68rem;margin-top:0.2rem;">${o.promoLabel ? `<span style="color:var(--key-gold);">${escapeHtml(o.promoLabel)}</span> — ` : ''}<span style="font-family:'IBM Plex Mono',monospace;color:var(--ash);word-break:break-all;">code: ${escapeHtml(o.promoCode.slice(0,10))}…</span></div>` : '';
       const isDigitalDelivery = o.format === 'digital' || o.format === 'audiobook';
       const downloadCount = isDigitalDelivery ? `<div class="download-count">⬇ ${o.downloadCount || 0} of ${o.isTest ? '∞' : 5} downloads used</div>` : '';
 
