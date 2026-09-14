@@ -255,6 +255,7 @@
       const txid = o.txid ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--ash);word-break:break-all;margin-top:0.3rem;">TX given: ${escapeHtml(o.txid)}</div>` : '';
       const mempoolSeen = o.mempoolSeen && o.status !== 'paid' ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--amber);word-break:break-all;margin-top:0.2rem;">⏳ seen in mempool: ${escapeHtml(o.mempoolTxid||'')}</div>` : '';
       const matched = o.matchedTxid ? `<div style="font-family:'IBM Plex Mono',monospace;font-size:0.68rem;color:var(--green);word-break:break-all;margin-top:0.2rem;">✓ matched: ${escapeHtml(o.matchedTxid)}</div>` : '';
+      const frontRunWarning = o.txidClaimedByOther ? `<div style="font-size:0.72rem;color:#ff4444;font-weight:bold;margin-top:0.3rem;">⚠ Possible stolen payment — this txid was already claimed by order ${escapeHtml(o.txidClaimedByOther)}. If this customer looks legitimate, verify manually and Mark Paid.</div>` : '';
       const tracking = o.trackingNumber ? `<div style="font-size:0.72rem;color:var(--ash);margin-top:0.3rem;">📦 ${o.trackingCarrier ? escapeHtml(o.trackingCarrier)+': ' : ''}${escapeHtml(o.trackingNumber)}</div>` : '';
       const refundNote = o.refunded ? `<div style="font-size:0.72rem;color:#d9534f;margin-top:0.3rem;">Refunded${o.refundNote ? ': '+escapeHtml(o.refundNote) : ''}</div>` : '';
       const badges = (o.isTest ? '<span class="tag tag-test">TEST</span>' : '') + (o.isPromoRedemption ? '<span class="tag tag-promo">PROMO</span>' : '');
@@ -289,7 +290,7 @@
         </div>`;
 
       return `<tr>
-        <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;">${o.id}</span>${badges}<br/><span style="color:var(--ash);font-size:0.72rem;">${date}</span>${ip}${txid}${mempoolSeen}${matched}${promoNote}${downloadCount}${tracking}${refundNote}</td>
+        <td><span style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;">${o.id}</span>${badges}<br/><span style="color:var(--ash);font-size:0.72rem;">${date}</span>${ip}${txid}${mempoolSeen}${matched}${frontRunWarning}${promoNote}${downloadCount}${tracking}${refundNote}</td>
         <td>${o.format}</td>
         <td><span class="status-pill status-${statusClass}">${statusLabel}</span></td>
         <td style="font-family:'IBM Plex Mono',monospace;">$${(o.amountUsd||0).toFixed(2)}${o.estimatedTax > 0 ? `<div style="font-size:0.65rem;color:var(--ash);font-family:'Inter',sans-serif;">incl. $${o.estimatedTax.toFixed(2)} est. tax</div>` : ''}</td>
