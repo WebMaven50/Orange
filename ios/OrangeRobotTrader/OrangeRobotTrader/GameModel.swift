@@ -18,6 +18,9 @@ final class GameModel {
     var phase: Phase = .intro
     var session: GameSession = .random()
     var timeframe = 15
+    /// Remembered between runs.
+    private(set) var speed: PlaybackSpeed =
+        PlaybackSpeed(rawValue: UserDefaults.standard.string(forKey: "tor_speed") ?? "") ?? .normal
     var side: Side = .buy
     var orderType: OrderType = .market
     var fraction = 0.75
@@ -30,6 +33,19 @@ final class GameModel {
     var showStartPicker = false
     var showOrderForm = false
     var showPositions = false
+    var showNews = false
+
+    // News
+    private(set) var newsTracker = NewsTracker(startDay: 0)
+    private(set) var banner: NewsItem?
+    private var bannerQueue: [NewsItem] = []
+    private var lastSeenNewsDay = 0
+    /// Headlines that arrived since the News page was last opened.
+    var unreadNews: Int { newsTracker.unread(after: lastSeenNewsDay, day: session.currentDayNumber) }
+    /// What the player may read right now (never anything from later than the ticker).
+    func visibleNews(limit: Int = 80) -> [NewsItem] {
+        newsTracker.visible(day: session.currentDayNumber, limit: limit)
+    }
     private var autoPaused = false
 
     // Leaderboard save state for the current run
@@ -47,17 +63,25 @@ final class GameModel {
     // MARK: Lifecycle
 
     /// True while any sheet is covering the game, so the market can wait.
-    var anySheetOpen: Bool { showInfo || showLeaderboard || showPrologue || showStartPicker || showPositions }
+    var anySheetOpen: Bool { showInfo || showLeaderboard || showPrologue || showStartPicker || showPositions || showNews }
 
     func startNewRun(_ choice: StartChoice = .random) {
         switch choice {
         case .random: session = .random()
         case .moment(let d): session = .starting(at: d)
         }
+        session.speed = speed
         autoPaused = false
         showOrderForm = false
         showPositions = false
+        showNews = false
+        banner = nil
+        bannerQueue = []
+        // Events dated on the start day itself still flash; earlier ones are only in the feed.
+        newsTracker = NewsTracker(startDay: session.currentDayNumber)
+        lastSeenNewsDay = session.currentDayNumber
         phase = .playing
+        trackNews()
         side = .buy
         orderType = .market
         fraction = 0.75
@@ -80,14 +104,50 @@ final class GameModel {
         lastTick = now
         guard phase == .playing else { return }
         session.advance(seconds: dt)
+        trackNews()
         if session.outcome != nil { finish() }
     }
+
+    // MARK: News
+
+    private func trackNews() {
+        let released = newsTracker.update(day: session.currentDayNumber, price: session.lastPrice)
+        if !released.isEmpty {
+            bannerQueue.append(contentsOf: released)
+            if bannerQueue.count > 4 { bannerQueue.removeFirst(bannerQueue.count - 4) }
+        }
+        presentNextBanner()
+    }
+
+    private func presentNextBanner() {
+        // Wait for the player to wake up from a sleep so the banner isn't missed.
+        guard banner == nil, !session.isSleeping, !bannerQueue.isEmpty else { return }
+        let item = bannerQueue.removeFirst()
+        banner = item
+        Haptics.notify(.warning)
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(5.5))
+            guard let self, self.banner?.id == item.id else { return }
+            self.banner = nil
+        }
+    }
+
+    func dismissBanner() { banner = nil }
+
+    func openNews() {
+        banner = nil
+        showNews = true
+    }
+
+    func markNewsSeen() { lastSeenNewsDay = session.currentDayNumber }
 
     private func finish() {
         timer?.invalidate()
         timer = nil
         showOrderForm = false
         showPositions = false
+        showNews = false
+        banner = nil
         phase = .ended
         Activity.track(.gameEnd)
         if session.outcome == .win { Activity.track(.gameWin) }
@@ -170,6 +230,13 @@ final class GameModel {
         } catch {
             saveError = "Couldn't reach the leaderboard. Check your connection and try again."
         }
+    }
+
+    func setSpeed(_ new: PlaybackSpeed) {
+        speed = new
+        session.speed = new
+        UserDefaults.standard.set(new.rawValue, forKey: "tor_speed")
+        Haptics.impact()
     }
 
     // MARK: Pause

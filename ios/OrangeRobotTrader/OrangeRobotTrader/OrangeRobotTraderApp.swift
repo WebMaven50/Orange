@@ -39,6 +39,7 @@ struct RootView: View {
         .sheet(isPresented: $model.showInfo) { InfoView() }
         .sheet(isPresented: $model.showLeaderboard) { LeaderboardSheet() }
         .sheet(isPresented: $model.showPrologue) { PrologueView() }
+        .sheet(isPresented: $model.showNews) { NewsView(model: model).presentationDetents([.large]) }
         .sheet(isPresented: $model.showPositions) {
             PositionsView(model: model).presentationDetents([.large])
         }

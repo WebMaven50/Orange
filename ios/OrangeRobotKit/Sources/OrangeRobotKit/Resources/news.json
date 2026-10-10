@@ -1,0 +1,682 @@
+{
+ "version": 1,
+ "generatedFrom": "btc_daily.json",
+ "items": [
+  {
+   "date": "2008-10-31",
+   "title": "Satoshi Nakamoto publishes the Bitcoin white paper",
+   "tag": "bitcoin",
+   "significant": false,
+   "detail": "A nine-page proposal for a peer-to-peer electronic cash system."
+  },
+  {
+   "date": "2009-01-03",
+   "title": "The Bitcoin network starts: the first block is mined",
+   "tag": "bitcoin",
+   "significant": false
+  },
+  {
+   "date": "2010-05-22",
+   "title": "10,000 BTC buy two pizzas, the first known purchase with bitcoin",
+   "tag": "adoption",
+   "significant": false,
+   "detail": "A programmer pays another forum user for pizza delivery."
+  },
+  {
+   "date": "2010-07-18",
+   "title": "Mt. Gox opens as a bitcoin exchange",
+   "tag": "adoption",
+   "significant": true
+  },
+  {
+   "date": "2010-08-15",
+   "title": "A bug creates 184 billion bitcoins in one transaction; a fix is released",
+   "tag": "tech",
+   "significant": true,
+   "detail": "The invalid block is wiped out by a patched version of the software."
+  },
+  {
+   "date": "2010-12-12",
+   "title": "Satoshi Nakamoto makes a final public post on the Bitcoin forum",
+   "tag": "bitcoin",
+   "significant": false
+  },
+  {
+   "date": "2011-02-09",
+   "title": "Bitcoin reaches parity with the US dollar: $1 per BTC",
+   "tag": "markets",
+   "significant": true
+  },
+  {
+   "date": "2011-06-01",
+   "title": "Gawker exposes Silk Road, a hidden marketplace that accepts only bitcoin",
+   "tag": "bitcoin",
+   "significant": false
+  },
+  {
+   "date": "2011-06-08",
+   "title": "Bitcoin surges above $30 as interest explodes",
+   "tag": "markets",
+   "significant": true,
+   "detail": "The price has multiplied several times over in a few weeks.",
+   "milestone": 30,
+   "trigger": 30
+  },
+  {
+   "date": "2011-06-19",
+   "title": "Mt. Gox is hacked: stolen coins flood the market and its price briefly hits one cent",
+   "tag": "security",
+   "significant": true
+  },
+  {
+   "date": "2011-08-05",
+   "title": "S&P downgrades the United States' credit rating for the first time",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2012-11-28",
+   "title": "First halving: the reward for each block drops from 50 to 25 bitcoins",
+   "tag": "tech",
+   "significant": true
+  },
+  {
+   "date": "2013-03-12",
+   "title": "A software bug splits the blockchain; Mt. Gox halts deposits until miners roll back",
+   "tag": "tech",
+   "significant": false
+  },
+  {
+   "date": "2013-03-16",
+   "title": "Cyprus agrees a bailout that taxes bank deposits; savers panic",
+   "tag": "markets",
+   "significant": true,
+   "detail": "Bitcoin is discussed as a place to move money outside the banking system."
+  },
+  {
+   "date": "2013-03-18",
+   "title": "US regulator FinCEN issues guidance: bitcoin exchangers must register as money transmitters",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2013-04-10",
+   "title": "Bitcoin spikes to about $266, then halves within hours as exchanges buckle under demand",
+   "tag": "markets",
+   "significant": true
+  },
+  {
+   "date": "2013-05-15",
+   "title": "US authorities seize Mt. Gox accounts over its registration with FinCEN",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2013-08-06",
+   "title": "A US federal judge rules bitcoin is \"a currency or form of money\"",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2013-10-02",
+   "title": "FBI shuts down Silk Road and arrests its alleged founder; about 26,000 BTC are seized",
+   "tag": "regulation",
+   "significant": true
+  },
+  {
+   "date": "2013-10-29",
+   "title": "The world's first bitcoin ATM opens in Vancouver",
+   "tag": "adoption",
+   "significant": false
+  },
+  {
+   "date": "2013-11-18",
+   "title": "A US Senate committee holds a hearing on virtual currencies",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2013-11-27",
+   "title": "Bitcoin passes $1,000 for the first time",
+   "tag": "markets",
+   "significant": true,
+   "milestone": 1000,
+   "trigger": 1000
+  },
+  {
+   "date": "2013-12-05",
+   "title": "China's central bank bars financial institutions from handling bitcoin",
+   "tag": "regulation",
+   "significant": true
+  },
+  {
+   "date": "2014-02-07",
+   "title": "Mt. Gox halts bitcoin withdrawals, citing a technical problem",
+   "tag": "security",
+   "significant": false
+  },
+  {
+   "date": "2014-02-24",
+   "title": "Mt. Gox stops trading and its website goes offline",
+   "tag": "security",
+   "significant": true
+  },
+  {
+   "date": "2014-02-28",
+   "title": "Mt. Gox files for bankruptcy protection in Tokyo, reporting hundreds of thousands of bitcoins missing",
+   "tag": "security",
+   "significant": true
+  },
+  {
+   "date": "2014-03-25",
+   "title": "The IRS rules that bitcoin is property, not currency, for US tax purposes",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2014-06-27",
+   "title": "US Marshals auction nearly 30,000 bitcoins seized from Silk Road",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2014-07-17",
+   "title": "New York proposes the \"BitLicense\" for bitcoin businesses",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2014-12-11",
+   "title": "Microsoft begins accepting bitcoin for Xbox and Windows purchases",
+   "tag": "adoption",
+   "significant": false
+  },
+  {
+   "date": "2015-01-05",
+   "title": "Bitstamp suspends trading after about 19,000 BTC are stolen",
+   "tag": "security",
+   "significant": false
+  },
+  {
+   "date": "2015-01-20",
+   "title": "Coinbase raises $75 million, the biggest funding round yet for a bitcoin company",
+   "tag": "adoption",
+   "significant": false
+  },
+  {
+   "date": "2015-02-04",
+   "title": "Silk Road founder Ross Ulbricht is found guilty on all seven counts",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2015-06-03",
+   "title": "New York finalizes its BitLicense rules",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2015-09-17",
+   "title": "The CFTC declares bitcoin a commodity",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2016-01-14",
+   "title": "Developer Mike Hearn quits, declaring the bitcoin experiment a failure as the block-size fight boils over",
+   "tag": "tech",
+   "significant": false
+  },
+  {
+   "date": "2016-06-17",
+   "title": "Ethereum's \"DAO\" investment fund is drained of roughly $50 million in a hack",
+   "tag": "security",
+   "significant": false
+  },
+  {
+   "date": "2016-06-24",
+   "title": "Britain votes to leave the European Union; markets lurch",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2016-07-09",
+   "title": "Second halving: the block reward drops to 12.5 bitcoins",
+   "tag": "tech",
+   "significant": true
+  },
+  {
+   "date": "2016-08-02",
+   "title": "Bitfinex is hacked: almost 120,000 BTC are stolen",
+   "tag": "security",
+   "significant": true
+  },
+  {
+   "date": "2016-11-08",
+   "title": "India withdraws its two largest banknotes overnight",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2016-11-09",
+   "title": "Donald Trump wins the US presidential election",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2017-01-01",
+   "title": "Bitcoin tops $1,000 again, for the first time in three years",
+   "tag": "markets",
+   "significant": true,
+   "milestone": 1000,
+   "since": "2016-01-01",
+   "trigger": 1000
+  },
+  {
+   "date": "2017-03-10",
+   "title": "The SEC rejects the Winklevoss bitcoin ETF proposal",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2017-04-01",
+   "title": "Japan's law recognizing bitcoin as a legal payment method takes effect",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2017-05-20",
+   "title": "Bitcoin crosses $2,000 for the first time",
+   "tag": "markets",
+   "significant": false,
+   "milestone": 2000,
+   "trigger": 2000
+  },
+  {
+   "date": "2017-08-01",
+   "title": "Bitcoin splits: Bitcoin Cash forks off with larger blocks",
+   "tag": "tech",
+   "significant": true
+  },
+  {
+   "date": "2017-08-24",
+   "title": "SegWit activates on the Bitcoin network",
+   "tag": "tech",
+   "significant": false
+  },
+  {
+   "date": "2017-09-04",
+   "title": "China bans initial coin offerings",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2017-09-12",
+   "title": "JPMorgan chief Jamie Dimon calls bitcoin \"a fraud\"",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2017-10-12",
+   "title": "Bitcoin breaks $5,000 for the first time",
+   "tag": "markets",
+   "significant": true,
+   "milestone": 5000,
+   "trigger": 5000
+  },
+  {
+   "date": "2017-11-08",
+   "title": "The planned SegWit2x hard fork is cancelled",
+   "tag": "tech",
+   "significant": false
+  },
+  {
+   "date": "2017-11-29",
+   "title": "Bitcoin passes $10,000 for the first time",
+   "tag": "markets",
+   "significant": true,
+   "milestone": 10000,
+   "trigger": 10000
+  },
+  {
+   "date": "2017-12-10",
+   "title": "Cboe launches bitcoin futures: the first on a regulated US exchange",
+   "tag": "markets",
+   "significant": true
+  },
+  {
+   "date": "2017-12-17",
+   "title": "Bitcoin sets a new all-time record near $19,900 as CME launches its own futures",
+   "tag": "markets",
+   "significant": true,
+   "record": true,
+   "trigger": 19830.86
+  },
+  {
+   "date": "2018-01-26",
+   "title": "Japan's Coincheck loses about $530 million of NEM tokens in a hack",
+   "tag": "security",
+   "significant": false
+  },
+  {
+   "date": "2018-01-30",
+   "title": "Facebook bans cryptocurrency advertising",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2018-02-05",
+   "title": "Bitcoin sinks below $7,000, down by half in 16 days",
+   "tag": "markets",
+   "significant": true,
+   "trigger": 7000,
+   "direction": "below"
+  },
+  {
+   "date": "2018-12-15",
+   "title": "Bitcoin slides to roughly $3,200, more than 80% below its record",
+   "tag": "markets",
+   "significant": true,
+   "trigger": 3300,
+   "direction": "below"
+  },
+  {
+   "date": "2019-05-07",
+   "title": "Binance is hacked: about 7,000 BTC are stolen",
+   "tag": "security",
+   "significant": false
+  },
+  {
+   "date": "2019-06-18",
+   "title": "Facebook unveils Libra, a global digital currency project",
+   "tag": "adoption",
+   "significant": false
+  },
+  {
+   "date": "2020-03-12",
+   "title": "\"Black Thursday\": bitcoin plunges about 40% in a day as COVID-19 panic grips global markets",
+   "tag": "markets",
+   "significant": true,
+   "trigger": 6744.92,
+   "direction": "below"
+  },
+  {
+   "date": "2020-03-15",
+   "title": "The Federal Reserve cuts rates to near zero in an emergency move",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2020-05-11",
+   "title": "Third halving: the block reward drops to 6.25 bitcoins",
+   "tag": "tech",
+   "significant": true
+  },
+  {
+   "date": "2020-08-11",
+   "title": "MicroStrategy buys $250 million of bitcoin as a treasury reserve",
+   "tag": "adoption",
+   "significant": false
+  },
+  {
+   "date": "2020-10-21",
+   "title": "PayPal will let US users buy, hold and sell bitcoin",
+   "tag": "adoption",
+   "significant": true
+  },
+  {
+   "date": "2020-12-16",
+   "title": "Bitcoin passes $20,000 for the first time, a new record",
+   "tag": "markets",
+   "significant": true,
+   "milestone": 20000,
+   "trigger": 20000
+  },
+  {
+   "date": "2021-01-07",
+   "title": "Bitcoin tops $40,000 as institutional buying gathers pace",
+   "tag": "markets",
+   "significant": false,
+   "milestone": 40000,
+   "trigger": 40000
+  },
+  {
+   "date": "2021-02-08",
+   "title": "Tesla discloses a $1.5 billion bitcoin purchase",
+   "tag": "adoption",
+   "significant": true
+  },
+  {
+   "date": "2021-02-16",
+   "title": "Bitcoin crosses $50,000",
+   "tag": "markets",
+   "significant": false,
+   "milestone": 50000,
+   "trigger": 50000
+  },
+  {
+   "date": "2021-02-19",
+   "title": "Bitcoin's total value tops $1 trillion for the first time",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2021-04-14",
+   "title": "Coinbase goes public as bitcoin sets a record near $64,800",
+   "tag": "markets",
+   "significant": true,
+   "record": true,
+   "trigger": 64648.44
+  },
+  {
+   "date": "2021-05-12",
+   "title": "Tesla stops accepting bitcoin, citing the energy used to mine it",
+   "tag": "adoption",
+   "significant": true
+  },
+  {
+   "date": "2021-05-19",
+   "title": "Bitcoin plunges as much as 30% in a day on a China crackdown and forced liquidations",
+   "tag": "markets",
+   "significant": true,
+   "trigger": 36463.56,
+   "direction": "below"
+  },
+  {
+   "date": "2021-06-09",
+   "title": "El Salvador's congress passes a law making bitcoin legal tender",
+   "tag": "regulation",
+   "significant": true
+  },
+  {
+   "date": "2021-09-07",
+   "title": "El Salvador becomes the first country to adopt bitcoin as legal tender",
+   "tag": "adoption",
+   "significant": false
+  },
+  {
+   "date": "2021-09-24",
+   "title": "China's central bank declares all cryptocurrency transactions illegal",
+   "tag": "regulation",
+   "significant": true
+  },
+  {
+   "date": "2021-10-19",
+   "title": "The first US bitcoin futures ETF, ProShares BITO, begins trading",
+   "tag": "markets",
+   "significant": true
+  },
+  {
+   "date": "2021-11-10",
+   "title": "Bitcoin sets a new all-time record near $69,000",
+   "tag": "markets",
+   "significant": true,
+   "record": true,
+   "trigger": 68852.62
+  },
+  {
+   "date": "2021-11-14",
+   "title": "The Taproot upgrade activates on the Bitcoin network",
+   "tag": "tech",
+   "significant": false
+  },
+  {
+   "date": "2022-02-24",
+   "title": "Russia invades Ukraine; global markets tumble",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2022-03-16",
+   "title": "The Federal Reserve raises interest rates for the first time since 2018",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2022-05-09",
+   "title": "TerraUSD, a leading stablecoin, slips below its $1 peg",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2022-05-12",
+   "title": "Terra's LUNA collapses and the crypto market is rocked",
+   "tag": "markets",
+   "significant": true
+  },
+  {
+   "date": "2022-06-12",
+   "title": "Celsius Network freezes customer withdrawals",
+   "tag": "markets",
+   "significant": true
+  },
+  {
+   "date": "2022-06-18",
+   "title": "Bitcoin falls below $18,000, under its 2017 record for the first time since 2020",
+   "tag": "markets",
+   "significant": true,
+   "trigger": 18000,
+   "direction": "below"
+  },
+  {
+   "date": "2022-06-27",
+   "title": "Crypto hedge fund Three Arrows Capital is ordered into liquidation",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2022-09-15",
+   "title": "Ethereum completes \"the Merge\", switching to proof of stake",
+   "tag": "tech",
+   "significant": false
+  },
+  {
+   "date": "2022-11-02",
+   "title": "A CoinDesk report raises questions about the balance sheet of FTX-linked Alameda Research",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2022-11-08",
+   "title": "Binance agrees to buy rival exchange FTX amid a run on withdrawals",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2022-11-09",
+   "title": "Binance walks away from the FTX deal",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2022-11-11",
+   "title": "FTX files for bankruptcy",
+   "tag": "markets",
+   "significant": true
+  },
+  {
+   "date": "2023-03-10",
+   "title": "Silicon Valley Bank collapses, the largest US bank failure since 2008",
+   "tag": "markets",
+   "significant": true
+  },
+  {
+   "date": "2023-03-12",
+   "title": "Signature Bank is closed; regulators guarantee depositors",
+   "tag": "markets",
+   "significant": false
+  },
+  {
+   "date": "2023-06-05",
+   "title": "The SEC sues Binance",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2023-06-06",
+   "title": "The SEC sues Coinbase",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2023-06-15",
+   "title": "BlackRock files for a spot bitcoin ETF",
+   "tag": "markets",
+   "significant": true
+  },
+  {
+   "date": "2023-08-29",
+   "title": "A US appeals court rules for Grayscale against the SEC over a bitcoin ETF",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2023-11-21",
+   "title": "Binance founder Changpeng Zhao pleads guilty; Binance agrees to a $4.3 billion settlement",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2024-01-10",
+   "title": "The SEC approves spot bitcoin ETFs",
+   "tag": "regulation",
+   "significant": true
+  },
+  {
+   "date": "2024-03-11",
+   "title": "Bitcoin tops $70,000 for the first time",
+   "tag": "markets",
+   "significant": false,
+   "milestone": 70000,
+   "trigger": 70000
+  },
+  {
+   "date": "2024-03-14",
+   "title": "Bitcoin sets a new all-time record near $73,700 as ETFs draw record inflows",
+   "tag": "markets",
+   "significant": true,
+   "record": true,
+   "trigger": 73593.42
+  },
+  {
+   "date": "2024-04-20",
+   "title": "Fourth halving: the block reward drops to 3.125 bitcoins",
+   "tag": "tech",
+   "significant": true
+  },
+  {
+   "date": "2024-05-23",
+   "title": "The SEC approves spot Ether ETFs",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2024-08-05",
+   "title": "A global market rout drags bitcoin below $50,000",
+   "tag": "markets",
+   "significant": true,
+   "trigger": 50000,
+   "direction": "below"
+  }
+ ]
+}

@@ -1,9 +1,25 @@
 import Foundation
 
-public enum PlaybackSpeed: Sendable {
-    case normal, fast
+/// How fast the game clock runs relative to the real one.
+public enum PlaybackSpeed: String, CaseIterable, Sendable {
+    /// Real time: one game minute per real minute.
+    case actual
+    /// Game speed: four game minutes per real second.
+    case normal
+    /// Fast forward: an hour of game time per real second.
+    case fast
+
     /// Game minutes that pass per real second.
-    var minutesPerSecond: Double { self == .fast ? 60 : 4 }
+    public var minutesPerSecond: Double {
+        switch self {
+        case .actual: return 1.0 / 60.0
+        case .normal: return 4
+        case .fast: return 60
+        }
+    }
+
+    /// How many times faster than real life this runs.
+    public var multiplier: Double { minutesPerSecond * 60 }
 }
 
 /// All state and rules of one Orange Robot Trader run.

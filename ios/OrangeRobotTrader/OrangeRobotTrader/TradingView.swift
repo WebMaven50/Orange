@@ -28,6 +28,15 @@ struct TradingView: View {
                         Spacer()
                     }.padding(6)
                 }
+                if let b = model.banner {
+                    VStack {
+                        NewsBannerView(item: b) { model.openNews() }
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                            .padding(.top, 6)
+                        Spacer()
+                    }
+                    .zIndex(2)
+                }
                 if s.isPaused {
                     Color.black.opacity(0.55)
                     VStack(spacing: 8) {
@@ -64,6 +73,7 @@ struct TradingView: View {
         }
         .background(Theme.bg)
         .animation(.spring(response: 0.38, dampingFraction: 0.88), value: model.showOrderForm)
+        .animation(.spring(response: 0.4, dampingFraction: 0.85), value: model.banner?.id)
         .overlay(alignment: .top) {
             if let f = model.flash {
                 Text(f).font(.system(size: 13, weight: .bold))
@@ -148,12 +158,53 @@ struct TradingView: View {
                 }
             }
             Spacer()
-            HStack(spacing: 4) {
-                chip("Normal", active: model.session.speed == .normal) { model.session.speed = .normal }
-                chip("Fast", active: model.session.speed == .fast) { model.session.speed = .fast }
-            }
+            speedMenu
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
+    }
+
+    private var speedMenu: some View {
+        let current = model.session.speed
+        return Menu {
+            ForEach(PlaybackSpeed.allCases, id: \.self) { sp in
+                Button {
+                    model.setSpeed(sp)
+                } label: {
+                    if sp == current {
+                        Label(Self.speedTitle(sp), systemImage: "checkmark")
+                    } else {
+                        Text(Self.speedTitle(sp))
+                    }
+                }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Text(Self.speedName(current)).font(.system(size: 11, weight: .bold))
+                Text(Self.multiplierText(current)).font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .opacity(0.75)
+                Image(systemName: "chevron.up.chevron.down").font(.system(size: 8, weight: .bold))
+            }
+            .padding(.horizontal, 9).padding(.vertical, 6)
+            .background(Theme.orange, in: RoundedRectangle(cornerRadius: 6))
+            .foregroundStyle(.black)
+        }
+    }
+
+    static func speedName(_ s: PlaybackSpeed) -> String {
+        switch s { case .actual: return "Actual"; case .normal: return "Normal"; case .fast: return "Fast" }
+    }
+
+    static func multiplierText(_ s: PlaybackSpeed) -> String {
+        let m = s.multiplier
+        return m >= 1000 ? String(format: "%.1fk×", m / 1000).replacingOccurrences(of: ".0k", with: "k") : String(format: "%.0f×", m)
+    }
+
+    static func speedTitle(_ s: PlaybackSpeed) -> String {
+        switch s {
+        case .actual: return "Actual — real time (1×)"
+        case .normal: return "Normal — game speed (240×)"
+        case .fast: return "Fast — fast forward (3,600×)"
+        }
     }
 
     private func chip(_ t: String, active: Bool, action: @escaping () -> Void) -> some View {
@@ -208,20 +259,37 @@ struct TradingView: View {
 
     private func actionBar(_ s: GameSession) -> some View {
         VStack(spacing: 10) {
-            Button { model.showPositions = true } label: {
-                HStack(spacing: 6) {
-                    Text("📊 Position & orders")
-                    if !s.pendingOrders.isEmpty {
-                        Text("\(s.pendingOrders.count)")
-                            .font(.system(size: 11, weight: .black))
-                            .padding(.horizontal, 7).padding(.vertical, 2)
-                            .background(Theme.orange, in: Capsule()).foregroundStyle(.black)
+            HStack(spacing: 8) {
+                Button { model.showPositions = true } label: {
+                    HStack(spacing: 6) {
+                        Text("📊 Position & orders")
+                        if !s.pendingOrders.isEmpty {
+                            Text("\(s.pendingOrders.count)")
+                                .font(.system(size: 11, weight: .black))
+                                .padding(.horizontal, 7).padding(.vertical, 2)
+                                .background(Theme.orange, in: Capsule()).foregroundStyle(.black)
+                        }
                     }
-                    Image(systemName: "chevron.up").font(.system(size: 10, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(s.pendingOrders.isEmpty ? Theme.dim : Theme.orange)
+                    .frame(maxWidth: .infinity).padding(.vertical, 8)
+                    .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 8))
                 }
-                .font(.system(size: 12, weight: .bold))
-                .foregroundStyle(s.pendingOrders.isEmpty ? Theme.dim : Theme.orange)
-                .frame(maxWidth: .infinity).padding(.vertical, 6)
+                Button { model.openNews() } label: {
+                    HStack(spacing: 6) {
+                        Text("📰 News")
+                        if model.unreadNews > 0 {
+                            Text("\(min(model.unreadNews, 99))")
+                                .font(.system(size: 11, weight: .black))
+                                .padding(.horizontal, 7).padding(.vertical, 2)
+                                .background(Theme.red, in: Capsule()).foregroundStyle(.white)
+                        }
+                    }
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(model.unreadNews > 0 ? Theme.text : Theme.dim)
+                    .frame(maxWidth: .infinity).padding(.vertical, 8)
+                    .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 8))
+                }
             }
             HStack(spacing: 10) {
                 tradeButton("BUY", .buy, Theme.green, s)

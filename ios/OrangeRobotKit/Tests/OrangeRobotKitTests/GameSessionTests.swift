@@ -327,4 +327,28 @@ final class GameSessionTests: XCTestCase {
         s.startSleep()
         XCTAssertThrowsError(try s.modifyOrder(id: o.id, level: 5)) { XCTAssertEqual($0 as? OrderError, .sleeping) }
     }
+
+    // MARK: Speeds
+
+    func testSpeedMultipliers() {
+        XCTAssertEqual(PlaybackSpeed.actual.multiplier, 1, accuracy: 1e-9)
+        XCTAssertEqual(PlaybackSpeed.normal.multiplier, 240, accuracy: 1e-9)
+        XCTAssertEqual(PlaybackSpeed.fast.multiplier, 3600, accuracy: 1e-9)
+    }
+
+    func testActualSpeedRunsInRealTime() {
+        var s = session()
+        s.speed = .actual
+        let start = s.absMinute
+        for _ in 0..<1200 { s.advance(seconds: 0.05) }   // 60 real seconds
+        XCTAssertEqual(s.absMinute - start, 1.0, accuracy: 1e-6, "one game minute per real minute")
+    }
+
+    func testNormalKeepsItsOriginalPace() {
+        var s = session()
+        s.speed = .normal
+        let start = s.absMinute
+        for _ in 0..<20 { s.advance(seconds: 0.05) }     // 1 real second
+        XCTAssertEqual(s.absMinute - start, 4.0, accuracy: 1e-9)
+    }
 }
