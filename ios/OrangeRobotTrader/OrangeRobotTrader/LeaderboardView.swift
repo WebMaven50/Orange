@@ -102,47 +102,78 @@ struct LeaderboardSheet: View {
     }
 }
 
-/// Save-score control used on the end screen.
+/// Sends the finished run to the Orange Robot Vault on theorangerobot.com:
+/// adds the run's virtual sats to the player's total and puts the score on the
+/// shared leaderboard.
 struct SaveScoreButton: View {
     @Bindable var model: GameModel
     @State private var asking = false
     @State private var draft = ""
+    @Environment(\.openURL) private var openURL
+
+    private static let vaultURL = URL(string: "https://theorangerobot.com/games/")!
 
     var body: some View {
-        VStack(spacing: 6) {
+        let sats = model.session.satsEarned
+        VStack(spacing: 10) {
+            if model.savedInitials == nil {
+                Text(sats > 0
+                     ? "Send your \(sats) virtual sats to the Orange Robot Vault and your score to the leaderboard. Get your name on theorangerobot.com."
+                     : "Put your score on the Orange Robot leaderboard and get your name on theorangerobot.com.")
+                    .font(.system(size: 12)).foregroundStyle(Theme.dim).multilineTextAlignment(.center)
+            }
+
             Button {
-                draft = model.lastInitials
-                asking = true
+                if model.savedInitials != nil {
+                    openURL(Self.vaultURL)
+                } else {
+                    draft = model.lastInitials
+                    asking = true
+                }
             } label: {
                 Text(label).font(.system(size: 14, weight: .heavy)).tracking(0.5)
-                    .frame(maxWidth: .infinity).padding(.vertical, 13)
+                    .frame(maxWidth: .infinity).padding(.vertical, 14)
+                    .background(model.savedInitials == nil ? Theme.orange : Color.clear,
+                                in: RoundedRectangle(cornerRadius: 10))
                     .overlay(RoundedRectangle(cornerRadius: 10)
                         .stroke(model.savedInitials == nil ? Theme.orange : Theme.green, lineWidth: 1.5))
-                    .foregroundStyle(model.savedInitials == nil ? Theme.orange : Theme.green)
+                    .foregroundStyle(model.savedInitials == nil ? Color.black : Theme.green)
             }
-            .disabled(model.savedInitials != nil || model.isSaving)
+            .disabled(model.isSaving)
 
+            if let who = model.savedInitials {
+                VStack(spacing: 4) {
+                    Text("Sent as \(who) ✓").font(.system(size: 13, weight: .bold)).foregroundStyle(Theme.green)
+                    if let r = model.savedRank {
+                        Text("Leaderboard rank #\(r)").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.gold)
+                    }
+                    if let v = model.vaultTotal {
+                        Text("Your Vault total: \(v.formatted()) virtual sats ⚡")
+                            .font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.gold)
+                    }
+                    Text("Tap the button to see the Vault board on theorangerobot.com.")
+                        .font(.system(size: 11)).foregroundStyle(Theme.dim)
+                }
+            }
             if let e = model.saveError {
                 Text(e).font(.system(size: 11)).foregroundStyle(Theme.red).multilineTextAlignment(.center)
             }
-            if let r = model.savedRank {
-                Text("You placed #\(r) on the board").font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.gold)
-            }
         }
-        .alert("Enter your initials", isPresented: $asking) {
+        .alert("Your initials", isPresented: $asking) {
             TextField("ABC", text: $draft)
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
                 .onChange(of: draft) { _, v in draft = String(LeaderboardClient.cleanInitials(v) ?? "") }
-            Button("Submit") { Task { await model.saveScore(initials: draft) } }
+            Button("Send") { Task { await model.saveScore(initials: draft) } }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("1–3 letters or numbers. Shown on the public leaderboard.")
+            Text("1–3 letters or numbers. This is shown publicly on theorangerobot.com. Nothing else about you is sent.")
         }
     }
 
     private var label: String {
-        if let i = model.savedInitials { return "SAVED AS \(i) ✓" }
-        return model.isSaving ? "SAVING…" : "SAVE MY SCORE"
+        if model.savedInitials != nil { return "SEE THE VAULT ON THE WEBSITE →" }
+        if model.isSaving { return "SENDING…" }
+        return model.session.satsEarned > 0 ? "⚡ SEND MY SATS TO THE VAULT" : "🏆 PUT MY SCORE ON THE BOARD"
     }
 }

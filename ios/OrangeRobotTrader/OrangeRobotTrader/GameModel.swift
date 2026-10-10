@@ -58,6 +58,7 @@ final class GameModel {
     // Leaderboard save state for the current run
     var savedInitials: String?
     var savedRank: Int?
+    var vaultTotal: Int?
     var isSaving = false
     var saveError: String?
     var lastInitials = UserDefaults.standard.string(forKey: "tor_initials") ?? ""
@@ -101,7 +102,7 @@ final class GameModel {
         orderType = .market
         fraction = 0.75
         banked = false
-        savedInitials = nil; savedRank = nil; saveError = nil; isSaving = false
+        savedInitials = nil; savedRank = nil; vaultTotal = nil; saveError = nil; isSaving = false
         Activity.track(.gameStart)
         resetLevel()
         lastTick = Date()
@@ -245,6 +246,7 @@ final class GameModel {
             let r = try await leaderboard.submit(initials: initials, score: score, sats: session.satsEarned)
             savedInitials = initials
             savedRank = r.rank
+            vaultTotal = r.vaultTotal
             lastInitials = initials
             Activity.track(.scoreSaved)
             UserDefaults.standard.set(initials, forKey: "tor_initials")

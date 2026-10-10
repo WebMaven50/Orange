@@ -13,6 +13,8 @@ public struct LeaderboardEntry: Decodable, Equatable, Identifiable, Sendable {
 public struct SubmitResult: Equatable, Sendable {
     /// 1-based rank of the submitted score, if it made the stored board.
     public let rank: Int?
+    /// The player's running total of virtual sats in the website's Vault.
+    public let vaultTotal: Int?
 }
 
 public enum LeaderboardError: Error, Equatable, Sendable {
@@ -79,7 +81,7 @@ public struct LeaderboardClient: Sendable {
     public func submit(game: String = traderGame, initials rawInitials: String,
                        score: Int, sats: Int) async throws -> SubmitResult {
         guard let initials = Self.cleanInitials(rawInitials) else { throw LeaderboardError.invalidInitials }
-        struct Response: Decodable { let ok: Bool?; let rank: Int? }
+        struct Response: Decodable { let ok: Bool?; let rank: Int?; let vaultTotal: Double? }
         do {
             let req = submitRequest(game: game, initials: initials, score: max(0, score), sats: max(0, sats))
             let (data, resp) = try await session.data(for: req)
@@ -87,7 +89,7 @@ public struct LeaderboardClient: Sendable {
                 throw LeaderboardError.server(http.statusCode)
             }
             let r = try JSONDecoder().decode(Response.self, from: data)
-            return SubmitResult(rank: r.rank)
+            return SubmitResult(rank: r.rank, vaultTotal: r.vaultTotal.map { Int($0.rounded()) })
         } catch let e as LeaderboardError {
             throw e
         } catch {
