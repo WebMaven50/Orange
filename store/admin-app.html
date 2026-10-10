@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://orange-robot-store.victor-cb4.workers.dev; frame-src 'none'; object-src 'none'; base-uri 'self'; upgrade-insecure-requests">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iOS App Activity — Orange Robot Store</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
+  :root{
+    --ink:#0d0b09; --smoke:#1a1410; --smoke2:#241d16; --smoke3:#2e2519;
+    --ash:#7a6e62; --key-gold:#c9a84c; --rust-glow:#e06820; --white:#f5f0e8;
+    --green:#4caf50;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--ink); color:var(--white); font-family:'Inter', sans-serif; padding: 1.5rem; }
+  h1{ font-family:'Cinzel', serif; color:var(--key-gold); font-size:1.4rem; text-align:center; }
+  .nav{ text-align:center; margin-bottom:1rem; }
+  .nav a{ color:var(--ash); font-size:0.8rem; text-decoration:none; margin:0 0.5rem; }
+  .nav a:hover{ color:var(--key-gold); }
+
+  .login-box{ max-width:320px; margin:4rem auto; text-align:center; }
+  .login-box input{
+    width:100%; padding:0.8rem; border-radius:8px; border:1px solid var(--smoke3);
+    background:var(--smoke2); color:var(--white); font-size:1rem; margin-bottom:0.8rem;
+  }
+  .login-box button{
+    width:100%; padding:0.8rem; border:none; border-radius:8px; background:var(--key-gold);
+    color:#1a1204; font-weight:700; cursor:pointer; font-family:'Cinzel', serif;
+  }
+  .err{ color:#d9534f; font-size:0.85rem; margin-top:0.6rem; }
+
+  #dashboard{ display:none; max-width:980px; margin:0 auto; }
+  .toolbar{ text-align:center; margin-bottom:1.2rem; }
+  .toolbar select, .toolbar button{
+    padding:0.55rem 0.9rem; border-radius:8px; border:1px solid var(--smoke3); background:var(--smoke2);
+    color:var(--white); font-family:'Inter', sans-serif; font-size:0.8rem; cursor:pointer; margin:0 0.25rem;
+  }
+  .toolbar button{ color:var(--key-gold); }
+  .toolbar button:hover{ border-color:var(--key-gold); }
+
+  .summary{ display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:0.8rem; margin: 0 0 1.6rem; }
+  .summary .box{ background:var(--smoke2); border:1px solid var(--smoke3); border-radius:8px; padding:0.8rem; text-align:center; }
+  .summary .box .n{ font-family:'IBM Plex Mono', monospace; font-size:1.4rem; font-weight:700; color:var(--key-gold); }
+  .summary .box .l{ font-size:0.68rem; color:var(--ash); text-transform:uppercase; letter-spacing:0.05em; margin-top:2px; }
+  .summary .box.hot .n{ color:var(--rust-glow); }
+
+  .section-title{ font-family:'Cinzel', serif; color:var(--key-gold); font-size:1.05rem; margin:2rem 0 0.8rem; }
+  .tablewrap{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:0.8rem; }
+  th{ text-align:right; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.04em; color:var(--ash); padding:0.5rem 0.4rem; border-bottom:1px solid var(--smoke3); white-space:nowrap; }
+  th:first-child, td:first-child{ text-align:left; }
+  td{ padding:0.5rem 0.4rem; border-bottom:1px solid var(--smoke3); text-align:right; font-family:'IBM Plex Mono', monospace; font-size:0.78rem; }
+  td.zero{ color:var(--smoke3); }
+  .privacy{ margin-top:2rem; font-size:0.75rem; color:var(--ash); text-align:center; line-height:1.5; }
+  .note{ font-size:0.72rem; color:var(--ash); text-align:center; margin-top:0.6rem; }
+</style>
+</head>
+<body>
+
+<h1>📱 Orange Robot — iOS App Activity</h1>
+<div class="nav">
+  <a href="admin-orders.html">← Orders</a>
+  <a href="admin-downloads.html">Download Log</a>
+  <a href="admin-settings.html">Settings</a>
+</div>
+
+<div class="login-box" id="loginBox">
+  <input type="password" id="pwInput" placeholder="Admin password" />
+  <button id="loginBtn">VIEW APP ACTIVITY</button>
+  <div class="err" id="loginErr"></div>
+</div>
+
+<div id="dashboard">
+  <div class="toolbar">
+    <select id="rangeSel">
+      <option value="7">Last 7 days</option>
+      <option value="30" selected>Last 30 days</option>
+      <option value="60">Last 60 days</option>
+    </select>
+    <button id="refreshBtn">↻ Refresh</button>
+    <button id="exportBtn">⬇ Export CSV</button>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="section-title">Daily counts</div>
+  <div class="tablewrap">
+    <table>
+      <thead id="head"></thead>
+      <tbody id="body"></tbody>
+    </table>
+  </div>
+  <div class="note">Days are UTC. Counts are anonymous — a single tap or play adds one.</div>
+
+  <div class="privacy">
+    Counters only: no IP address, device ID, account or location is read or stored for these numbers.<br>
+    App installs and downloads themselves are in App Store Connect → App Analytics.
+  </div>
+</div>
+
+<script>
+  const API_BASE = 'https://orange-robot-store.victor-cb4.workers.dev';
+  let PASSWORD = '';
+  let data = null;
+
+  // Friendly labels, in the order they appear.
+  const LABELS = {
+    app_open: 'App opens',
+    game_start: 'Games started',
+    game_end: 'Games finished',
+    game_win: 'Reached $1M',
+    score_saved: 'Scores saved',
+    leaderboard_open: 'Leaderboard views',
+    prologue_play: 'Prologue plays',
+    prologue_complete: 'Prologue finished',
+    book_link_tap: 'Book link taps',
+    audiobook_link_tap: 'Audiobook link taps'
+  };
+  const HOT = new Set(['prologue_play', 'book_link_tap', 'audiobook_link_tap']);
+
+  const loginBox = document.getElementById('loginBox');
+  const dashboard = document.getElementById('dashboard');
+  const loginErr = document.getElementById('loginErr');
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    PASSWORD = document.getElementById('pwInput').value;
+    if (await load()) { loginBox.style.display = 'none'; dashboard.style.display = 'block'; }
+  });
+  document.getElementById('pwInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('loginBtn').click(); });
+  document.getElementById('rangeSel').addEventListener('change', load);
+  document.getElementById('refreshBtn').addEventListener('click', load);
+  document.getElementById('exportBtn').addEventListener('click', exportCsv);
+
+  async function load() {
+    const days = document.getElementById('rangeSel').value;
+    try {
+      const res = await fetch(API_BASE + '/admin/app-stats?days=' + encodeURIComponent(days), {
+        headers: { 'X-Admin-Password': PASSWORD }
+      });
+      if (res.status === 401) { loginErr.textContent = 'Wrong password.'; return false; }
+      if (res.status === 429) { loginErr.textContent = 'Too many attempts — wait a few minutes.'; return false; }
+      if (res.status === 404) { loginErr.textContent = 'The store worker has no app-stats endpoint yet (not deployed).'; return false; }
+      if (!res.ok) { loginErr.textContent = 'Could not reach the store worker.'; return false; }
+      data = await res.json();
+      render();
+      return true;
+    } catch (e) {
+      loginErr.textContent = 'Could not reach the store worker.';
+      return false;
+    }
+  }
+
+  function n(x) { return Number(x || 0).toLocaleString('en-US'); }
+  function label(ev) { return LABELS[ev] || ev; }
+
+  function render() {
+    const events = data.events;
+    document.getElementById('summary').innerHTML = events.map(ev =>
+      '<div class="box' + (HOT.has(ev) ? ' hot' : '') + '"><div class="n">' + n(data.totals[ev]) +
+      '</div><div class="l">' + label(ev) + '</div></div>'
+    ).join('');
+
+    document.getElementById('head').innerHTML =
+      '<tr><th>Date (UTC)</th>' + events.map(ev => '<th>' + label(ev) + '</th>').join('') + '</tr>';
+
+    document.getElementById('body').innerHTML = data.days.map(d =>
+      '<tr><td>' + d.date + '</td>' + events.map(ev => {
+        const v = d.counts[ev] || 0;
+        return '<td class="' + (v ? '' : 'zero') + '">' + n(v) + '</td>';
+      }).join('') + '</tr>'
+    ).join('');
+  }
+
+  function exportCsv() {
+    if (!data) return;
+    const rows = [['date', ...data.events]];
+    data.days.slice().reverse().forEach(d => rows.push([d.date, ...data.events.map(ev => d.counts[ev] || 0)]));
+    const csv = rows.map(r => r.join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'orange-robot-app-activity.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+</script>
+</body>
+</html>
