@@ -18,9 +18,8 @@ final class GameModel {
     var phase: Phase = .intro
     var session: GameSession = .random()
     var timeframe = 15
-    /// Remembered between runs.
-    private(set) var speed: PlaybackSpeed =
-        PlaybackSpeed(rawValue: UserDefaults.standard.string(forKey: "tor_speed") ?? "") ?? .normal
+    /// Every new run starts at Normal; the player's choice applies to the current run only.
+    private(set) var speed: PlaybackSpeed = .normal
     var side: Side = .buy
     var orderType: OrderType = .market
     var fraction = 0.75
@@ -70,7 +69,8 @@ final class GameModel {
         case .random: session = .random()
         case .moment(let d): session = .starting(at: d)
         }
-        session.speed = speed
+        speed = .normal
+        session.speed = .normal
         autoPaused = false
         showOrderForm = false
         showPositions = false
@@ -235,7 +235,6 @@ final class GameModel {
     func setSpeed(_ new: PlaybackSpeed) {
         speed = new
         session.speed = new
-        UserDefaults.standard.set(new.rawValue, forKey: "tor_speed")
         Haptics.impact()
     }
 
