@@ -30,6 +30,10 @@ struct CandleChart: View {
     let candles: [Candle]
     let lastPrice: Double
     let orders: [PendingOrder]
+    var overlay: ChartOverlay?
+    /// Share of the chart's height covered by peek panels (RSI / MACD) at the bottom.
+    /// The price scale fits the space above them so candles are never hidden.
+    var bottomFraction: CGFloat = 0
     /// How many candle slots span the plot. Fewer candles hug the right edge,
     /// so a brand-new run reads like a real chart that is just getting started.
     var slots = 48
@@ -38,11 +42,19 @@ struct CandleChart: View {
         Canvas { ctx, size in
             guard !candles.isEmpty else { return }
             let labelW: CGFloat = 62
-            let plot = CGRect(x: 0, y: 6, width: size.width - labelW, height: size.height - 12)
+            let plot = CGRect(x: 0, y: 6, width: size.width - labelW,
+                              height: size.height * (1 - bottomFraction) - 12)
 
             var hi = candles.map(\.high).max()!
             var lo = candles.map(\.low).min()!
             for o in orders where o.type != .trailing { hi = max(hi, o.level); lo = min(lo, o.level) }
+            // Keep indicator lines on screen too
+            if let ov = overlay {
+                var extra: [Double?] = []
+                if ov.showBands { extra += ov.data.bbUpper + ov.data.bbLower }
+                if ov.showMA { extra += ov.data.ma20 + ov.data.ma50 }
+                for v in extra.compactMap({ $0 }) { hi = max(hi, v); lo = min(lo, v) }
+            }
             if hi - lo < hi * 0.002 {          // flat market: give it a visible band
                 let mid = (hi + lo) / 2
                 hi = mid * 1.02; lo = mid * 0.98
@@ -118,6 +130,42 @@ struct CandleChart: View {
                 }
                 ctx.stroke(line, with: .color(color), style: StrokeStyle(lineWidth: 1.8, lineJoin: .round))
                 ctx.fill(Path(ellipseIn: CGRect(x: last.x - 3, y: last.y - 3, width: 6, height: 6)), with: .color(color))
+            }
+
+            // Indicator overlays, clipped to the plot area
+            if let o = overlay {
+                var c = ctx
+                c.clip(to: Path(plot))
+                func line(_ vals: [Double?]) -> Path {
+                    var p = Path(); var started = false
+                    for (i, v) in vals.enumerated() where i < candles.count {
+                        guard let v else { started = false; continue }
+                        let pt = CGPoint(x: x(i), y: y(v))
+                        if started { p.addLine(to: pt) } else { p.move(to: pt); started = true }
+                    }
+                    return p
+                }
+                if o.showBands {
+                    // light fill between the bands, then the three lines
+                    var fill = Path(); var started = false
+                    var back: [CGPoint] = []
+                    for i in candles.indices {
+                        guard i < o.data.bbUpper.count, let u = o.data.bbUpper[i], let l = o.data.bbLower[i] else { continue }
+                        let pu = CGPoint(x: x(i), y: y(u))
+                        if started { fill.addLine(to: pu) } else { fill.move(to: pu); started = true }
+                        back.append(CGPoint(x: x(i), y: y(l)))
+                    }
+                    for p in back.reversed() { fill.addLine(to: p) }
+                    if started { fill.closeSubpath(); c.fill(fill, with: .color(Color(hex: 0xB28CFF).opacity(0.10))) }
+                    c.stroke(line(o.data.bbUpper), with: .color(Color(hex: 0xB28CFF)), lineWidth: 1)
+                    c.stroke(line(o.data.bbLower), with: .color(Color(hex: 0xB28CFF)), lineWidth: 1)
+                    c.stroke(line(o.data.bbMid), with: .color(Color(hex: 0xB28CFF).opacity(0.7)),
+                             style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                }
+                if o.showMA {
+                    c.stroke(line(o.data.ma50), with: .color(Color(hex: 0xFFD166)), lineWidth: 1.4)
+                    c.stroke(line(o.data.ma20), with: .color(Color(hex: 0x6AA9FF)), lineWidth: 1.4)
+                }
             }
 
             // Resting orders

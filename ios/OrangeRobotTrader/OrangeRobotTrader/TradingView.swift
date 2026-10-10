@@ -6,6 +6,14 @@ struct TradingView: View {
 
     var body: some View {
         let s = model.session
+        // Indicators need history before the visible window to warm up.
+        let wanted = model.indicators.isEmpty ? 48 : 48 + 130
+        let series = s.candles(timeframeMinutes: model.timeframe, count: wanted)
+        let shown = Array(series.suffix(48))
+        let panelCount = (model.indicators.contains(.rsi) ? 1 : 0) + (model.indicators.contains(.macd) ? 1 : 0)
+        let panelShare = CGFloat(panelCount) * 0.22
+        let ind: IndicatorData? = model.indicators.isEmpty ? nil
+            : IndicatorData(closes: series.map(\.close), visible: shown.count)
         VStack(spacing: 0) {
             topBar
             priceRow(s)
@@ -14,11 +22,47 @@ struct TradingView: View {
             VStack(spacing: 0) {
             ZStack {
                 CandleChart(style: model.chartStyle,
-                            candles: s.candles(timeframeMinutes: model.timeframe, count: 48),
-                            lastPrice: s.lastPrice, orders: s.pendingOrders)
+                            candles: shown,
+                            lastPrice: s.lastPrice, orders: s.pendingOrders,
+                            overlay: ind.map {
+                                ChartOverlay(data: $0,
+                                             showMA: model.indicators.contains(.ma),
+                                             showBands: model.indicators.contains(.bollinger))
+                            },
+                            bottomFraction: panelShare)
+                // RSI / MACD peek panels slide up over the bottom of the chart
+                if let ind, model.indicators.contains(.rsi) || model.indicators.contains(.macd) {
+                    GeometryReader { g in
+                        VStack(spacing: 0) {
+                            Spacer(minLength: 0)
+                            if model.indicators.contains(.rsi) {
+                                RSIPanel(values: ind.rsi).frame(height: g.size.height * 0.22)
+                            }
+                            if model.indicators.contains(.macd) {
+                                MACDPanel(macd: ind.macd, signal: ind.signal, histogram: ind.histogram)
+                                    .frame(height: g.size.height * 0.22)
+                            }
+                        }
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .allowsHitTesting(false)
+                }
                 VStack {
                     HStack {
                         Spacer()
+                        Button {
+                            model.showIndicatorMenu.toggle()
+                            Haptics.impact()
+                        } label: {
+                            Image(systemName: "waveform.path.ecg")
+                                .font(.system(size: 13, weight: .semibold))
+                                .frame(width: 30, height: 28)
+                                .background((model.indicators.isEmpty ? Theme.panel2 : Theme.orange).opacity(0.9),
+                                            in: RoundedRectangle(cornerRadius: 7))
+                                .overlay(RoundedRectangle(cornerRadius: 7).stroke(Theme.line))
+                                .foregroundStyle(model.indicators.isEmpty ? Theme.text : Color.black)
+                        }
+                        .padding(.trailing, 4)
                         Menu {
                             ForEach(ChartStyle.allCases) { st in
                                 Button {
@@ -44,6 +88,19 @@ struct TradingView: View {
                     }
                     Spacer()
                 }.padding(.top, 6)
+                if model.showIndicatorMenu {
+                    Color.clear.contentShape(Rectangle())
+                        .onTapGesture { model.showIndicatorMenu = false }
+                    VStack {
+                        HStack {
+                            Spacer()
+                            IndicatorMenuCard(model: model).padding(.trailing, 8)
+                        }
+                        Spacer()
+                    }
+                    .padding(.top, 40)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
                 if !s.isRandomStart {
                     VStack {
                         HStack {
@@ -102,6 +159,8 @@ struct TradingView: View {
         }
         .background(Theme.bg)
         .animation(.spring(response: 0.38, dampingFraction: 0.88), value: model.showOrderForm)
+        .animation(.easeOut(duration: 0.2), value: model.indicators)
+        .animation(.easeOut(duration: 0.18), value: model.showIndicatorMenu)
         .animation(.spring(response: 0.4, dampingFraction: 0.85), value: model.banner?.id)
         .overlay(alignment: .top) {
             if let f = model.flash {

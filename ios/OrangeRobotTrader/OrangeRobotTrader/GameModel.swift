@@ -18,6 +18,9 @@ final class GameModel {
     var phase: Phase = .intro
     var session: GameSession = .random()
     var timeframe = 15
+    /// Indicators the player has switched on for this run (peek tools, off by default).
+    var indicators: Set<IndicatorKind> = []
+    var showIndicatorMenu = false
     /// Remembered between runs.
     var chartStyle: ChartStyle =
         ChartStyle(rawValue: UserDefaults.standard.string(forKey: "chart_style") ?? "") ?? .candles {
@@ -81,6 +84,8 @@ final class GameModel {
         }
         speed = .normal
         session.speed = .normal
+        indicators = []
+        showIndicatorMenu = false
         autoPaused = false
         showOrderForm = false
         showPositions = false
@@ -177,6 +182,12 @@ final class GameModel {
     var maxAmount: Double { session.maxAmount(for: side) }
     var amountUSD: Double { maxAmount * fraction }
     var needsLevel: Bool { orderType != .market }
+
+    func toggleIndicator(_ k: IndicatorKind) {
+        if indicators.contains(k) { indicators.remove(k) } else { indicators.insert(k) }
+        Haptics.impact()
+    }
+    func clearIndicators() { indicators = []; showIndicatorMenu = false }
 
     func setSide(_ s: Side) { side = s; resetLevel() }
 
