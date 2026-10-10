@@ -26,6 +26,13 @@ public struct GameSession {
     public private(set) var lastPrice: Double
     public private(set) var bestEquity: Double
     public private(set) var trades = 0
+    /// Average entry price of the open position (long or short); nil when flat.
+    public private(set) var averageEntry: Double?
+    /// Profit locked in by closing (part of) positions, before fees.
+    public private(set) var realizedPL: Double = 0
+    public private(set) var feesPaid: Double = 0
+    /// Newest first.
+    public private(set) var fills: [Fill] = []
     public private(set) var pendingOrders: [PendingOrder] = []
     public private(set) var outcome: GameOutcome?
     public private(set) var isPaused = false
@@ -36,6 +43,7 @@ public struct GameSession {
     public let isRandomStart: Bool
 
     private var nextOrderID = 1
+    private var nextFillID = 1
     private var sleep: (startMinute: Double, elapsed: Double)?
 
     public var isSleeping: Bool { sleep != nil }
@@ -98,6 +106,17 @@ public struct GameSession {
 
     public var equity: Double { cash + btc * lastPrice }
     public var profitLoss: Double { equity - Self.startCash }
+    /// Paper profit on the open position at the current price.
+    public var unrealizedPL: Double {
+        guard let avg = averageEntry, btc != 0 else { return 0 }
+        return btc * (lastPrice - avg)
+    }
+    /// Unrealized profit as a percent of what the position cost to open.
+    public var unrealizedPercent: Double {
+        guard let avg = averageEntry, avg > 0, btc != 0 else { return 0 }
+        return (lastPrice - avg) / avg * 100 * (btc > 0 ? 1 : -1)
+    }
+    public var hasPosition: Bool { abs(btc) * lastPrice >= 1 }
     public var goalProgress: Double { min(max(equity / Self.winTarget, 0), 1) }
     public var daysPlayed: Int { Int(floor(absMinute / 1440)) }
     public var currentDate: Date { engine.date(forDayOffset: daysPlayed) }
@@ -188,8 +207,8 @@ public struct GameSession {
         guard amountUSD >= 1 else { throw OrderError.amountTooSmall }
 
         if type == .market {
-            let ok = side == .buy ? executeBuy(amountUSD, at: lastPrice)
-                                  : executeSell(amountUSD, at: lastPrice)
+            let ok = side == .buy ? executeBuy(amountUSD, at: lastPrice, via: .market)
+                                  : executeSell(amountUSD, at: lastPrice, via: .market)
             if !ok { throw OrderError.amountTooSmall }
             bestEquity = max(bestEquity, equity)
             checkEndConditions()
@@ -211,6 +230,49 @@ public struct GameSession {
         pendingOrders.removeAll { $0.id == id }
     }
 
+    public mutating func cancelAllOrders() { pendingOrders.removeAll() }
+
+    /// Change a resting order's price level (or trail %) and/or its size.
+    /// The order keeps its id and, for trailing orders, its best-price memory.
+    public mutating func modifyOrder(id: Int, level: Double? = nil,
+                                     amountFraction: Double? = nil) throws {
+        guard isRunning else { throw OrderError.sessionOver }
+        guard !isSleeping else { throw OrderError.sleeping }
+        guard let i = pendingOrders.firstIndex(where: { $0.id == id }) else { throw OrderError.orderNotFound }
+        if let level {
+            guard level.isFinite, level > 0 else { throw OrderError.invalidPrice }
+            pendingOrders[i].level = level
+        }
+        if let amountFraction {
+            guard amountFraction.isFinite, amountFraction > 0 else { throw OrderError.amountTooSmall }
+            pendingOrders[i].amountFraction = min(amountFraction, 1)
+        }
+    }
+
+    /// The price at which an order will trigger right now (trailing orders move).
+    public func triggerPrice(for o: PendingOrder) -> Double {
+        switch o.type {
+        case .market, .limit, .stop: return o.level
+        case .trailing:
+            return o.side == .sell ? o.extreme * (1 - o.level / 100) : o.extreme * (1 + o.level / 100)
+        }
+    }
+
+    /// Market order that closes the whole position. Returns false if flat.
+    @discardableResult
+    public mutating func closePosition() -> Bool {
+        guard isRunning, !isSleeping, hasPosition else { return false }
+        let side: Side = btc > 0 ? .sell : .buy
+        // Buying back a short must also cover the fee out of the notional.
+        let amount = btc > 0 ? btc * lastPrice : -btc * lastPrice / (1 - Self.fee)
+        do {
+            try place(side: side, type: .market, amountUSD: amount)
+            return true
+        } catch {
+            return false
+        }
+    }
+
     /// Dollar size an order would fill at right now.
     public func liveAmount(for order: PendingOrder) -> Double {
         max(0, maxAmount(for: order.side) * order.amountFraction)
@@ -227,26 +289,26 @@ public struct GameSession {
                 break
             case .limit:
                 if o.side == .buy, price <= o.level {
-                    executeBuy(liveAmount(for: o), at: o.level); filled = true
+                    executeBuy(liveAmount(for: o), at: o.level, via: o.type); filled = true
                 } else if o.side == .sell, price >= o.level {
-                    executeSell(liveAmount(for: o), at: o.level); filled = true
+                    executeSell(liveAmount(for: o), at: o.level, via: o.type); filled = true
                 }
             case .stop:
                 if o.side == .buy, price >= o.level {
-                    executeBuy(liveAmount(for: o), at: price); filled = true
+                    executeBuy(liveAmount(for: o), at: price, via: o.type); filled = true
                 } else if o.side == .sell, price <= o.level {
-                    executeSell(liveAmount(for: o), at: price); filled = true
+                    executeSell(liveAmount(for: o), at: price, via: o.type); filled = true
                 }
             case .trailing:
                 if o.side == .sell {
                     o.extreme = max(o.extreme, price)
                     if price <= o.extreme * (1 - o.level / 100) {
-                        executeSell(liveAmount(for: o), at: price); filled = true
+                        executeSell(liveAmount(for: o), at: price, via: o.type); filled = true
                     }
                 } else {
                     o.extreme = min(o.extreme, price)
                     if price >= o.extreme * (1 + o.level / 100) {
-                        executeBuy(liveAmount(for: o), at: price); filled = true
+                        executeBuy(liveAmount(for: o), at: price, via: o.type); filled = true
                     }
                 }
             }
@@ -258,22 +320,57 @@ public struct GameSession {
     // MARK: Execution
 
     @discardableResult
-    private mutating func executeBuy(_ amountUSD: Double, at price: Double) -> Bool {
+    private mutating func executeBuy(_ amountUSD: Double, at price: Double, via: OrderType) -> Bool {
         let spend = min(amountUSD, max(cash, 0))
         guard spend >= 1, price > 0 else { return false }
-        btc += spend * (1 - Self.fee) / price
+        let qty = spend * (1 - Self.fee) / price
+        applyToPosition(signedQty: qty, at: price)
+        btc += qty
         cash -= spend
-        trades += 1
+        record(side: .buy, via: via, price: price, quantity: qty, notional: spend, fee: spend * Self.fee)
         return true
     }
 
     @discardableResult
-    private mutating func executeSell(_ amountUSD: Double, at price: Double) -> Bool {
+    private mutating func executeSell(_ amountUSD: Double, at price: Double, via: OrderType) -> Bool {
         guard amountUSD >= 1, price > 0 else { return false }
         let qty = amountUSD / price
+        applyToPosition(signedQty: -qty, at: price)
         btc -= qty
         cash += qty * price * (1 - Self.fee)
-        trades += 1
+        record(side: .sell, via: via, price: price, quantity: qty, notional: amountUSD, fee: amountUSD * Self.fee)
         return true
+    }
+
+    /// Average-cost bookkeeping. `signedQty` > 0 buys, < 0 sells.
+    private mutating func applyToPosition(signedQty q: Double, at price: Double) {
+        let held = btc
+        if held == 0 || held.sign == q.sign {
+            // opening or adding in the same direction: blend the entry price
+            let old = averageEntry ?? price
+            averageEntry = (abs(held) * old + abs(q) * price) / (abs(held) + abs(q))
+        } else {
+            // reducing, closing, or flipping
+            let closed = min(abs(q), abs(held))
+            if let avg = averageEntry {
+                realizedPL += held > 0 ? closed * (price - avg) : closed * (avg - price)
+            }
+            let remainder = abs(q) - closed
+            if remainder > 1e-12 {
+                averageEntry = price           // flipped: the leftover opens a new position
+            } else if abs(held) - closed < 1e-9 {
+                averageEntry = nil             // flat
+            }
+        }
+    }
+
+    private mutating func record(side: Side, via: OrderType, price: Double,
+                                 quantity: Double, notional: Double, fee: Double) {
+        trades += 1
+        feesPaid += fee
+        fills.insert(Fill(id: nextFillID, absMinute: absMinute, side: side, via: via,
+                          price: price, quantity: quantity, notional: notional, fee: fee), at: 0)
+        nextFillID += 1
+        if fills.count > 100 { fills.removeLast() }
     }
 }

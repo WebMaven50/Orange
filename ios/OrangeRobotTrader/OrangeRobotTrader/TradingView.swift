@@ -208,11 +208,20 @@ struct TradingView: View {
 
     private func actionBar(_ s: GameSession) -> some View {
         VStack(spacing: 10) {
-            if !s.pendingOrders.isEmpty {
-                Button { model.openOrderForm(model.side) } label: {
-                    Text("● \(s.pendingOrders.count) open order\(s.pendingOrders.count == 1 ? "" : "s") — tap to manage")
-                        .font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.orange)
+            Button { model.showPositions = true } label: {
+                HStack(spacing: 6) {
+                    Text("📊 Position & orders")
+                    if !s.pendingOrders.isEmpty {
+                        Text("\(s.pendingOrders.count)")
+                            .font(.system(size: 11, weight: .black))
+                            .padding(.horizontal, 7).padding(.vertical, 2)
+                            .background(Theme.orange, in: Capsule()).foregroundStyle(.black)
+                    }
+                    Image(systemName: "chevron.up").font(.system(size: 10, weight: .bold))
                 }
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(s.pendingOrders.isEmpty ? Theme.dim : Theme.orange)
+                .frame(maxWidth: .infinity).padding(.vertical, 6)
             }
             HStack(spacing: 10) {
                 tradeButton("BUY", .buy, Theme.green, s)

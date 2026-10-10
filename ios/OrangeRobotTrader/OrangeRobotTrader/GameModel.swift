@@ -29,6 +29,7 @@ final class GameModel {
     var showPrologue = false
     var showStartPicker = false
     var showOrderForm = false
+    var showPositions = false
     private var autoPaused = false
 
     // Leaderboard save state for the current run
@@ -46,7 +47,7 @@ final class GameModel {
     // MARK: Lifecycle
 
     /// True while any sheet is covering the game, so the market can wait.
-    var anySheetOpen: Bool { showInfo || showLeaderboard || showPrologue || showStartPicker }
+    var anySheetOpen: Bool { showInfo || showLeaderboard || showPrologue || showStartPicker || showPositions }
 
     func startNewRun(_ choice: StartChoice = .random) {
         switch choice {
@@ -55,6 +56,7 @@ final class GameModel {
         }
         autoPaused = false
         showOrderForm = false
+        showPositions = false
         phase = .playing
         side = .buy
         orderType = .market
@@ -85,6 +87,7 @@ final class GameModel {
         timer?.invalidate()
         timer = nil
         showOrderForm = false
+        showPositions = false
         phase = .ended
         Activity.track(.gameEnd)
         if session.outcome == .win { Activity.track(.gameWin) }
@@ -201,7 +204,24 @@ final class GameModel {
 
     func sleep() { if session.startSleep() { Haptics.impact() } }
     func cashOut() { session.cashOut(); finish() }
-    func cancel(_ id: Int) { session.cancelOrder(id: id) }
+    func cancel(_ id: Int) { session.cancelOrder(id: id); Haptics.impact() }
+    func updateOrder(id: Int, level: Double, fraction: Double) throws {
+        try session.modifyOrder(id: id, level: level, amountFraction: fraction)
+        Haptics.impact()
+        flash = "Order updated"
+        Task { try? await Task.sleep(for: .seconds(1.2)); if flash == "Order updated" { flash = nil } }
+    }
+
+    func cancelAll() { session.cancelAllOrders(); Haptics.impact() }
+
+    func closePosition() {
+        if session.closePosition() {
+            flash = "Position closed"
+            Haptics.impact()
+            if session.outcome != nil { finish() }
+            Task { try? await Task.sleep(for: .seconds(1.2)); if flash == "Position closed" { flash = nil } }
+        }
+    }
 }
 
 enum Haptics {

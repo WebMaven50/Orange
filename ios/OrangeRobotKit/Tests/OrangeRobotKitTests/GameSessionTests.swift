@@ -199,4 +199,132 @@ final class GameSessionTests: XCTestCase {
     func testRandomRunsAreRandomStart() {
         XCTAssertTrue(GameSession.random().isRandomStart)
     }
+
+    // MARK: Position tracking
+
+    func testAverageEntryAndUnrealized() throws {
+        var s = session()
+        XCTAssertNil(s.averageEntry)
+        XCTAssertFalse(s.hasPosition)
+        let p = s.lastPrice
+        try s.place(side: .buy, type: .market, amountUSD: 10_000)
+        XCTAssertEqual(try XCTUnwrap(s.averageEntry), p, accuracy: 1e-9)
+        XCTAssertTrue(s.hasPosition)
+        XCTAssertEqual(s.fills.count, 1)
+        XCTAssertEqual(s.fills[0].side, .buy)
+        XCTAssertEqual(s.fills[0].fee, 26, accuracy: 1e-9)
+        XCTAssertEqual(s.unrealizedPL, s.btc * (s.lastPrice - p), accuracy: 1e-6)
+        XCTAssertEqual(s.feesPaid, 26, accuracy: 1e-9)
+    }
+
+    func testPartialCloseRealizesProfitAndKeepsEntry() throws {
+        var s = session()
+        let entry = s.lastPrice
+        try s.place(side: .buy, type: .market, amountUSD: 10_000)
+        s.advance(seconds: 0.05); s.advance(seconds: 0.05)   // price moves a little
+        let qtyBefore = s.btc
+        let px = s.lastPrice
+        try s.place(side: .sell, type: .market, amountUSD: s.btc * px / 2)
+        XCTAssertEqual(s.btc, qtyBefore / 2, accuracy: 1e-9)
+        XCTAssertEqual(try XCTUnwrap(s.averageEntry), entry, accuracy: 1e-9, "entry unchanged by a partial close")
+        XCTAssertEqual(s.realizedPL, (qtyBefore / 2) * (px - entry), accuracy: 1e-6)
+        XCTAssertEqual(s.fills.count, 2)
+        XCTAssertEqual(s.fills[0].side, .sell, "newest first")
+    }
+
+    func testClosingToFlatClearsEntry() throws {
+        var s = session()
+        try s.place(side: .buy, type: .market, amountUSD: 10_000)
+        XCTAssertTrue(s.closePosition())
+        XCTAssertNil(s.averageEntry)
+        XCTAssertFalse(s.hasPosition)
+        XCTAssertEqual(s.btc, 0, accuracy: 1e-9)
+    }
+
+    func testShortProfitWhenPriceFalls() throws {
+        var s = session()
+        let entry = s.lastPrice
+        try s.place(side: .sell, type: .market, amountUSD: 10_000)
+        XCTAssertLessThan(s.btc, 0)
+        XCTAssertEqual(try XCTUnwrap(s.averageEntry), entry, accuracy: 1e-9)
+        // pretend the price is lower by checking the formula directly
+        let lower = entry * 0.9
+        XCTAssertEqual(s.btc * (lower - entry), abs(s.btc) * (entry - lower), accuracy: 1e-6)
+        XCTAssertTrue(s.closePosition())
+        XCTAssertFalse(s.hasPosition)
+    }
+
+    func testFlippingLongToShortOpensNewEntryAtFlipPrice() throws {
+        var s = session()
+        try s.place(side: .buy, type: .market, amountUSD: 10_000)
+        let px = s.lastPrice
+        // sell twice the position: closes long and opens a short at the same price
+        try s.place(side: .sell, type: .market, amountUSD: s.btc * px * 2)
+        XCTAssertLessThan(s.btc, 0)
+        XCTAssertEqual(try XCTUnwrap(s.averageEntry), px, accuracy: 1e-9)
+    }
+
+    func testTriggeredOrderIsRecordedWithItsType() throws {
+        var s = session()
+        try s.place(side: .buy, type: .limit, amountUSD: 5_000, level: s.lastPrice * 2)
+        s.advance(seconds: 0.016)
+        XCTAssertEqual(s.fills.count, 1)
+        XCTAssertEqual(s.fills[0].via, .limit)
+    }
+
+    func testCancelAllAndTriggerPrice() throws {
+        var s = session()
+        let a = try XCTUnwrap(try s.place(side: .buy, type: .limit, amountUSD: 1000, level: s.lastPrice * 0.5))
+        let b = try XCTUnwrap(try s.place(side: .sell, type: .trailing, amountUSD: 1000, level: 10))
+        XCTAssertEqual(s.triggerPrice(for: a), s.lastPrice * 0.5, accuracy: 1e-9)
+        XCTAssertEqual(s.triggerPrice(for: b), b.extreme * 0.9, accuracy: 1e-9)
+        s.cancelAllOrders()
+        XCTAssertTrue(s.pendingOrders.isEmpty)
+    }
+
+    // MARK: Editing orders
+
+    func testModifyLimitOrderLevelAndSize() throws {
+        var s = session()
+        let o = try XCTUnwrap(try s.place(side: .buy, type: .limit, amountUSD: 10_000, level: s.lastPrice * 0.5))
+        try s.modifyOrder(id: o.id, level: s.lastPrice * 0.4, amountFraction: 0.25)
+        let m = try XCTUnwrap(s.pendingOrders.first)
+        XCTAssertEqual(m.id, o.id)
+        XCTAssertEqual(m.level, s.lastPrice * 0.4, accuracy: 1e-9)
+        XCTAssertEqual(m.amountFraction, 0.25, accuracy: 1e-12)
+    }
+
+    func testModifiedOrderFillsAtTheNewLevel() throws {
+        var s = session()
+        let p = s.lastPrice
+        let o = try XCTUnwrap(try s.place(side: .buy, type: .limit, amountUSD: 10_000, level: p * 0.1))
+        s.advance(seconds: 0.016)
+        XCTAssertEqual(s.pendingOrders.count, 1, "far below market: still resting")
+        try s.modifyOrder(id: o.id, level: p * 3)
+        s.advance(seconds: 0.016)
+        XCTAssertTrue(s.pendingOrders.isEmpty)
+        XCTAssertEqual(s.fills.first?.price ?? 0, p * 3, accuracy: 1e-9)
+    }
+
+    func testTrailingEditKeepsBestPriceMemory() throws {
+        var s = session()
+        try s.place(side: .buy, type: .market, amountUSD: 10_000)
+        let o = try XCTUnwrap(try s.place(side: .sell, type: .trailing, amountUSD: 5_000, level: 5))
+        let extreme = o.extreme
+        try s.modifyOrder(id: o.id, level: 8)
+        XCTAssertEqual(s.pendingOrders[0].extreme, extreme)
+        XCTAssertEqual(s.pendingOrders[0].level, 8)
+    }
+
+    func testModifyValidation() throws {
+        var s = session()
+        let o = try XCTUnwrap(try s.place(side: .buy, type: .limit, amountUSD: 1000, level: s.lastPrice * 0.5))
+        XCTAssertThrowsError(try s.modifyOrder(id: o.id, level: -1)) { XCTAssertEqual($0 as? OrderError, .invalidPrice) }
+        XCTAssertThrowsError(try s.modifyOrder(id: o.id, amountFraction: 0)) { XCTAssertEqual($0 as? OrderError, .amountTooSmall) }
+        XCTAssertThrowsError(try s.modifyOrder(id: 999, level: 5)) { XCTAssertEqual($0 as? OrderError, .orderNotFound) }
+        try s.modifyOrder(id: o.id, amountFraction: 7)   // clamped to 100%
+        XCTAssertEqual(s.pendingOrders[0].amountFraction, 1)
+        s.startSleep()
+        XCTAssertThrowsError(try s.modifyOrder(id: o.id, level: 5)) { XCTAssertEqual($0 as? OrderError, .sleeping) }
+    }
 }
