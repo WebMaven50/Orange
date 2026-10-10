@@ -18,6 +18,11 @@ final class GameModel {
     var phase: Phase = .intro
     var session: GameSession = .random()
     var timeframe = 15
+    /// Remembered between runs.
+    var chartStyle: ChartStyle =
+        ChartStyle(rawValue: UserDefaults.standard.string(forKey: "chart_style") ?? "") ?? .candles {
+        didSet { UserDefaults.standard.set(chartStyle.rawValue, forKey: "chart_style") }
+    }
     /// Every new run starts at Normal; the player's choice applies to the current run only.
     private(set) var speed: PlaybackSpeed = .normal
     var side: Side = .buy

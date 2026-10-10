@@ -13,8 +13,37 @@ struct TradingView: View {
             ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
             ZStack {
-                CandleChart(candles: s.candles(timeframeMinutes: model.timeframe, count: 48),
+                CandleChart(style: model.chartStyle,
+                            candles: s.candles(timeframeMinutes: model.timeframe, count: 48),
                             lastPrice: s.lastPrice, orders: s.pendingOrders)
+                VStack {
+                    HStack {
+                        Spacer()
+                        Menu {
+                            ForEach(ChartStyle.allCases) { st in
+                                Button {
+                                    model.chartStyle = st
+                                    Haptics.impact()
+                                } label: {
+                                    if st == model.chartStyle {
+                                        Label(st.title, systemImage: "checkmark")
+                                    } else {
+                                        Label(st.title, systemImage: st.symbol)
+                                    }
+                                }
+                            }
+                        } label: {
+                            Image(systemName: model.chartStyle.symbol)
+                                .font(.system(size: 13, weight: .semibold))
+                                .frame(width: 30, height: 28)
+                                .background(Theme.panel2.opacity(0.9), in: RoundedRectangle(cornerRadius: 7))
+                                .overlay(RoundedRectangle(cornerRadius: 7).stroke(Theme.line))
+                                .foregroundStyle(Theme.text)
+                        }
+                        .padding(.trailing, 68)
+                    }
+                    Spacer()
+                }.padding(.top, 6)
                 if !s.isRandomStart {
                     VStack {
                         HStack {

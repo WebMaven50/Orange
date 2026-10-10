@@ -1,7 +1,32 @@
 import SwiftUI
 import OrangeRobotKit
 
+enum ChartStyle: String, CaseIterable, Identifiable {
+    case candles, hollow, bars, line, area
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .candles: return "Candles"
+        case .hollow: return "Hollow candles"
+        case .bars: return "OHLC bars"
+        case .line: return "Line"
+        case .area: return "Area"
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .candles: return "chart.bar.fill"
+        case .hollow: return "chart.bar"
+        case .bars: return "chart.bar.xaxis"
+        case .line: return "chart.xyaxis.line"
+        case .area: return "chart.line.uptrend.xyaxis"
+        }
+    }
+}
+
 struct CandleChart: View {
+    var style: ChartStyle = .candles
     let candles: [Candle]
     let lastPrice: Double
     let orders: [PendingOrder]
@@ -37,19 +62,62 @@ struct CandleChart: View {
                          at: CGPoint(x: plot.maxX + 4, y: gy), anchor: .leading)
             }
 
-            // Candles
+            // Price series
             let w = plot.width / CGFloat(max(slots, candles.count))
-            for (i, c) in candles.enumerated() {
-                let x = plot.maxX - (CGFloat(candles.count - i) - 0.5) * w
-                let up = c.close >= c.open
-                let color = up ? Theme.green : Theme.red
-                var wick = Path()
-                wick.move(to: CGPoint(x: x, y: y(c.high)))
-                wick.addLine(to: CGPoint(x: x, y: y(c.low)))
-                ctx.stroke(wick, with: .color(color), lineWidth: 1)
-                let top = y(max(c.open, c.close)), bottom = y(min(c.open, c.close))
-                let body = CGRect(x: x - w * 0.34, y: top, width: w * 0.68, height: max(1, bottom - top))
-                ctx.fill(Path(body), with: .color(color))
+            func x(_ i: Int) -> CGFloat { plot.maxX - (CGFloat(candles.count - i) - 0.5) * w }
+
+            switch style {
+            case .candles, .hollow:
+                for (i, c) in candles.enumerated() {
+                    let up = c.close >= c.open
+                    let color = up ? Theme.green : Theme.red
+                    let cx = x(i)
+                    var wick = Path()
+                    wick.move(to: CGPoint(x: cx, y: y(c.high)))
+                    wick.addLine(to: CGPoint(x: cx, y: y(c.low)))
+                    ctx.stroke(wick, with: .color(color), lineWidth: 1)
+                    let top = y(max(c.open, c.close)), bottom = y(min(c.open, c.close))
+                    let body = CGRect(x: cx - w * 0.34, y: top, width: w * 0.68, height: max(1, bottom - top))
+                    if style == .hollow && up {
+                        // rising candles are outlined, falling ones are solid
+                        ctx.stroke(Path(body.insetBy(dx: 0.5, dy: 0.5)), with: .color(color), lineWidth: 1.2)
+                    } else {
+                        ctx.fill(Path(body), with: .color(color))
+                    }
+                }
+
+            case .bars:
+                for (i, c) in candles.enumerated() {
+                    let color = c.close >= c.open ? Theme.green : Theme.red
+                    let cx = x(i), tick = max(2, w * 0.4)
+                    var p = Path()
+                    p.move(to: CGPoint(x: cx, y: y(c.high))); p.addLine(to: CGPoint(x: cx, y: y(c.low)))
+                    p.move(to: CGPoint(x: cx - tick, y: y(c.open))); p.addLine(to: CGPoint(x: cx, y: y(c.open)))
+                    p.move(to: CGPoint(x: cx, y: y(c.close))); p.addLine(to: CGPoint(x: cx + tick, y: y(c.close)))
+                    ctx.stroke(p, with: .color(color), lineWidth: max(1, min(2, w * 0.18)))
+                }
+
+            case .line, .area:
+                // Closes, ending on the live price so the line meets the price tag.
+                var pts = candles.enumerated().map { CGPoint(x: x($0.offset), y: y($0.element.close)) }
+                if let last = pts.indices.last { pts[last].y = y(lastPrice) }
+                guard let first = pts.first, let last = pts.last else { break }
+                let rising = lastPrice >= candles[0].open
+                let color = rising ? Theme.green : Theme.red
+                var line = Path()
+                line.move(to: first)
+                for pt in pts.dropFirst() { line.addLine(to: pt) }
+                if style == .area {
+                    var fill = line
+                    fill.addLine(to: CGPoint(x: last.x, y: plot.maxY))
+                    fill.addLine(to: CGPoint(x: first.x, y: plot.maxY))
+                    fill.closeSubpath()
+                    ctx.fill(fill, with: .linearGradient(
+                        Gradient(colors: [color.opacity(0.35), color.opacity(0.02)]),
+                        startPoint: CGPoint(x: 0, y: plot.minY), endPoint: CGPoint(x: 0, y: plot.maxY)))
+                }
+                ctx.stroke(line, with: .color(color), style: StrokeStyle(lineWidth: 1.8, lineJoin: .round))
+                ctx.fill(Path(ellipseIn: CGRect(x: last.x - 3, y: last.y - 3, width: 6, height: 6)), with: .color(color))
             }
 
             // Resting orders
