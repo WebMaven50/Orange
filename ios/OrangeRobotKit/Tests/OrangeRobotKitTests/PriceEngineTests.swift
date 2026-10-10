@@ -82,4 +82,67 @@ final class PriceEngineTests: XCTestCase {
         let c = cal.dateComponents([.year, .month, .day], from: d)
         XCTAssertEqual([c.year, c.month, c.day], [2010, 7, 18])
     }
+
+    // MARK: Micro moves
+
+    func testMicroMovesOffByDefaultKeepsWebParity() {
+        XCTAssertFalse(PriceEngine(startDay: 3000).microMoves)
+        XCTAssertFalse(GameSession.random().engine.microMoves)
+    }
+
+    func testMicroMovesNeverTouchAnchors() {
+        let plain = PriceEngine(startDay: 3000)
+        let live = PriceEngine(startDay: 3000, microMoves: true)
+        // every 90 game-minutes is an anchor (16 per day)
+        for k in 0..<64 {
+            let m = Double(k) * 90
+            XCTAssertEqual(live.price(atMinute: m), plain.price(atMinute: m), accuracy: 1e-6, "anchor \(k)")
+        }
+    }
+
+    func testMicroMovesStayInsideTheRealDailyRange() {
+        let live = PriceEngine(startDay: 3500, microMoves: true)
+        for d in 0..<20 {
+            let bar = live.history.bar(at: 3500 + d)
+            for step in 0..<1440 {
+                let p = live.price(atMinute: Double(d * 1440 + step) + 0.37)
+                XCTAssertGreaterThanOrEqual(p, min(bar.low, bar.open) - 1e-6)
+                XCTAssertLessThanOrEqual(p, max(bar.high, bar.open) + 1e-6)
+            }
+        }
+    }
+
+    func testMicroMovesActuallyMove() {
+        let plain = PriceEngine(startDay: 3000)
+        let live = PriceEngine(startDay: 3000, microMoves: true)
+        var diffs = 0.0
+        var changes = 0
+        var last = live.price(atMinute: 600)
+        for k in 1...600 {                       // 10 game-hours, sampled every minute
+            let m = 600 + Double(k)
+            diffs += abs(live.price(atMinute: m) - plain.price(atMinute: m))
+            let p = live.price(atMinute: m)
+            if abs(p - last) > 1e-9 { changes += 1 }
+            last = p
+        }
+        XCTAssertGreaterThan(diffs, 0)
+        XCTAssertGreaterThan(changes, 500)
+    }
+
+    func testMicroMovesAreDeterministic() {
+        let a = PriceEngine(startDay: 4000, microMoves: true)
+        let b = PriceEngine(startDay: 4000, microMoves: true)
+        for m in stride(from: 100.0, to: 5000.0, by: 137.3) {
+            XCTAssertEqual(a.price(atMinute: m), b.price(atMinute: m))
+        }
+    }
+
+    func testDailyCandlesStayRealWithMicroMoves() {
+        let plain = PriceEngine(startDay: 3000)
+        let live = PriceEngine(startDay: 3000, microMoves: true)
+        // fully elapsed days are built from real bars, not the path
+        let a = plain.candles(timeframeMinutes: 1440, count: 5, atMinute: 1440 * 6 + 10)
+        let b = live.candles(timeframeMinutes: 1440, count: 5, atMinute: 1440 * 6 + 10)
+        XCTAssertEqual(a.dropLast(), b.dropLast())
+    }
 }

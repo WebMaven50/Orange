@@ -78,29 +78,30 @@ public struct GameSession {
 
     /// A fresh run in a random window of real history, starting mid-morning.
     public static func random<G: RandomNumberGenerator>(
-        history: PriceHistory = .bundled, using rng: inout G
+        history: PriceHistory = .bundled, microMoves: Bool = false, using rng: inout G
     ) -> GameSession {
         let startDay = Int.random(in: 0..<PriceEngine.maxStartDay(for: history), using: &rng)
         let minute = Double(480 + Int.random(in: 0..<120, using: &rng))
-        return GameSession(engine: PriceEngine(history: history, startDay: startDay),
+        return GameSession(engine: PriceEngine(history: history, startDay: startDay, microMoves: microMoves),
                            startMinute: minute)
     }
 
-    public static func random(history: PriceHistory = .bundled) -> GameSession {
+    public static func random(history: PriceHistory = .bundled, microMoves: Bool = false) -> GameSession {
         var rng = SystemRandomNumberGenerator()
-        return random(history: history, using: &rng)
+        return random(history: history, microMoves: microMoves, using: &rng)
     }
 
     /// A practice run at a player-chosen moment (UTC calendar date and time of day).
     /// The date is clamped to the playable history.
-    public static func starting(at moment: Date, history: PriceHistory = .bundled) -> GameSession {
+    public static func starting(at moment: Date, history: PriceHistory = .bundled,
+                                microMoves: Bool = false) -> GameSession {
         let cal = utcCalendar
         let first = cal.startOfDay(for: history.startDate)
         let day = cal.dateComponents([.day], from: first, to: cal.startOfDay(for: moment)).day ?? 0
         let clamped = min(max(0, day), PriceEngine.maxStartDay(for: history))
         let hm = cal.dateComponents([.hour, .minute], from: moment)
         let minute = Double((hm.hour ?? 0) * 60 + (hm.minute ?? 0))
-        return GameSession(engine: PriceEngine(history: history, startDay: clamped),
+        return GameSession(engine: PriceEngine(history: history, startDay: clamped, microMoves: microMoves),
                            startMinute: minute, isRandomStart: false)
     }
 

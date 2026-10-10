@@ -19,13 +19,19 @@ public final class PriceEngine {
     /// Day index into `history` where this run begins.
     public let startDay: Int
 
+    /// Adds small deterministic flickers on top of the smooth intraday path so
+    /// real-time play feels like a live market. The day's real open, high, low
+    /// and close are untouched (the flicker fades to zero at every anchor).
+    public let microMoves: Bool
+
     private var anchorCache: [Int: [Double]] = [:]
     private static let segments = 16
     private static let cacheLimit = 400
 
-    public init(history: PriceHistory = .bundled, startDay: Int) {
+    public init(history: PriceHistory = .bundled, startDay: Int, microMoves: Bool = false) {
         self.history = history
         self.startDay = startDay
+        self.microMoves = microMoves
     }
 
     /// Highest valid random start day (leaves 30 days of runway).
@@ -48,7 +54,36 @@ public final class PriceEngine {
         let i0 = min(n - 1, Int(floor(pos)))
         let t = pos - Double(i0)
         let s = t * t * (3 - 2 * t) // smoothstep
-        return anchors[i0] + (anchors[i0 + 1] - anchors[i0]) * s
+        let base = anchors[i0] + (anchors[i0 + 1] - anchors[i0]) * s
+        guard microMoves else { return base }
+
+        // Flicker: zero at both ends of every anchor segment, so anchors
+        // (including the real high, low and close) are hit exactly.
+        let envelope = 4 * t * (1 - t)
+        if envelope <= 0 { return base }
+        let bar = history.bar(at: dayIdx)
+        let range = max(bar.high - bar.low, bar.close * 0.002)
+        let amp = range * 0.010
+        let minute = f * 1440
+        let fine = Self.valueNoise(day: dayIdx, t: minute * 4, salt: 1)          // ~15 game-seconds
+        let slow = Self.valueNoise(day: dayIdx, t: minute / 3, salt: 2)          // ~3 game-minutes
+        let noisy = base + amp * envelope * (0.7 * fine + 1.1 * slow)
+        // Never leave the day's real range (unless the path itself starts outside it).
+        return min(max(noisy, min(bar.low, base)), max(bar.high, base))
+    }
+
+    /// Smooth value noise in [-1, 1], a pure function of (day, t).
+    private static func valueNoise(day: Int, t: Double, salt: UInt32) -> Double {
+        let i = Int(floor(t))
+        let u = t - Double(i)
+        func at(_ k: Int) -> Double {
+            var g = Mulberry32(seed: UInt32(truncatingIfNeeded: Int64(day) &* 2_246_822_519 &+ Int64(k) &* 3_266_489_917)
+                               ^ (salt &* 0x9E3779B9))
+            _ = g.next()
+            return g.next() * 2 - 1
+        }
+        let w = u * u * (3 - 2 * u)
+        return at(i) + (at(i + 1) - at(i)) * w
     }
 
     private func dayAnchors(_ idx: Int) -> [Double] {

@@ -154,6 +154,7 @@ struct EndView: View {
 struct InfoView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(Activity.settingKey) private var shareCounts = true
+    @AppStorage("live_flicker") private var liveFlicker = true
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -170,6 +171,14 @@ struct InfoView: View {
                          "You don't have to wait for $1M or bankruptcy — cash out anytime to lock in your equity. You earn 1 virtual sat per dollar of profit.")
                     para("About virtual sats.",
                          "Virtual sats are game points. They have no cash value and cannot be redeemed for Bitcoin or money. All money in this game is simulated and prices are historical — it is a game, not financial advice.")
+                    VStack(alignment: .leading, spacing: 6) {
+                        Toggle(isOn: $liveFlicker) {
+                            Text("Live price flicker")
+                                .font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.orange)
+                        }.tint(Theme.orange)
+                        Text("Adds small tick-by-tick movement between the day's real prices so the market feels alive, especially at Actual speed. The day's real open, high, low and close never change. Applies to your next run.")
+                            .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                    }
                     VStack(alignment: .leading, spacing: 6) {
                         Toggle(isOn: $shareCounts) {
                             Text("Share anonymous usage counts")

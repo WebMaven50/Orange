@@ -59,6 +59,11 @@ final class GameModel {
     private var lastTick = Date()
     private var banked = false
 
+    /// Player setting (Info screen): small live price flickers. On by default.
+    static var liveFlicker: Bool {
+        UserDefaults.standard.object(forKey: "live_flicker") as? Bool ?? true
+    }
+
     // MARK: Lifecycle
 
     /// True while any sheet is covering the game, so the market can wait.
@@ -66,8 +71,8 @@ final class GameModel {
 
     func startNewRun(_ choice: StartChoice = .random) {
         switch choice {
-        case .random: session = .random()
-        case .moment(let d): session = .starting(at: d)
+        case .random: session = .random(microMoves: Self.liveFlicker)
+        case .moment(let d): session = .starting(at: d, microMoves: Self.liveFlicker)
         }
         speed = .normal
         session.speed = .normal
