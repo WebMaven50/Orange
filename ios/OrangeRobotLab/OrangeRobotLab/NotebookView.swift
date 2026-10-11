@@ -81,6 +81,11 @@ struct NotebookView: View {
                     if r.starred { Image(systemName: "star.fill").font(.system(size: 11)).foregroundStyle(Theme.gold) }
                 }
                 Text(r.headline).font(.system(size: 12)).foregroundStyle(Theme.dim).multilineTextAlignment(.leading)
+                if let sc = r.scoreVsHold {
+                    Text("Score \(Score.label(sc))")
+                        .font(.system(size: 11, weight: .black, design: .monospaced))
+                        .foregroundStyle(abs(sc) < 3 ? Theme.dim : (sc > 0 ? Theme.green : Theme.red))
+                }
                 Text("\(Fmt.date(r.start)) – \(Fmt.date(r.end)) · saved \(r.createdAt.formatted(date: .abbreviated, time: .shortened))")
                     .font(.system(size: 10)).foregroundStyle(Theme.dim)
                 if !r.notes.isEmpty {

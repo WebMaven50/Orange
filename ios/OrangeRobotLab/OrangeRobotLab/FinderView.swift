@@ -11,6 +11,8 @@ struct FinderView: View {
     @State private var finishedSpan: DateSpan?
     @State private var task: Task<Void, Never>?
     @State private var open: Strategy?
+    @State private var naming: Candidate?
+    @State private var nameDraft = ""
 
     var body: some View {
         ScrollView {
@@ -60,6 +62,21 @@ struct FinderView: View {
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(item: $open) { strategy in
             BuilderView(strategy: strategy)
+        }
+        .alert("Name your robot", isPresented: Binding(get: { naming != nil }, set: { if !$0 { naming = nil } })) {
+            TextField("Robot name", text: $nameDraft)
+            Button("Save") {
+                if let c = naming {
+                    var st = c.strategy
+                    let n = nameDraft.trimmingCharacters(in: .whitespaces)
+                    st.name = n.isEmpty ? lab.uniqueName(c.strategy.name) : n
+                    lab.save(st)
+                }
+                naming = nil
+            }
+            Button("Cancel", role: .cancel) { naming = nil }
+        } message: {
+            Text("Pick a name you'll recognise. Reports and live tests use it.")
         }
         .onDisappear { task?.cancel() }
     }
@@ -118,6 +135,14 @@ struct FinderView: View {
                         .foregroundStyle(color)
                 }
                 Text(describe(c.strategy)).font(.system(size: 12)).foregroundStyle(Theme.dim)
+                if let v = c.validation, let vh = c.validationBuyAndHold {
+                    let sc = Score.vsHold(robotReturn: v.totalReturn, holdReturn: vh.totalReturn)
+                    HStack(spacing: 6) {
+                        Text("Score on unseen time").font(.system(size: 11)).foregroundStyle(Theme.dim)
+                        Text(Score.label(sc)).font(.system(size: 13, weight: .black, design: .monospaced))
+                            .foregroundStyle(abs(sc) < 3 ? Theme.dim : (sc > 0 ? Theme.green : Theme.red))
+                    }
+                }
 
                 VStack(spacing: 6) {
                     row("Practice period", c.train.totalReturn, hold: c.trainBuyAndHold.totalReturn)
@@ -145,8 +170,11 @@ struct FinderView: View {
                             .background(Theme.orange, in: RoundedRectangle(cornerRadius: 10))
                             .foregroundStyle(.black)
                     }
-                    Button { lab.save(c.strategy) } label: {
-                        Text(lab.saved.contains(where: { $0.name == c.strategy.name && $0 == c.strategy }) ? "Saved ✓" : "Save robot")
+                    Button {
+                        nameDraft = lab.uniqueName(c.strategy.name)
+                        naming = c
+                    } label: {
+                        Text(lab.saved.contains(where: { $0.dropName == c.strategy.dropName }) ? "Saved ✓" : "Save robot")
                             .font(.system(size: 13, weight: .bold))
                             .frame(maxWidth: .infinity).padding(.vertical, 10)
                             .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.line))

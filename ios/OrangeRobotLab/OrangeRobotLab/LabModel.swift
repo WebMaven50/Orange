@@ -198,6 +198,15 @@ final class LabModel {
         return a..<(max(a, b) + 1)
     }
 
+    /// "Dip buyer" -> "Dip buyer 2" if that name is already one of your robots.
+    func uniqueName(_ base: String) -> String {
+        let taken = Set(saved.map(\.name))
+        if !taken.contains(base) { return base }
+        var n = 2
+        while taken.contains("\(base) \(n)") { n += 1 }
+        return "\(base) \(n)"
+    }
+
     func save(_ s: Strategy) {
         if let i = saved.firstIndex(where: { $0.name == s.name }) { saved[i] = s } else { saved.insert(s, at: 0) }
         persist()

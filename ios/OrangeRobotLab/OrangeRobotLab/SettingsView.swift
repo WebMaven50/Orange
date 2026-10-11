@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(LabModel.self) private var lab
     @AppStorage(Feedback.hapticsKey) private var haptics = true
     @AppStorage(Feedback.soundKey) private var sound = true
+    @AppStorage(ActivityLab.settingKey) private var shareCounts = true
     @State private var permission: UNAuthorizationStatus = .notDetermined
 
     var body: some View {
@@ -49,12 +50,16 @@ struct SettingsView: View {
                         }
                     }
                     Card {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 10) {
                             SectionLabel("Privacy")
-                            Text("Everything in the Lab stays on this phone: your rules, reports and live tests. Prices come from a public exchange feed. No account, no tracking.")
+                            Text("Everything in the Lab stays on this phone: your rules, reports and live tests. Prices come from a public exchange feed. There is no account.")
                                 .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                            Toggle(isOn: $shareCounts) {
+                                label("Share anonymous usage counts", "Counts only, like \"someone tapped the book link\". No device ID, no IP address, nothing personal. Turn off and the app sends nothing.")
+                            }.tint(Theme.orange)
                         }
                     }
+                    WebsiteCallout()
                 }
                 .padding(16)
             }

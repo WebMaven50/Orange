@@ -65,6 +65,12 @@ public struct Report: Codable, Identifiable, Equatable, Sendable {
                found: candidates.map(Found.init), notes: "", starred: false)
     }
 
+    /// Score against just holding (0 = same, +100 = twice the money, −50 = half), for tests.
+    public var scoreVsHold: Double? {
+        guard kind == .test, let r = result, let h = hold else { return nil }
+        return Score.vsHold(robotReturn: r.totalReturn, holdReturn: h.totalReturn)
+    }
+
     /// One line for list rows.
     public var headline: String {
         switch kind {
@@ -105,6 +111,7 @@ public struct Report: Codable, Identifiable, Equatable, Sendable {
                 lines.append("RESULT")
                 lines.append("Robot: \(Report.pct(r.totalReturn)) · biggest fall \(Int(r.maxDrawdown * 100))% · \(r.trades) trades · \(Int(r.winRate * 100))% won")
                 lines.append("Just holding: \(Report.pct(h.totalReturn)) · biggest fall \(Int(h.maxDrawdown * 100))%")
+                if let sc = scoreVsHold { lines.append("Score vs holding: \(Score.label(sc))") }
             }
         case .search:
             lines.append("Ideas tried: \(tries ?? 0)")
@@ -125,6 +132,7 @@ public struct Report: Codable, Identifiable, Equatable, Sendable {
         }
         lines.append("")
         lines.append("Simulation on past data. Not financial advice.")
+        lines.append("Made with Orange Robot Lab · theorangerobot.com")
         return lines.joined(separator: "\n")
     }
 

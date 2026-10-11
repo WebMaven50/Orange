@@ -87,6 +87,8 @@ struct HomeView: View {
                     }
                 }
 
+                WebsiteCallout()
+
                 Text("History simulations only. Past results don't predict the future, and nothing here is financial advice. Intraday movement isn't used: the robot trades on real daily candles.")
                     .font(.system(size: 11)).foregroundStyle(Theme.dim).multilineTextAlignment(.center)
                     .padding(.top, 6)

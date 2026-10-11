@@ -61,7 +61,7 @@ struct ReplayView: View {
                 header(day: day, price: bar.close, held: held, total: r.days.count)
                 headline(day: day)
 
-                ReplayChart(history: bt.history, range: r.days, cursor: cursor, trades: r.trades,
+                ReplayChart(history: bt.history, range: r.days, cursor: cursor, trades: r.trades, purchases: r.purchases.map(\.day),
                             strategy: strategy, held: held)
                     .frame(height: 280)
                     .background(Theme.panel, in: RoundedRectangle(cornerRadius: 12))
@@ -70,8 +70,8 @@ struct ReplayView: View {
                 controls(total: r.days.count)
 
                 HStack(spacing: 10) {
-                    valueBox("Your robot", rEq, start, color: Theme.orange)
-                    valueBox("Just holding", hEq, start, color: Theme.dim)
+                    valueBox("Your robot", rEq, start, color: Theme.orange, leading: rEq >= hEq)
+                    valueBox("Just holding", hEq, start, color: Theme.dim, leading: hEq > rEq)
                 }
 
                 LiveEquityChart(robot: r.equity, hold: h.equity, upTo: cursor)
@@ -133,7 +133,7 @@ struct ReplayView: View {
                     } else {
                         Text("▲ BOUGHT \(when) at \(Fmt.usd(t.entryPrice, decimals: 0))")
                             .font(.system(size: 13, weight: .heavy)).foregroundStyle(Theme.green)
-                        Text(strategy.entry.map(\.summary).joined(separator: " and "))
+                        Text(strategy.dca.map { "Scheduled purchase, \($0.label)." } ?? strategy.entry.map(\.summary).joined(separator: " and "))
                             .font(.system(size: 12)).foregroundStyle(Theme.text)
                     }
                 }
@@ -184,7 +184,7 @@ struct ReplayView: View {
         }
     }
 
-    private func valueBox(_ title: String, _ eq: Double, _ start: Double, color: Color) -> some View {
+    private func valueBox(_ title: String, _ eq: Double, _ start: Double, color: Color, leading: Bool) -> some View {
         let r = eq / start - 1
         return VStack(spacing: 3) {
             Text(title.uppercased()).font(.system(size: 9, weight: .bold)).tracking(0.5).foregroundStyle(color)
@@ -192,9 +192,13 @@ struct ReplayView: View {
                 .foregroundStyle(Theme.text)
             Text(Money.pct(r, digits: 1)).font(.system(size: 12, weight: .bold, design: .monospaced))
                 .foregroundStyle(r >= 0 ? Theme.green : Theme.red)
+            Text(leading ? "BETTER" : " ").font(.system(size: 10, weight: .black)).tracking(1.5)
+                .foregroundStyle(Theme.orange).frame(height: 12)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 10)
         .background(Theme.panel, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.orange, lineWidth: leading ? 1.5 : 0))
+        .animation(.easeInOut(duration: 0.25), value: leading)
     }
 
     private func tradeLog(_ r: BacktestResult, day: Int, held: Trade?) -> some View {
@@ -262,6 +266,7 @@ private struct ReplayChart: View {
     let range: Range<Int>
     let cursor: Int
     let trades: [Trade]
+    var purchases: [Int] = []
     let strategy: Strategy
     let held: Trade?
 
@@ -342,8 +347,17 @@ private struct ReplayChart: View {
                 level(t.entryPrice, Theme.orange.opacity(0.9), "BOUGHT")
             }
 
+            // DCA purchases
+            for d in purchases where d >= firstDay && d <= lastDay {
+                let p = CGPoint(x: x(d), y: y(bars[d].low) + 11)
+                var tri = Path()
+                tri.move(to: CGPoint(x: p.x, y: p.y - 6)); tri.addLine(to: CGPoint(x: p.x - 5, y: p.y + 4))
+                tri.addLine(to: CGPoint(x: p.x + 5, y: p.y + 4)); tri.closeSubpath()
+                ctx.fill(tri, with: .color(Theme.green))
+            }
+
             // buy / sell markers
-            for t in trades {
+            for t in trades where purchases.isEmpty {
                 if t.entryDay >= firstDay, t.entryDay <= lastDay {
                     let p = CGPoint(x: x(t.entryDay), y: y(bars[t.entryDay].low) + 11)
                     var tri = Path()

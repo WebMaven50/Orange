@@ -247,6 +247,12 @@ public extension LiveEvaluator {
         guard let robot = status.robot, let hist = status.history else { return [] }
         let first = Int((hist.startDate.timeIntervalSince1970 / 86_400).rounded())
         var out: [LiveEvent] = []
+        if !robot.purchases.isEmpty {
+            // A DCA robot's decisions are its scheduled buys.
+            return robot.purchases.map {
+                LiveEvent(kind: .bought, day: first + $0.day, price: $0.price, reason: nil, returnPercent: nil)
+            }
+        }
         for t in robot.trades {
             out.append(LiveEvent(kind: .bought, day: first + t.entryDay, price: t.entryPrice, reason: nil, returnPercent: nil))
             // The end-of-test close is bookkeeping, not a decision the robot made.

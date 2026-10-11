@@ -22,18 +22,79 @@ struct BuilderView: View {
                 templates
                 Card {
                     VStack(alignment: .leading, spacing: 10) {
-                        SectionLabel("Name")
-                        TextField("My rules", text: $strategy.name)
-                            .font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.text)
+                        SectionLabel("Name your robot")
+                        HStack {
+                            Text("🤖")
+                            TextField("e.g. Trend follower", text: $strategy.name)
+                                .font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.text)
+                                .textInputAutocapitalization(.words)
+                            if !strategy.name.isEmpty {
+                                Button { strategy.name = "" } label: {
+                                    Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.dim)
+                                }
+                            }
+                        }
+                        Text("Reports and live tests are named after your robot.")
+                            .font(.system(size: 11)).foregroundStyle(Theme.dim)
                     }
                 }
 
-                conditionCard(title: "BUY when ALL of these are true", subtitle: "The robot buys the moment they all become true together.",
-                              list: \.entry, kind: .entry, color: Theme.green)
-                conditionCard(title: "SELL when ANY of these is true", subtitle: "Optional. The robot also has the stops below.",
-                              list: \.exit, kind: .exit, color: Theme.red)
+                Card {
+                    VStack(alignment: .leading, spacing: 10) {
+                        SectionLabel("How does it decide?")
+                        Picker("", selection: Binding(
+                            get: { strategy.dca != nil },
+                            set: { on in
+                                if on { strategy.dca = DCAPlan(intervalDays: 7) }
+                                else {
+                                    strategy.dca = nil
+                                    if strategy.entry.isEmpty { strategy.entry = [.rsiBelow(period: 14, level: 30)] }
+                                }
+                            })) {
+                            Text("Signals").tag(false)
+                            Text("DCA schedule").tag(true)
+                        }.pickerStyle(.segmented)
+                        if strategy.dca != nil {
+                            Text("Dollar-cost averaging: buy the same amount on a schedule, whatever the price. Your starting cash is spread evenly over every purchase.")
+                                .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                        }
+                    }
+                }
 
-                riskCard
+                if let plan = strategy.dca {
+                    Card {
+                        VStack(alignment: .leading, spacing: 10) {
+                            SectionLabel("Buy…")
+                            HStack(spacing: 8) {
+                                ForEach([(1, "Daily"), (7, "Weekly"), (14, "2 weeks"), (30, "Monthly")], id: \.0) { d, t in
+                                    Button { strategy.dca = DCAPlan(intervalDays: d) } label: {
+                                        Text(t).font(.system(size: 13, weight: .bold))
+                                            .frame(maxWidth: .infinity).padding(.vertical, 10)
+                                            .background(plan.intervalDays == d ? Theme.orange : Theme.panel2,
+                                                        in: RoundedRectangle(cornerRadius: 10))
+                                            .foregroundStyle(plan.intervalDays == d ? Color.black : Theme.text)
+                                    }
+                                }
+                            }
+                            HStack {
+                                Text("Or every").foregroundStyle(Theme.dim)
+                                Spacer()
+                                Text("\(plan.intervalDays) days")
+                                    .font(.system(size: 16, weight: .bold, design: .monospaced)).foregroundStyle(Theme.orange)
+                                Stepper("", value: Binding(get: { plan.intervalDays },
+                                                           set: { strategy.dca = DCAPlan(intervalDays: $0) }),
+                                        in: 1...90).labelsHidden()
+                            }
+                            .font(.system(size: 13))
+                        }
+                    }
+                } else {
+                    conditionCard(title: "BUY when ALL of these are true", subtitle: "The robot buys the moment they all become true together.",
+                                  list: \.entry, kind: .entry, color: Theme.green)
+                    conditionCard(title: "SELL when ANY of these is true", subtitle: "Optional. The robot also has the stops below.",
+                                  list: \.exit, kind: .exit, color: Theme.red)
+                    riskCard
+                }
 
                 Card {
                     VStack(alignment: .leading, spacing: 10) {
@@ -48,9 +109,9 @@ struct BuilderView: View {
                         .background(Theme.orange, in: RoundedRectangle(cornerRadius: 12))
                         .foregroundStyle(.black)
                 }
-                .disabled(strategy.entry.isEmpty)
-                .opacity(strategy.entry.isEmpty ? 0.4 : 1)
-                if strategy.entry.isEmpty {
+                .disabled(strategy.entry.isEmpty && strategy.dca == nil)
+                .opacity(strategy.entry.isEmpty && strategy.dca == nil ? 0.4 : 1)
+                if strategy.entry.isEmpty && strategy.dca == nil {
                     Text("Add at least one BUY condition.").font(.system(size: 12)).foregroundStyle(Theme.red)
                 }
             }
@@ -62,6 +123,7 @@ struct BuilderView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button(saved ? "Saved ✓" : "Save") {
+                    if strategy.name.trimmingCharacters(in: .whitespaces).isEmpty { strategy.name = "My robot" }
                     lab.save(strategy); saved = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { saved = false }
                 }

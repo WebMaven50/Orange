@@ -21,6 +21,20 @@ public enum Condition: Codable, Equatable, Hashable, Sendable {
     case aboveUpperBand(period: Int, deviations: Double)
     case macdAboveSignal
     case macdBelowSignal
+    /// Close is at or above an absolute dollar level.
+    case priceAbove(price: Double)
+    /// Close is at or below an absolute dollar level.
+    case priceBelow(price: Double)
+    /// Close is up at least `percent` over the last `days` days.
+    case upPercent(days: Int, percent: Double)
+    /// Close is down at least `percent` over the last `days` days.
+    case downPercent(days: Int, percent: Double)
+    /// Close is at least `percent` above its `period`-day average.
+    case percentAboveMA(period: Int, percent: Double)
+    /// Close is at least `percent` below its `period`-day average.
+    case percentBelowMA(period: Int, percent: Double)
+    /// Close is at least `percent` above the lowest close of the last `days`.
+    case riseFromLow(days: Int, percent: Double)
 
     /// Plain-English description for screens.
     public var summary: String {
@@ -38,6 +52,31 @@ public enum Condition: Codable, Equatable, Hashable, Sendable {
         case let .aboveUpperBand(p, k): return "Price is above the upper Bollinger band (\(p), \(g(k))σ)"
         case .macdAboveSignal: return "MACD is above its signal line"
         case .macdBelowSignal: return "MACD is below its signal line"
+        case let .priceAbove(p): return "Price is at or above $\(Int(p.rounded()).formatted())"
+        case let .priceBelow(p): return "Price is at or below $\(Int(p.rounded()).formatted())"
+        case let .upPercent(d, p): return "Price is up \(g(p))% or more over \(d) days"
+        case let .downPercent(d, p): return "Price is down \(g(p))% or more over \(d) days"
+        case let .percentAboveMA(n, p): return "Price is \(g(p))% or more above its \(n)-day average"
+        case let .percentBelowMA(n, p): return "Price is \(g(p))% or more below its \(n)-day average"
+        case let .riseFromLow(d, p): return "Price is \(g(p))% or more above its \(d)-day low"
+        }
+    }
+}
+
+/// Dollar-cost averaging: buy the same amount on a fixed schedule, whatever the price.
+/// The test's starting cash is spread evenly over every purchase day.
+public struct DCAPlan: Codable, Equatable, Hashable, Sendable {
+    /// Days between purchases (1 = daily, 7 = weekly, 14, 30 = roughly monthly).
+    public var intervalDays: Int
+    public init(intervalDays: Int = 7) { self.intervalDays = max(1, intervalDays) }
+
+    public var label: String {
+        switch intervalDays {
+        case 1: return "every day"
+        case 7: return "every week"
+        case 14: return "every two weeks"
+        case 30: return "every month"
+        default: return "every \(intervalDays) days"
         }
     }
 }
@@ -62,6 +101,8 @@ public struct Strategy: Codable, Equatable, Hashable, Sendable {
     /// If set, buy with a limit order this many percent below the signal price
     /// (good for `Strategy.limitValidDays`) instead of buying at the next open.
     public var limitEntryDiscountPercent: Double?
+    /// When set, the robot ignores signals and simply buys on a schedule.
+    public var dca: DCAPlan?
 
     public static let limitValidDays = 3
 
@@ -73,7 +114,8 @@ public struct Strategy: Codable, Equatable, Hashable, Sendable {
                 trailingStopPercent: Double? = nil,
                 maxHoldDays: Int? = nil,
                 positionPercent: Double = 100,
-                limitEntryDiscountPercent: Double? = nil) {
+                limitEntryDiscountPercent: Double? = nil,
+                dca: DCAPlan? = nil) {
         self.name = name
         self.entry = entry
         self.exit = exit
@@ -83,6 +125,7 @@ public struct Strategy: Codable, Equatable, Hashable, Sendable {
         self.maxHoldDays = maxHoldDays
         self.positionPercent = min(max(positionPercent, 1), 100)
         self.limitEntryDiscountPercent = limitEntryDiscountPercent
+        self.dca = dca
     }
 
     /// Ready-made starting points for the rule builder.
@@ -99,6 +142,8 @@ public struct Strategy: Codable, Equatable, Hashable, Sendable {
                  entry: [.rsiBelow(period: 14, level: 30)],
                  exit: [.rsiAbove(period: 14, level: 55)],
                  stopLossPercent: 10, takeProfitPercent: 20, positionPercent: 50),
+        Strategy(name: "Weekly DCA", dca: DCAPlan(intervalDays: 7)),
+        Strategy(name: "Monthly DCA", dca: DCAPlan(intervalDays: 30)),
         Strategy(name: "Breakout rider",
                  entry: [.breakout(days: 30)],
                  exit: [.priceBelowMA(period: 20)],

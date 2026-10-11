@@ -4,6 +4,7 @@ import OrangeRobotKit
 enum ConditionKind: String, CaseIterable, Identifiable {
     case rsiBelow, rsiAbove, priceAboveMA, priceBelowMA, maAbove, maBelow
     case dropFromHigh, breakout, belowLowerBand, aboveUpperBand, macdAbove, macdBelow
+    case priceAbove, priceBelow, upPercent, downPercent, percentAboveMA, percentBelowMA, riseFromLow
     var id: String { rawValue }
 
     var title: String {
@@ -20,6 +21,13 @@ enum ConditionKind: String, CaseIterable, Identifiable {
         case .aboveUpperBand: return "Price above the upper Bollinger band"
         case .macdAbove: return "MACD is above its signal line"
         case .macdBelow: return "MACD is below its signal line"
+        case .priceAbove: return "Price is at or above a dollar level"
+        case .priceBelow: return "Price is at or below a dollar level"
+        case .upPercent: return "Price is up by a percentage"
+        case .downPercent: return "Price is down by a percentage"
+        case .percentAboveMA: return "Price is a percentage above its average"
+        case .percentBelowMA: return "Price is a percentage below its average"
+        case .riseFromLow: return "Price is a percentage above a recent low"
         }
     }
 
@@ -33,6 +41,10 @@ enum ConditionKind: String, CaseIterable, Identifiable {
         case .breakout: return [("Look back (days)", 5...200, 1)]
         case .belowLowerBand, .aboveUpperBand: return [("Band days", 5...100, 1), ("Width (σ)", 0.5...4, 0.5)]
         case .macdAbove, .macdBelow: return []
+        case .priceAbove, .priceBelow: return [("Price ($)", 100...200_000, 500)]
+        case .upPercent, .downPercent: return [("Over how many days", 1...90, 1), ("Move (%)", 1...200, 1)]
+        case .percentAboveMA, .percentBelowMA: return [("Average days", 2...300, 1), ("Distance (%)", 1...100, 1)]
+        case .riseFromLow: return [("Look back (days)", 3...200, 1), ("Rise (%)", 1...300, 1)]
         }
     }
 
@@ -46,6 +58,13 @@ enum ConditionKind: String, CaseIterable, Identifiable {
         case .breakout: return [30]
         case .belowLowerBand, .aboveUpperBand: return [20, 2]
         case .macdAbove, .macdBelow: return []
+        case .priceAbove: return [60_000]
+        case .priceBelow: return [30_000]
+        case .upPercent: return [7, 10]
+        case .downPercent: return [7, 10]
+        case .percentAboveMA: return [50, 10]
+        case .percentBelowMA: return [50, 10]
+        case .riseFromLow: return [30, 20]
         }
     }
 
@@ -64,6 +83,13 @@ enum ConditionKind: String, CaseIterable, Identifiable {
         case .aboveUpperBand: return .aboveUpperBand(period: a, deviations: b)
         case .macdAbove: return .macdAboveSignal
         case .macdBelow: return .macdBelowSignal
+        case .priceAbove: return .priceAbove(price: v.first ?? 0)
+        case .priceBelow: return .priceBelow(price: v.first ?? 0)
+        case .upPercent: return .upPercent(days: a, percent: b)
+        case .downPercent: return .downPercent(days: a, percent: b)
+        case .percentAboveMA: return .percentAboveMA(period: a, percent: b)
+        case .percentBelowMA: return .percentBelowMA(period: a, percent: b)
+        case .riseFromLow: return .riseFromLow(days: a, percent: b)
         }
     }
 
@@ -81,6 +107,13 @@ enum ConditionKind: String, CaseIterable, Identifiable {
         case let .aboveUpperBand(p, k): return (.aboveUpperBand, [Double(p), k])
         case .macdAboveSignal: return (.macdAbove, [])
         case .macdBelowSignal: return (.macdBelow, [])
+        case let .priceAbove(p): return (.priceAbove, [p])
+        case let .priceBelow(p): return (.priceBelow, [p])
+        case let .upPercent(d, p): return (.upPercent, [Double(d), p])
+        case let .downPercent(d, p): return (.downPercent, [Double(d), p])
+        case let .percentAboveMA(n, p): return (.percentAboveMA, [Double(n), p])
+        case let .percentBelowMA(n, p): return (.percentBelowMA, [Double(n), p])
+        case let .riseFromLow(d, p): return (.riseFromLow, [Double(d), p])
         }
     }
 }

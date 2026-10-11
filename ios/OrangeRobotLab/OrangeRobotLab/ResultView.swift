@@ -32,6 +32,15 @@ struct ResultView: View {
                     }
                 }
                 NavigationLink {
+                    AnalysisView(strategy: strategy, span: span)
+                } label: {
+                    Label("WHY? ANALYZE THIS RESULT", systemImage: "magnifyingglass.circle.fill")
+                        .font(.system(size: 15, weight: .black)).tracking(0.5)
+                        .frame(maxWidth: .infinity).padding(.vertical, 15)
+                        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.orange, lineWidth: 1.5))
+                        .foregroundStyle(Theme.orange)
+                }
+                NavigationLink {
                     ReplayView(strategy: strategy, span: span)
                 } label: {
                     Label("WATCH THE ROBOT TRADE", systemImage: "play.circle.fill")
@@ -42,6 +51,7 @@ struct ResultView: View {
                 }
                 statsGrid(robot.metrics, hold.metrics)
                 tradeList(robot.trades)
+                WebsiteCallout()
                 Text("Signals are read at each day's close and traded at the next open. Stops and targets use each day's real high and low, and a stop wins if both are touched in one day. Costs: 0.26% fee plus 0.1% slippage. Past results don't predict the future.")
                     .font(.system(size: 11)).foregroundStyle(Theme.dim)
             }
@@ -60,33 +70,26 @@ struct ResultView: View {
     }
 
     private func headline(_ r: BacktestResult, _ h: BacktestResult) -> some View {
-        let diff = r.metrics.totalReturn - h.metrics.totalReturn
-        return Card {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        SectionLabel("Your robot")
-                        Text(Money.pct(r.metrics.totalReturn))
-                            .font(.system(size: 34, weight: .bold, design: .monospaced))
-                            .foregroundStyle(r.metrics.totalReturn >= 0 ? Theme.green : Theme.red)
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 2) {
-                        SectionLabel("Just holding")
-                        Text(Money.pct(h.metrics.totalReturn))
-                            .font(.system(size: 22, weight: .bold, design: .monospaced)).foregroundStyle(Theme.dim)
-                    }
-                }
-                Text(diff >= 0
-                     ? "The robot beat holding by \(Int((diff * 100).rounded())) points."
-                     : "Holding beat the robot by \(Int((-diff * 100).rounded())) points. The robot's worst fall was \(Int(r.metrics.maxDrawdown * 100))% against \(Int(h.metrics.maxDrawdown * 100))% for holding.")
-                    .font(.system(size: 13)).foregroundStyle(Theme.text)
-                if r.metrics.trades < 6 {
-                    Text("⚠️ Only \(r.metrics.trades) trade\(r.metrics.trades == 1 ? "" : "s"): too few to say much about skill.")
-                        .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.orange)
-                }
+        let score = Score.vsHold(robotReturn: r.metrics.totalReturn, holdReturn: h.metrics.totalReturn)
+        let robotWins = r.metrics.totalReturn >= h.metrics.totalReturn
+        return VStack(spacing: 12) {
+            HStack(spacing: 10) {
+                WinnerBox(title: "YOUR ROBOT", value: r.metrics.totalReturn, wins: robotWins)
+                WinnerBox(title: "JUST HOLDING", value: h.metrics.totalReturn, wins: !robotWins)
+            }
+            ScoreBanner(score: score, headline: scoreLine(r, h, robotWins))
+            if r.metrics.trades < 6 && strategy.dca == nil {
+                Text("⚠️ Only \(r.metrics.trades) trade\(r.metrics.trades == 1 ? "" : "s"): too few to say much about skill.")
+                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.orange)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
+    }
+
+    private func scoreLine(_ r: BacktestResult, _ h: BacktestResult, _ robotWins: Bool) -> String {
+        let a = Int((r.metrics.maxDrawdown * 100).rounded()), b = Int((h.metrics.maxDrawdown * 100).rounded())
+        let who = robotWins ? "Your robot ended ahead of holding." : "Holding ended ahead of your robot."
+        return "\(who) Worst fall: \(a)% for the robot, \(b)% for holding."
     }
 
     private func legend(_ c: Color, _ t: String) -> some View {
@@ -172,4 +175,75 @@ struct EquityChart: View {
             ctx.stroke(line(robot), with: .color(Theme.orange), lineWidth: 2)
         }
     }
+}
+
+
+/// One side of the robot-vs-holding comparison. The winner flashes, then keeps a
+/// highlighted outline, with "BETTER" in orange along the bottom.
+struct WinnerBox: View {
+    let title: String
+    let value: Double
+    let wins: Bool
+    @State private var pulse = false
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(title).font(.system(size: 10, weight: .heavy)).tracking(1)
+                .foregroundStyle(wins ? Theme.orange : Theme.dim)
+            Text(Money.pct(value))
+                .font(.system(size: 26, weight: .bold, design: .monospaced))
+                .foregroundStyle(value >= 0 ? Theme.green : Theme.red)
+                .minimumScaleFactor(0.6).lineLimit(1)
+            Text(wins ? "BETTER" : " ")
+                .font(.system(size: 12, weight: .black)).tracking(2)
+                .foregroundStyle(Theme.orange)
+                .frame(height: 16)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 14)
+        .background(Theme.panel, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14)
+            .stroke(Theme.orange, lineWidth: wins ? (pulse ? 3 : 1.5) : 0))
+        .shadow(color: wins ? Theme.orange.opacity(pulse ? 0.6 : 0.15) : .clear, radius: pulse ? 14 : 4)
+        .opacity(wins ? 1 : 0.8)
+        .onAppear {
+            guard wins else { return }
+            Feedback.play(.finished)
+            withAnimation(.easeInOut(duration: 0.45).repeatCount(5, autoreverses: true)) { pulse = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) { withAnimation { pulse = false } }
+        }
+    }
+}
+
+/// A small, honest pointer back to the book and the website.
+struct WebsiteCallout: View {
+    @Environment(\.openURL) private var openURL
+    var body: some View {
+        Button {
+            ActivityLab.bookTap()
+            openURL(URL(string: "https://theorangerobot.com")!)
+        } label: {
+            HStack(spacing: 12) {
+                Text("📖").font(.system(size: 26))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("The robot has a story").font(.system(size: 14, weight: .heavy)).foregroundStyle(Theme.text)
+                    Text("Read The Orange Robot, and play the games, at theorangerobot.com")
+                        .font(.system(size: 11)).foregroundStyle(Theme.dim).multilineTextAlignment(.leading)
+                }
+                Spacer()
+                Image(systemName: "arrow.up.right").foregroundStyle(Theme.orange)
+            }
+            .padding(14)
+            .background(Theme.panel, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.orange.opacity(0.5)))
+        }
+    }
+}
+
+/// Anonymous counter for taps on the website links (same privacy rules as the game).
+enum ActivityLab {
+    static let settingKey = "share_usage_counts"
+    private static let client = ActivityClient(isEnabled: {
+        UserDefaults.standard.object(forKey: settingKey) as? Bool ?? true
+    })
+    static func bookTap() { client.track(.bookLinkTap) }
 }

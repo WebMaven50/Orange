@@ -44,11 +44,20 @@ public struct BacktestSettings: Sendable {
     public init() {}
 }
 
+/// One scheduled purchase made by a DCA robot.
+public struct Purchase: Equatable, Sendable {
+    public let day: Int          // index into the price history
+    public let price: Double
+    public let amount: Double    // dollars spent
+}
+
 public struct BacktestResult: Sendable {
     public let days: Range<Int>
     public let equity: [Double]           // one value per day, closing equity
     public let trades: [Trade]
     public let metrics: Metrics
+    /// Filled only by DCA robots.
+    public var purchases: [Purchase] = []
 }
 
 /// Runs a `Strategy` over real daily candles.
@@ -140,6 +149,16 @@ public final class Backtester {
         case .macdBelowSignal:
             guard let m = macdLine.macd[i], let s = macdLine.signal[i] else { return false }
             return m < s
+        case let .priceAbove(p): return close >= p
+        case let .priceBelow(p): return close <= p
+        case let .upPercent(d, p): return i >= d && close >= closes[i - d] * (1 + p / 100)
+        case let .downPercent(d, p): return i >= d && close <= closes[i - d] * (1 - p / 100)
+        case let .percentAboveMA(n, p): return sma(n)[i].map { close >= $0 * (1 + p / 100) } ?? false
+        case let .percentBelowMA(n, p): return sma(n)[i].map { close <= $0 * (1 - p / 100) } ?? false
+        case let .riseFromLow(d, p):
+            guard i >= d - 1 else { return false }
+            let low = closes[max(0, i - d + 1)...i].min()!
+            return close >= low * (1 + p / 100)
         }
     }
 
@@ -150,6 +169,7 @@ public final class Backtester {
     // MARK: Run
 
     public func run(_ s: Strategy, days: Range<Int>, settings: BacktestSettings = BacktestSettings()) -> BacktestResult {
+        if let plan = s.dca { return runDCA(plan, days: days, settings: settings) }
         let range = clamp(days)
         let bars = history.bars
         var cash = settings.startCash
@@ -254,6 +274,52 @@ public final class Backtester {
         return BacktestResult(days: range, equity: equity, trades: trades,
                               metrics: Self.metrics(equity: equity, trades: trades,
                                                     daysIn: daysIn, start: settings.startCash))
+    }
+
+    /// Buy equal dollar amounts on a schedule; the starting cash is spread over all purchase days.
+    private func runDCA(_ plan: DCAPlan, days: Range<Int>, settings: BacktestSettings) -> BacktestResult {
+        let range = clamp(days)
+        let bars = history.bars
+        guard !range.isEmpty else {
+            return BacktestResult(days: range, equity: [], trades: [],
+                                  metrics: Self.metrics(equity: [], trades: [], daysIn: 0, start: settings.startCash))
+        }
+        let interval = max(1, plan.intervalDays)
+        let buyCount = (range.count + interval - 1) / interval
+        let amount = settings.startCash / Double(buyCount)
+        var cash = settings.startCash, shares = 0.0, spent = 0.0, grossQty = 0.0
+        var purchases: [Purchase] = []
+        var equity: [Double] = []
+        var daysIn = 0
+        for (k, i) in range.enumerated() {
+            if k % interval == 0 {
+                let spend = min(amount, cash)
+                let price = bars[i].open * (1 + settings.slippage)
+                if spend > 1, price > 0 {
+                    shares += spend * (1 - settings.fee) / price
+                    grossQty += spend / price
+                    spent += spend; cash -= spend
+                    purchases.append(Purchase(day: i, price: price, amount: spend))
+                }
+            }
+            if shares > 0 { daysIn += 1 }
+            equity.append(cash + shares * bars[i].close)
+        }
+        guard let last = range.last else { fatalError() }
+        var trades: [Trade] = []
+        if shares > 0, let first = purchases.first {
+            let proceeds = shares * bars[last].close * (1 - settings.fee)
+            cash += proceeds
+            equity[equity.count - 1] = cash
+            trades.append(Trade(id: 0, entryDay: first.day, exitDay: last,
+                                entryPrice: spent / max(grossQty, 1e-12), exitPrice: bars[last].close,
+                                returnPercent: (proceeds / spent - 1) * 100, reason: .endOfTest))
+        }
+        var r = BacktestResult(days: range, equity: equity, trades: trades,
+                               metrics: Self.metrics(equity: equity, trades: trades, daysIn: daysIn,
+                                                     start: settings.startCash))
+        r.purchases = purchases
+        return r
     }
 
     /// Put everything in at the first open and hold to the last close, with the same costs.

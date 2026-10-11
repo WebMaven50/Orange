@@ -226,6 +226,9 @@ enum RuleGenerator {
             case .breakout: return "breakout"
             case .belowLowerBand, .aboveUpperBand: return "bands"
             case .macdAboveSignal, .macdBelowSignal: return "macd"
+            case .priceAbove, .priceBelow: return "level"
+            case .upPercent, .downPercent, .riseFromLow: return "move"
+            case .percentAboveMA, .percentBelowMA: return "ma-distance"
             }
         }.sorted().joined(separator: "+")
     }
