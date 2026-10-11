@@ -21,11 +21,28 @@ struct DateSpanPicker: View {
             }
             HStack {
                 Text("From").foregroundStyle(Theme.dim)
-                DatePicker("", selection: $span.start, in: lab.dataStart...span.end, displayedComponents: .date)
+                // Any date in the data is allowed; if it lands after "To", "To" moves with it.
+                DatePicker("", selection: Binding(
+                    get: { span.start },
+                    set: { new in
+                        span.start = new
+                        if span.end <= new {
+                            span.end = min(lab.dataEnd, new.addingTimeInterval(365 * 86_400))
+                            if span.end <= new { span.start = lab.dataEnd.addingTimeInterval(-86_400 * 90) }
+                        }
+                    }), in: lab.dataStart...lab.dataEnd, displayedComponents: .date)
                     .labelsHidden()
                 Spacer()
                 Text("To").foregroundStyle(Theme.dim)
-                DatePicker("", selection: $span.end, in: span.start...lab.dataEnd, displayedComponents: .date)
+                // Likewise, an earlier "To" pulls "From" back with it.
+                DatePicker("", selection: Binding(
+                    get: { span.end },
+                    set: { new in
+                        span.end = new
+                        if span.start >= new {
+                            span.start = max(lab.dataStart, new.addingTimeInterval(-365 * 86_400))
+                        }
+                    }), in: lab.dataStart...lab.dataEnd, displayedComponents: .date)
                     .labelsHidden()
             }
             .environment(\.timeZone, TimeZone(identifier: "UTC")!)
