@@ -11,7 +11,7 @@ public struct Robustness: Equatable, Sendable {
     public let beatsHoldShare: Double
 }
 
-public enum Verdict: String, Sendable {
+public enum Verdict: String, Codable, Sendable {
     /// Made money on time it never saw *and* beat simply holding in at least half of those periods.
     case holdsUp
     /// Made money on unseen time but holding did better; the ride was smoother (smaller drops).

@@ -30,11 +30,44 @@ final class LabModel {
 
     private let key = "lab_saved_strategies"
 
+    /// The notebook: every test and search is recorded here automatically.
+    var book = ReportBook()
+    private let bookURL: URL = {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return dir.appendingPathComponent("lab_reports.json")
+    }()
+
     init() {
         if let data = UserDefaults.standard.data(forKey: key),
            let list = try? JSONDecoder().decode([Strategy].self, from: data) {
             saved = list
         }
+        if let data = try? Data(contentsOf: bookURL),
+           let b = try? JSONDecoder().decode(ReportBook.self, from: data) {
+            book = b
+        }
+    }
+
+    // MARK: Notebook
+
+    func recordTest(strategy: Strategy, span: DateSpan, result: Metrics, hold: Metrics) {
+        let r = Report.test(strategy: strategy, start: span.start, end: span.end, result: result, hold: hold)
+        if book.add(r) { persistBook() }
+    }
+
+    func recordSearch(span: DateSpan, tries: Int, candidates: [Candidate]) {
+        guard !candidates.isEmpty else { return }
+        book.add(Report.search(start: span.start, end: span.end, tries: tries, candidates: candidates))
+        persistBook()
+    }
+
+    func setNotes(_ id: UUID, _ text: String) { book.setNotes(id, text); persistBook() }
+    func setTitle(_ id: UUID, _ text: String) { book.setTitle(id, text); persistBook() }
+    func toggleStar(_ id: UUID) { book.toggleStar(id); persistBook() }
+    func deleteReport(_ id: UUID) { book.delete(id); persistBook() }
+
+    private func persistBook() {
+        if let data = try? JSONEncoder().encode(book) { try? data.write(to: bookURL, options: .atomic) }
     }
 
     var dataStart: Date { backtester.date(forDay: 0) }

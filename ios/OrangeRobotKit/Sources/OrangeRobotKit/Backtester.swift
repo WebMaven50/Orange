@@ -26,7 +26,7 @@ public struct Trade: Identifiable, Equatable, Sendable {
     public let reason: ExitReason
 }
 
-public struct Metrics: Equatable, Sendable {
+public struct Metrics: Equatable, Codable, Sendable {
     public let totalReturn: Double        // 0.25 = +25%
     public let annualizedReturn: Double
     public let maxDrawdown: Double        // 0.3 = fell 30% from a peak

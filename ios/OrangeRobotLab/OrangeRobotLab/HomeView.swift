@@ -29,6 +29,24 @@ struct HomeView: View {
                             text: "Pick a period in history. The robot tries thousands of rule sets on it, then tests the best ones on time they've never seen.")
                 }
 
+                NavigationLink { NotebookView() } label: {
+                    HStack(spacing: 14) {
+                        Text("📓").font(.system(size: 30))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Notebook").font(.system(size: 17, weight: .heavy)).foregroundStyle(Theme.text)
+                            Text(lab.book.reports.isEmpty
+                                 ? "Every test and search is saved here automatically."
+                                 : "\(lab.book.reports.count) saved report\(lab.book.reports.count == 1 ? "" : "s")")
+                                .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").foregroundStyle(Theme.dim)
+                    }
+                    .padding(16)
+                    .background(Theme.panel, in: RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
+                }
+
                 if !lab.saved.isEmpty {
                     VStack(alignment: .leading, spacing: 10) {
                         SectionLabel("My robots")

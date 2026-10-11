@@ -81,7 +81,10 @@ struct FinderView: View {
                                     progress: { p in Task { @MainActor in progress = p } },
                                     isCancelled: { Task.isCancelled })
             await MainActor.run {
-                if !Task.isCancelled { results = found; finishedSpan = spanNow }
+                if !Task.isCancelled {
+                    results = found; finishedSpan = spanNow
+                    lab.recordSearch(span: spanNow, tries: req.candidates, candidates: found)
+                }
                 running = false
             }
         }

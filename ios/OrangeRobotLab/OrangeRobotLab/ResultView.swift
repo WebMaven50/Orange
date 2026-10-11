@@ -48,6 +48,13 @@ struct ResultView: View {
             .padding(16)
         }
         .background(Theme.bg)
+        .onAppear {
+            // Every test goes in the notebook automatically.
+            let range = lab.range(for: span)
+            let r = lab.backtester.run(strategy, days: range)
+            let h = lab.backtester.buyAndHold(days: range)
+            lab.recordTest(strategy: strategy, span: span, result: r.metrics, hold: h.metrics)
+        }
         .navigationTitle(strategy.name)
         .navigationBarTitleDisplayMode(.inline)
     }
