@@ -34,7 +34,7 @@ enum LabNotifications {
         comps.hour = 0; comps.minute = 30
         comps.timeZone = TimeZone(identifier: "UTC")
         let c = UNMutableNotificationContent()
-        c.title = "Daily close is in 🤖"
+        c.title = "Daily close is in"
         c.body = "See what your robots did today."
         c.sound = .default
         center.add(UNNotificationRequest(identifier: dailyID, content: c,

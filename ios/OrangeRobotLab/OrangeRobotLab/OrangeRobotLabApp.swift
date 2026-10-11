@@ -22,7 +22,7 @@ struct OrangeRobotLabApp: App {
 
     var body: some Scene {
         WindowGroup {
-            NavigationStack { HomeView() }
+            NavigationStack { SplashView() }
                 .environment(lab)
                 .preferredColorScheme(.dark)
                 .tint(Theme.orange)

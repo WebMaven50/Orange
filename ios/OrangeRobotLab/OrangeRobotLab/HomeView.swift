@@ -9,13 +9,11 @@ struct HomeView: View {
         ScrollView {
             VStack(spacing: 18) {
                 VStack(spacing: 6) {
-                    Text("🤖").font(.system(size: 54))
-                    Text("ORANGE ROBOT LAB").font(.system(size: 22, weight: .black)).tracking(1)
-                        .foregroundStyle(Theme.orange)
+                    Image("RobotHead").resizable().scaledToFit().frame(width: 84, height: 84)
                     Text("Teach the robot when to buy and sell,\nthen see how it would have done.")
                         .font(.system(size: 14)).foregroundStyle(Theme.dim).multilineTextAlignment(.center)
                 }
-                .padding(.top, 12)
+                .padding(.top, 4)
 
                 NavigationLink {
                     BuilderView(strategy: Strategy(name: "My rules", entry: [.rsiBelow(period: 14, level: 30)],
@@ -96,13 +94,14 @@ struct HomeView: View {
             .padding(18)
         }
         .background(Theme.bg)
-        .navigationBarHidden(true)
-        .overlay(alignment: .topTrailing) {
-            Button { showSettings = true } label: {
-                Image(systemName: "gearshape.fill").font(.system(size: 16, weight: .semibold))
-                    .frame(width: 38, height: 38).foregroundStyle(Theme.dim)
+        .navigationTitle("Orange Robot Lab")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button { showSettings = true } label: {
+                    Image(systemName: "gearshape.fill").foregroundStyle(Theme.dim)
+                }
             }
-            .padding(.trailing, 10).padding(.top, 4)
         }
         .sheet(isPresented: $showSettings) { SettingsView() }
     }

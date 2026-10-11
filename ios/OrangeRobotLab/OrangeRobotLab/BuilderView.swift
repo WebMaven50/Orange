@@ -24,7 +24,7 @@ struct BuilderView: View {
                     VStack(alignment: .leading, spacing: 10) {
                         SectionLabel("Name your robot")
                         HStack {
-                            Text("🤖")
+                            Image("RobotHead").resizable().scaledToFit().frame(width: 34, height: 34)
                             TextField("e.g. Trend follower", text: $strategy.name)
                                 .font(.system(size: 18, weight: .heavy)).foregroundStyle(Theme.text)
                                 .textInputAutocapitalization(.words)
