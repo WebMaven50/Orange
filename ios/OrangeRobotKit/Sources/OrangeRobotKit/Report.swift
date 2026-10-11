@@ -97,7 +97,11 @@ public struct Report: Codable, Identifiable, Equatable, Sendable {
             if let s = strategy {
                 lines.append("")
                 lines.append("RULES")
-                lines.append("Buy when " + s.entry.map(\.summary).joined(separator: " and "))
+                if let d = s.dca {
+                    lines.append("DCA: buys \(d.shortAmountText) \(d.label)")
+                } else {
+                    lines.append("Buy when " + s.entry.map(\.summary).joined(separator: " and "))
+                }
                 if !s.exit.isEmpty { lines.append("Sell when " + s.exit.map(\.summary).joined(separator: " or ")) }
                 if let v = s.stopLossPercent { lines.append("Stop loss \(Report.g(v))%") }
                 if let v = s.takeProfitPercent { lines.append("Take profit \(Report.g(v))%") }

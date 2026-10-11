@@ -98,7 +98,17 @@ public enum Analyzer {
                 add(.right, "Smaller falls",
                     "In a falling market DCA kept buying cheaper and lost less than putting everything in at the start.")
             }
-            add(.note, "How it works", "\(n) equal purchases, \(strategy.dca!.label). Fees and slippage were charged on each.")
+            let plan = strategy.dca!
+            let spent = result.purchases.map(\.amount).reduce(0, +)
+            let idle = max(settings.startCash - spent, 0)
+            add(.note, "How it works",
+                "\(n) purchases of \(DCAPlan.money(result.purchases.first?.amount ?? 0)), \(plan.label): \(DCAPlan.money(spent)) invested in total. Fees and slippage were charged on each.")
+            if idle >= settings.startCash * 0.05 {
+                add(.note, "Part of your cash never went in",
+                    "\(DCAPlan.money(idle)) of the \(DCAPlan.money(settings.startCash)) stayed in cash the whole test, which lowers the return compared with holding, because holding invests everything on day one.",
+                    nil)
+                tips.append("Raise the amount per purchase (or choose \"spread evenly\") to compare like with like against holding.")
+            }
             tips.append("DCA is about steady habit, not beating the market. Try a different interval, or compare the same plan over a falling year to see what it's for.")
             return Analysis(score: score, headline: headline, findings: out, suggestions: tips)
         }

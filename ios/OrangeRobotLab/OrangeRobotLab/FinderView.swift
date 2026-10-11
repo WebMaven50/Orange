@@ -197,6 +197,7 @@ struct FinderView: View {
 
     private func describe(_ s: Strategy) -> String {
         var parts: [String] = []
+        if let d = s.dca { return "DCA: buys \(d.shortAmountText) \(d.label)" }
         parts.append("Buy when " + s.entry.map(\.summary).joined(separator: " and "))
         if !s.exit.isEmpty { parts.append("sell when " + s.exit.map(\.summary).joined(separator: " or ")) }
         if let v = s.stopLossPercent { parts.append("stop loss \(String(format: "%g", v))%") }

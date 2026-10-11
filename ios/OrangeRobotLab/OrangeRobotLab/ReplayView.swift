@@ -131,9 +131,13 @@ struct ReplayView: View {
                         Text("\(t.reason.title) · \(String(format: "%+.1f%%", t.returnPercent)) on this trade")
                             .font(.system(size: 12)).foregroundStyle(Theme.text)
                     } else {
-                        Text("▲ BOUGHT \(when) at \(Fmt.usd(t.entryPrice, decimals: 0))")
+                        Text(strategy.dca != nil
+                             ? "▲ BUYING \(Fmt.date(lab.backtester.date(forDay: day)))"
+                             : "▲ BOUGHT \(when) at \(Fmt.usd(t.entryPrice, decimals: 0))")
                             .font(.system(size: 13, weight: .heavy)).foregroundStyle(Theme.green)
-                        Text(strategy.dca.map { "Scheduled purchase, \($0.label)." } ?? strategy.entry.map(\.summary).joined(separator: " and "))
+                        Text(strategy.dca != nil
+                             ? scheduledCaption(r, day: day)
+                             : strategy.entry.map(\.summary).joined(separator: " and "))
                             .font(.system(size: 12)).foregroundStyle(Theme.text)
                     }
                 }
@@ -145,6 +149,13 @@ struct ReplayView: View {
         }
         .padding(10)
         .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func scheduledCaption(_ r: BacktestResult, day: Int) -> String {
+        let done = r.purchases.filter { $0.day <= day }
+        guard let last = done.last, let d = strategy.dca else { return "" }
+        let spent = done.map(\.amount).reduce(0, +)
+        return "Scheduled purchase of \(DCAPlan.money(last.amount)) \(d.label). \(done.count) so far, \(DCAPlan.money(spent)) invested."
     }
 
     private func controls(total: Int) -> some View {

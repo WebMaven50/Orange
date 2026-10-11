@@ -63,12 +63,23 @@ public enum Condition: Codable, Equatable, Hashable, Sendable {
     }
 }
 
-/// Dollar-cost averaging: buy the same amount on a fixed schedule, whatever the price.
-/// The test's starting cash is spread evenly over every purchase day.
+/// Dollar-cost averaging: buy on a fixed schedule, whatever the price.
+///
+/// How much each purchase is worth is always explicit:
+/// - `dollarsPerBuy` set: that many dollars every time,
+/// - else `percentOfStart` set: that share of the starting cash every time,
+/// - else the starting cash is spread evenly over every purchase day.
 public struct DCAPlan: Codable, Equatable, Hashable, Sendable {
     /// Days between purchases (1 = daily, 7 = weekly, 14, 30 = roughly monthly).
     public var intervalDays: Int
-    public init(intervalDays: Int = 7) { self.intervalDays = max(1, intervalDays) }
+    public var dollarsPerBuy: Double?
+    public var percentOfStart: Double?
+
+    public init(intervalDays: Int = 7, dollarsPerBuy: Double? = nil, percentOfStart: Double? = nil) {
+        self.intervalDays = max(1, intervalDays)
+        self.dollarsPerBuy = dollarsPerBuy.map { max($0, 1) }
+        self.percentOfStart = percentOfStart.map { min(max($0, 0.1), 100) }
+    }
 
     public var label: String {
         switch intervalDays {
@@ -79,6 +90,48 @@ public struct DCAPlan: Codable, Equatable, Hashable, Sendable {
         default: return "every \(intervalDays) days"
         }
     }
+
+    public enum Mode: String, Sendable { case evenSpread, dollars, percent }
+    public var mode: Mode {
+        if dollarsPerBuy != nil { return .dollars }
+        if percentOfStart != nil { return .percent }
+        return .evenSpread
+    }
+
+    /// Number of purchase days in a test of `days` days (first day included).
+    public func buyCount(days: Int) -> Int { max(1, (max(days, 1) + intervalDays - 1) / intervalDays) }
+
+    /// Dollars spent on each purchase.
+    public func amountPerBuy(startCash: Double, days: Int) -> Double {
+        if let d = dollarsPerBuy { return d }
+        if let p = percentOfStart { return startCash * p / 100 }
+        return startCash / Double(buyCount(days: days))
+    }
+
+    /// Money that will actually be invested over the test (never more than the cash available).
+    public func totalInvested(startCash: Double, days: Int) -> Double {
+        min(startCash, amountPerBuy(startCash: startCash, days: days) * Double(buyCount(days: days)))
+    }
+
+    /// Plain-English description, e.g. "Buys $1,887 every week · 53 purchases · $100,000 in total".
+    public func summary(startCash: Double, days: Int) -> String {
+        let amt = amountPerBuy(startCash: startCash, days: days)
+        let n = buyCount(days: days)
+        let total = totalInvested(startCash: startCash, days: days)
+        var out = "Buys \(Self.money(amt)) \(label) · \(n) purchase\(n == 1 ? "" : "s") · \(Self.money(total)) in total"
+        if startCash - total >= 1 { out += " · \(Self.money(startCash - total)) stays in cash" }
+        if amt * Double(n) > startCash + 0.5 { out += " · stops when cash runs out" }
+        return out
+    }
+
+    /// Short label without needing the test length.
+    public var shortAmountText: String {
+        if let d = dollarsPerBuy { return Self.money(d) }
+        if let p = percentOfStart { return String(format: "%g%% of cash", p) }
+        return "an equal share of cash"
+    }
+
+    public static func money(_ x: Double) -> String { "$" + Int(x.rounded()).formatted() }
 }
 
 /// A complete set of rules for the robot. Long-only: it either holds Bitcoin or cash.

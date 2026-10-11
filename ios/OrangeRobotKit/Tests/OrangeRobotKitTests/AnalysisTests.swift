@@ -161,3 +161,70 @@ final class AnalysisTests: XCTestCase {
         XCTAssertTrue(a.headline.contains("less money"))
     }
 }
+
+final class DCAContributionTests: XCTestCase {
+    private func history(_ n: Int, price: Double = 100) -> PriceHistory {
+        PriceHistory(startDate: Date(timeIntervalSince1970: 1_600_000_000),
+                     bars: Array(repeating: DayBar(open: price, high: price, low: price, close: price), count: n))
+    }
+    private var free: BacktestSettings { var s = BacktestSettings(); s.fee = 0; s.slippage = 0; return s }
+
+    func testFixedDollarAmountEachTime() {
+        let h = history(28)
+        let r = Backtester(history: h).run(Strategy(name: "d", dca: DCAPlan(intervalDays: 7, dollarsPerBuy: 1_000)),
+                                           days: 0..<28, settings: free)
+        XCTAssertEqual(r.purchases.map(\.amount), [1000, 1000, 1000, 1000])
+        XCTAssertEqual(r.metrics.totalReturn, 0, accuracy: 1e-9)       // flat price: idle cash is still counted
+    }
+
+    func testPercentOfStartingCash() {
+        let h = history(28)
+        let r = Backtester(history: h).run(Strategy(name: "d", dca: DCAPlan(intervalDays: 7, percentOfStart: 10)),
+                                           days: 0..<28, settings: free)
+        XCTAssertEqual(r.purchases.map(\.amount), [10_000, 10_000, 10_000, 10_000])
+    }
+
+    func testStopsWhenTheCashRunsOut() {
+        let h = history(28)
+        let r = Backtester(history: h).run(Strategy(name: "d", dca: DCAPlan(intervalDays: 7, dollarsPerBuy: 40_000)),
+                                           days: 0..<28, settings: free)
+        XCTAssertEqual(r.purchases.map(\.amount), [40_000, 40_000, 20_000])
+    }
+
+    func testEvenSpreadStillSpendsEverything() {
+        let h = history(28)
+        let r = Backtester(history: h).run(Strategy(name: "d", dca: DCAPlan(intervalDays: 7)), days: 0..<28, settings: free)
+        XCTAssertEqual(r.purchases.map(\.amount).reduce(0, +), 100_000, accuracy: 1e-6)
+    }
+
+    func testSummaryStatesAmountCountAndTotal() {
+        let p = DCAPlan(intervalDays: 7, dollarsPerBuy: 1_000)
+        let s = p.summary(startCash: 100_000, days: 365)
+        XCTAssertTrue(s.contains("$1,000 every week"))
+        XCTAssertTrue(s.contains("53 purchases"))
+        XCTAssertTrue(s.contains("$53,000 in total"))
+        XCTAssertTrue(s.contains("$47,000 stays in cash"))
+        let even = DCAPlan(intervalDays: 30).summary(startCash: 100_000, days: 360)
+        XCTAssertTrue(even.contains("12 purchases"))
+        XCTAssertFalse(even.contains("stays in cash"))
+        XCTAssertTrue(DCAPlan(intervalDays: 7, dollarsPerBuy: 5_000).summary(startCash: 100_000, days: 365).contains("stops when cash runs out"))
+    }
+
+    func testAnalysisSaysHowMuchWasPaidAndFlagsIdleCash() {
+        let h = history(60)
+        let bt = Backtester(history: h)
+        let s = Strategy(name: "d", dca: DCAPlan(intervalDays: 7, dollarsPerBuy: 500))
+        let r = bt.run(s, days: 0..<60, settings: free)
+        let hold = bt.buyAndHold(days: 0..<60, settings: free)
+        let a = Analyzer.analyze(strategy: s, result: r, hold: hold, history: h, settings: free)
+        XCTAssertTrue(a.findings.contains { $0.detail.contains("$500") })
+        XCTAssertTrue(a.findings.contains { $0.title.contains("never went in") })
+    }
+
+    func testOldSavedPlansStillDecode() throws {
+        let json = #"{"intervalDays":7}"#.data(using: .utf8)!
+        let p = try JSONDecoder().decode(DCAPlan.self, from: json)
+        XCTAssertEqual(p.mode, .evenSpread)
+        XCTAssertEqual(p.intervalDays, 7)
+    }
+}

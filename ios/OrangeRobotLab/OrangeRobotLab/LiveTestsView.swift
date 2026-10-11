@@ -61,7 +61,7 @@ struct LiveTestsView: View {
                                 .foregroundStyle(choice?.name == s.name ? Theme.orange : Theme.dim)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(s.name).font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.text)
-                                Text(s.entry.map(\.summary).joined(separator: " and "))
+                                Text(s.decisionSummary)
                                     .font(.system(size: 11)).foregroundStyle(Theme.dim).multilineTextAlignment(.leading)
                             }
                             Spacer()
@@ -239,6 +239,10 @@ struct LiveTestDetailView: View {
                 Card {
                     VStack(alignment: .leading, spacing: 8) {
                         SectionLabel("Locked rules")
+                        if let d = t.strategy.dca {
+                            Text("BUY \(d.shortAmountText) \(d.label), whatever the price")
+                                .font(.system(size: 12)).foregroundStyle(Theme.green)
+                        }
                         ForEach(t.strategy.entry, id: \.self) {
                             Text("BUY when " + $0.summary).font(.system(size: 12)).foregroundStyle(Theme.green)
                         }

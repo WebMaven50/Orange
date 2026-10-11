@@ -202,6 +202,9 @@ struct ReportDetailView: View {
                 Card {
                     VStack(alignment: .leading, spacing: 6) {
                         SectionLabel("Rules")
+                        if let d = s.dca {
+                            Text("DCA: buys \(d.shortAmountText) \(d.label)").font(.system(size: 13)).foregroundStyle(Theme.green)
+                        }
                         ForEach(s.entry, id: \.self) { Text("BUY when " + $0.summary).font(.system(size: 13)).foregroundStyle(Theme.green) }
                         ForEach(s.exit, id: \.self) { Text("SELL when " + $0.summary).font(.system(size: 13)).foregroundStyle(Theme.red) }
                         if let v = s.stopLossPercent { Text("Stop loss \(String(format: "%g", v))%").font(.system(size: 13)).foregroundStyle(Theme.text) }

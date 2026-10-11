@@ -55,19 +55,22 @@ struct BuilderView: View {
                             Text("DCA schedule").tag(true)
                         }.pickerStyle(.segmented)
                         if strategy.dca != nil {
-                            Text("Dollar-cost averaging: buy the same amount on a schedule, whatever the price. Your starting cash is spread evenly over every purchase.")
+                            Text("Dollar-cost averaging: buy on a schedule, whatever the price. Choose below how much goes in each time.")
                                 .font(.system(size: 12)).foregroundStyle(Theme.dim)
                         }
                     }
                 }
 
                 if let plan = strategy.dca {
+                    let days = lab.range(for: span).count
                     Card {
-                        VStack(alignment: .leading, spacing: 10) {
-                            SectionLabel("Buy…")
+                        VStack(alignment: .leading, spacing: 12) {
+                            SectionLabel("How often")
                             HStack(spacing: 8) {
                                 ForEach([(1, "Daily"), (7, "Weekly"), (14, "2 weeks"), (30, "Monthly")], id: \.0) { d, t in
-                                    Button { strategy.dca = DCAPlan(intervalDays: d) } label: {
+                                    Button {
+                                        var p = plan; p.intervalDays = d; strategy.dca = p
+                                    } label: {
                                         Text(t).font(.system(size: 13, weight: .bold))
                                             .frame(maxWidth: .infinity).padding(.vertical, 10)
                                             .background(plan.intervalDays == d ? Theme.orange : Theme.panel2,
@@ -82,10 +85,84 @@ struct BuilderView: View {
                                 Text("\(plan.intervalDays) days")
                                     .font(.system(size: 16, weight: .bold, design: .monospaced)).foregroundStyle(Theme.orange)
                                 Stepper("", value: Binding(get: { plan.intervalDays },
-                                                           set: { strategy.dca = DCAPlan(intervalDays: $0) }),
+                                                           set: { var p = plan; p.intervalDays = $0; strategy.dca = p }),
                                         in: 1...90).labelsHidden()
                             }
                             .font(.system(size: 13))
+                        }
+                    }
+                    Card {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SectionLabel("How much each time")
+                            Picker("", selection: Binding(
+                                get: { plan.mode },
+                                set: { m in
+                                    var p = plan
+                                    switch m {
+                                    case .evenSpread: p.dollarsPerBuy = nil; p.percentOfStart = nil
+                                    case .dollars: p.dollarsPerBuy = p.dollarsPerBuy ?? 1_000; p.percentOfStart = nil
+                                    case .percent: p.percentOfStart = p.percentOfStart ?? 5; p.dollarsPerBuy = nil
+                                    }
+                                    strategy.dca = p
+                                })) {
+                                Text("Spread evenly").tag(DCAPlan.Mode.evenSpread)
+                                Text("Fixed $").tag(DCAPlan.Mode.dollars)
+                                Text("% of cash").tag(DCAPlan.Mode.percent)
+                            }.pickerStyle(.segmented)
+
+                            switch plan.mode {
+                            case .evenSpread:
+                                Text("Your starting cash is divided equally across every purchase, so all of it ends up invested by the last buy.")
+                                    .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                            case .dollars:
+                                HStack(spacing: 8) {
+                                    ForEach([100.0, 500, 1_000, 5_000], id: \.self) { v in
+                                        Button {
+                                            var p = plan; p.dollarsPerBuy = v; strategy.dca = p
+                                        } label: {
+                                            Text("$\(Int(v).formatted())").font(.system(size: 13, weight: .bold))
+                                                .frame(maxWidth: .infinity).padding(.vertical, 9)
+                                                .background(plan.dollarsPerBuy == v ? Theme.orange : Theme.panel2,
+                                                            in: RoundedRectangle(cornerRadius: 10))
+                                                .foregroundStyle(plan.dollarsPerBuy == v ? Color.black : Theme.text)
+                                        }
+                                    }
+                                }
+                                HStack {
+                                    Text("Each purchase").foregroundStyle(Theme.dim)
+                                    Spacer()
+                                    Text("$\(Int(plan.dollarsPerBuy ?? 0).formatted())")
+                                        .font(.system(size: 16, weight: .bold, design: .monospaced)).foregroundStyle(Theme.orange)
+                                    Stepper("", value: Binding(get: { plan.dollarsPerBuy ?? 1_000 },
+                                                               set: { var p = plan; p.dollarsPerBuy = $0; strategy.dca = p }),
+                                            in: 50...50_000, step: 50).labelsHidden()
+                                }
+                                .font(.system(size: 13))
+                            case .percent:
+                                HStack {
+                                    Text("Each purchase").foregroundStyle(Theme.dim)
+                                    Spacer()
+                                    Text(String(format: "%g%% of starting cash", plan.percentOfStart ?? 0))
+                                        .font(.system(size: 16, weight: .bold, design: .monospaced)).foregroundStyle(Theme.orange)
+                                    Stepper("", value: Binding(get: { plan.percentOfStart ?? 5 },
+                                                               set: { var p = plan; p.percentOfStart = $0; strategy.dca = p }),
+                                            in: 0.5...100, step: 0.5).labelsHidden()
+                                }
+                                .font(.system(size: 13))
+                            }
+
+                            // The plain-English bottom line, always visible.
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("WHAT THIS MEANS").font(.system(size: 9, weight: .heavy)).tracking(1)
+                                    .foregroundStyle(Theme.gold)
+                                Text(plan.summary(startCash: BacktestSettings().startCash, days: days))
+                                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Text("Based on \(BacktestSettings().startCash.formatted(.currency(code: "USD").precision(.fractionLength(0)))) starting cash over \(days) days.")
+                                    .font(.system(size: 11)).foregroundStyle(Theme.dim)
+                            }
+                            .padding(12).frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 10))
                         }
                     }
                 } else {

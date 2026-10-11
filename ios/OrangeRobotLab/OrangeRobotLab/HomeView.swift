@@ -74,7 +74,7 @@ struct HomeView: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text(s.name).font(.system(size: 15, weight: .bold)).foregroundStyle(Theme.text)
-                                        Text(s.entry.map(\.summary).joined(separator: " and "))
+                                        Text(s.decisionSummary)
                                             .font(.system(size: 11)).foregroundStyle(Theme.dim).lineLimit(2)
                                     }
                                     Spacer()

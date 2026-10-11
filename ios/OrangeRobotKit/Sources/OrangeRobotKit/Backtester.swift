@@ -285,8 +285,7 @@ public final class Backtester {
                                   metrics: Self.metrics(equity: [], trades: [], daysIn: 0, start: settings.startCash))
         }
         let interval = max(1, plan.intervalDays)
-        let buyCount = (range.count + interval - 1) / interval
-        let amount = settings.startCash / Double(buyCount)
+        let amount = plan.amountPerBuy(startCash: settings.startCash, days: range.count)
         var cash = settings.startCash, shares = 0.0, spent = 0.0, grossQty = 0.0
         var purchases: [Purchase] = []
         var equity: [Double] = []
