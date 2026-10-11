@@ -31,6 +31,15 @@ struct ResultView: View {
                         .font(.system(size: 10, design: .monospaced)).foregroundStyle(Theme.dim)
                     }
                 }
+                NavigationLink {
+                    ReplayView(strategy: strategy, span: span)
+                } label: {
+                    Label("WATCH THE ROBOT TRADE", systemImage: "play.circle.fill")
+                        .font(.system(size: 15, weight: .black)).tracking(0.5)
+                        .frame(maxWidth: .infinity).padding(.vertical, 15)
+                        .background(Theme.orange, in: RoundedRectangle(cornerRadius: 12))
+                        .foregroundStyle(.black)
+                }
                 statsGrid(robot.metrics, hold.metrics)
                 tradeList(robot.trades)
                 Text("Signals are read at each day's close and traded at the next open. Stops and targets use each day's real high and low, and a stop wins if both are touched in one day. Costs: 0.26% fee plus 0.1% slippage. Past results don't predict the future.")

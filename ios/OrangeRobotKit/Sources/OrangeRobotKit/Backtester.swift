@@ -303,3 +303,34 @@ public final class Backtester {
                        trades: trades.count, exposure: Double(daysIn) / Double(equity.count), sharpe: sharpe)
     }
 }
+
+// MARK: - Replay helpers
+
+public extension BacktestResult {
+    /// The trade the robot was holding at the *close* of `day`, if any.
+    /// (It buys at that trade's `entryDay` open and is out again by the close of its `exitDay`.)
+    func holding(atCloseOf day: Int) -> Trade? {
+        trades.first { $0.entryDay <= day && day < $0.exitDay }
+    }
+
+    /// Trades that had already been sold by the close of `day`, oldest first.
+    func closedTrades(through day: Int) -> [Trade] {
+        trades.filter { $0.exitDay <= day }
+    }
+
+    /// The most recent buy or sell on or before `day`, for "what just happened" captions.
+    func latestEvent(through day: Int) -> (trade: Trade, isExit: Bool)? {
+        var best: (Trade, Bool, Int)?
+        for t in trades {
+            if t.entryDay <= day, best == nil || t.entryDay >= best!.2 { best = (t, false, t.entryDay) }
+            if t.exitDay <= day, best == nil || t.exitDay >= best!.2 { best = (t, true, t.exitDay) }
+        }
+        return best.map { ($0.0, $0.1) }
+    }
+
+    /// Equity at the close of absolute history day `day` (nil outside the tested range).
+    func equity(atDay day: Int) -> Double? {
+        guard days.contains(day) else { return nil }
+        return equity[day - days.lowerBound]
+    }
+}

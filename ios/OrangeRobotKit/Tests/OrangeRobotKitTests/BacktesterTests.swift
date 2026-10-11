@@ -159,3 +159,47 @@ final class BacktesterTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(Strategy.self, from: data), s)
     }
 }
+
+final class ReplayHelperTests: XCTestCase {
+    private func trade(_ id: Int, _ a: Int, _ b: Int, _ r: Double = 5) -> Trade {
+        Trade(id: id, entryDay: a, exitDay: b, entryPrice: 100, exitPrice: 105, returnPercent: r, reason: .signal)
+    }
+    private func result(_ t: [Trade]) -> BacktestResult {
+        BacktestResult(days: 10..<40, equity: Array(repeating: 100, count: 30), trades: t,
+                       metrics: Backtester.metrics(equity: [100], trades: t, daysIn: 1, start: 100))
+    }
+
+    func testHoldingBetweenEntryAndExit() {
+        let r = result([trade(0, 12, 20), trade(1, 25, 30)])
+        XCTAssertNil(r.holding(atCloseOf: 11))
+        XCTAssertEqual(r.holding(atCloseOf: 12)?.id, 0)    // bought at that day's open
+        XCTAssertEqual(r.holding(atCloseOf: 19)?.id, 0)
+        XCTAssertNil(r.holding(atCloseOf: 20))             // sold during the 20th
+        XCTAssertEqual(r.holding(atCloseOf: 27)?.id, 1)
+    }
+
+    func testClosedTradesAccumulate() {
+        let r = result([trade(0, 12, 20), trade(1, 25, 30)])
+        XCTAssertEqual(r.closedTrades(through: 19).count, 0)
+        XCTAssertEqual(r.closedTrades(through: 20).map(\.id), [0])
+        XCTAssertEqual(r.closedTrades(through: 35).map(\.id), [0, 1])
+    }
+
+    func testLatestEventIsTheRightOne() throws {
+        let r = result([trade(0, 12, 20), trade(1, 25, 30)])
+        XCTAssertNil(r.latestEvent(through: 11))
+        var e = try XCTUnwrap(r.latestEvent(through: 15))
+        XCTAssertEqual(e.trade.id, 0); XCTAssertFalse(e.isExit)
+        e = try XCTUnwrap(r.latestEvent(through: 22))
+        XCTAssertEqual(e.trade.id, 0); XCTAssertTrue(e.isExit)
+        e = try XCTUnwrap(r.latestEvent(through: 26))
+        XCTAssertEqual(e.trade.id, 1); XCTAssertFalse(e.isExit)
+    }
+
+    func testEquityLookupUsesAbsoluteDays() {
+        let r = result([])
+        XCTAssertEqual(r.equity(atDay: 10), 100)
+        XCTAssertNil(r.equity(atDay: 9))
+        XCTAssertNil(r.equity(atDay: 40))
+    }
+}
