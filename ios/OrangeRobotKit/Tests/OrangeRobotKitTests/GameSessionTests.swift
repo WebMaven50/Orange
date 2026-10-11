@@ -351,4 +351,30 @@ final class GameSessionTests: XCTestCase {
         for _ in 0..<20 { s.advance(seconds: 0.05) }     // 1 real second
         XCTAssertEqual(s.absMinute - start, 4.0, accuracy: 1e-9)
     }
+
+    // MARK: Extended data
+
+    func testCanStartOnTheNewDataAndPlayThrough() {
+        let record = GameSession.starting(at: utc(2025, 10, 6, 12, 0))
+        XCTAssertGreaterThan(record.lastPrice, 120_000, "Oct 6 2025 was the record day")
+        let dec24 = GameSession.starting(at: utc(2024, 12, 5, 20, 0))
+        XCTAssertGreaterThan(dec24.lastPrice, 95_000)
+        var s = GameSession.starting(at: utc(2026, 9, 1, 9, 0))
+        s.speed = .fast
+        for _ in 0..<2000 { s.advance(seconds: 0.05) }          // a few game-days at fast speed
+        XCTAssertTrue(s.lastPrice > 1_000 && s.lastPrice < 1_000_000)
+        XCTAssertTrue(s.isRunning)
+    }
+
+    func testRandomStartsReachIntoTheNewDataAndStayInRange() {
+        let h = PriceHistory.bundled
+        let last = PriceEngine.maxStartDay(for: h)
+        XCTAssertGreaterThan(last, 5_800, "random runs can start in 2026")
+        var rng = SystemRandomNumberGenerator()
+        for _ in 0..<200 {
+            let s = GameSession.random(using: &rng)
+            XCTAssertLessThan(s.engine.startDay, last)
+            XCTAssertGreaterThan(s.lastPrice, 0)
+        }
+    }
 }

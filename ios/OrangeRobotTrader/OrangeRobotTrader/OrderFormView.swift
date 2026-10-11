@@ -89,7 +89,10 @@ struct OrderFormView: View {
     }
 
     private func sideTab(_ t: String, _ side: Side, _ c: Color) -> some View {
-        Button { model.setSide(side) } label: {
+        Button {
+            if model.side != side { Feedback.play(.select) }
+            model.setSide(side)
+        } label: {
             Text(t).font(.system(size: 15, weight: .heavy))
                 .frame(maxWidth: .infinity).padding(.vertical, 12)
                 .background(model.side == side ? c : Color.clear, in: RoundedRectangle(cornerRadius: 10))
@@ -101,7 +104,10 @@ struct OrderFormView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 ForEach([(OrderType.market, "Market"), (.limit, "Limit"), (.stop, "Stop"), (.trailing, "Trailing")], id: \.0) { t, l in
-                    Button { model.setOrderType(t) } label: {
+                    Button {
+                        if model.orderType != t { Feedback.play(.select) }
+                        model.setOrderType(t)
+                    } label: {
                         Text(l).font(.system(size: 13, weight: .bold))
                             .frame(maxWidth: .infinity).padding(.vertical, 9)
                             .background(model.orderType == t ? Theme.orange : Theme.panel2,
@@ -158,7 +164,7 @@ struct OrderFormView: View {
     }
 
     private func nudge(_ t: String, _ run: @escaping () -> Void) -> some View {
-        Button(action: run) {
+        Button { Feedback.play(.select); run() } label: {
             Text(t).font(.system(size: 12, weight: .bold))
                 .frame(maxWidth: .infinity).padding(.vertical, 8)
                 .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 8))
@@ -206,6 +212,10 @@ struct OrderFormView: View {
                 }
             }
             Slider(value: $model.fraction, in: 0...1).tint(Theme.orange)
+                .onChange(of: model.fraction) { old, new in
+                    // a tick every 5% of the way, so dragging the slider has detents
+                    if Int((old * 20).rounded()) != Int((new * 20).rounded()) { Feedback.play(.select) }
+                }
         }
     }
 

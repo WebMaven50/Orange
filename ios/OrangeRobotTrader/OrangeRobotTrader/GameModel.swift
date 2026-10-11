@@ -65,6 +65,8 @@ final class GameModel {
     private let leaderboard = LeaderboardClient()
 
     private var timer: Timer?
+    private var moments = MomentMonitor()
+    private var wasSleeping = false
     private var lastTick = Date()
     private var banked = false
 
@@ -88,6 +90,9 @@ final class GameModel {
         indicators = []
         showIndicatorMenu = false
         autoPaused = false
+        moments = MomentMonitor()
+        wasSleeping = false
+        Feedback.play(.start)
         showOrderForm = false
         showPositions = false
         showNews = false
@@ -127,6 +132,7 @@ final class GameModel {
             Task { try? await Task.sleep(for: .seconds(1.4)); if flash?.hasSuffix("filled") == true { flash = nil } }
         }
         trackNews()
+        trackMoments()
         if session.outcome != nil { finish() }
     }
 
@@ -163,6 +169,29 @@ final class GameModel {
 
     func markNewsSeen() { lastSeenNewsDay = session.currentDayNumber }
 
+    /// Subtle physical cues for what's happening in the market.
+    private func trackMoments() {
+        let sleeping = session.isSleeping
+        if wasSleeping && !sleeping {
+            Feedback.play(.wake)
+            moments.resetSwing(at: session.absMinute)
+        }
+        wasSleeping = sleeping
+        guard !session.isPaused else { return }
+        let triggers = session.pendingOrders.map { (id: $0.id, price: session.triggerPrice(for: $0)) }
+        let found = moments.update(equity: session.equity, price: session.lastPrice,
+                                   absMinute: session.absMinute, orderTriggers: triggers,
+                                   allowSwing: !sleeping)
+        for m in found {
+            switch m {
+            case .milestone: Feedback.play(.milestone)
+            case .danger: Feedback.play(.danger)
+            case .near: Feedback.play(.near)
+            case .swing: Feedback.play(.swing)
+            }
+        }
+    }
+
     private func finish() {
         timer?.invalidate()
         timer = nil
@@ -196,7 +225,7 @@ final class GameModel {
 
     func toggleIndicator(_ k: IndicatorKind) {
         if indicators.contains(k) { indicators.remove(k) } else { indicators.insert(k) }
-        Haptics.impact()
+        Feedback.play(.select)
     }
     func clearIndicators() { indicators = []; showIndicatorMenu = false }
 
@@ -206,7 +235,7 @@ final class GameModel {
         guard phase == .playing else { return }
         setSide(s)
         showOrderForm = true
-        Haptics.impact()
+        Feedback.play(.select)
     }
     func setOrderType(_ t: OrderType) { orderType = t; resetLevel() }
 
@@ -258,6 +287,7 @@ final class GameModel {
             savedRank = r.rank
             vaultTotal = r.vaultTotal
             lastInitials = initials
+            Feedback.play(.finished)
             Activity.track(.scoreSaved)
             UserDefaults.standard.set(initials, forKey: "tor_initials")
         } catch {
@@ -268,7 +298,7 @@ final class GameModel {
     func setSpeed(_ new: PlaybackSpeed) {
         speed = new
         session.speed = new
-        Haptics.impact()
+        Feedback.play(.select)
     }
 
     // MARK: Pause
@@ -277,7 +307,7 @@ final class GameModel {
         guard phase == .playing else { return }
         autoPaused = false
         if session.isPaused { session.resume() } else { session.pause() }
-        Haptics.impact()
+        Feedback.play(session.isPaused ? .pause : .resume)
     }
 
     /// Pause because something else came to the front (a sheet, another app).
@@ -301,9 +331,9 @@ final class GameModel {
         session.pause()
     }
 
-    func sleep() { if session.startSleep() { Haptics.impact() } }
+    func sleep() { if session.startSleep() { Feedback.play(.pause) } }
     func cashOut() { session.cashOut(); finish() }
-    func cancel(_ id: Int) { session.cancelOrder(id: id); Haptics.impact() }
+    func cancel(_ id: Int) { session.cancelOrder(id: id); Feedback.play(.select) }
     func updateOrder(id: Int, level: Double, fraction: Double) throws {
         try session.modifyOrder(id: id, level: level, amountFraction: fraction)
         Haptics.impact()

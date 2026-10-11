@@ -5,6 +5,8 @@ import AudioToolbox
 /// Moments in the apps that can give a little haptic tap and a short sound.
 public enum FeedbackCue: String, CaseIterable, Sendable {
     case buy, sell, news, finished, win, bust, tap
+    /// Haptic-only cues for interface changes and game feel.
+    case select, start, pause, resume, wake, milestone, near, danger, swing
 }
 
 /// Haptics and sound, each with its own on/off switch (both default on).
@@ -25,6 +27,11 @@ public enum Feedback {
     }
 
     private static var ids: [FeedbackCue: SystemSoundID] = [:]
+    private static var silent: Set<FeedbackCue> = []
+
+    private static func later(_ seconds: Double, _ work: @escaping () -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + seconds, execute: work)
+    }
 
     public static func play(_ cue: FeedbackCue) {
         if hapticsEnabled { haptic(for: cue) }
@@ -39,14 +46,32 @@ public enum Feedback {
         case .news: UINotificationFeedbackGenerator().notificationOccurred(.warning)
         case .finished, .win: UINotificationFeedbackGenerator().notificationOccurred(.success)
         case .bust: UINotificationFeedbackGenerator().notificationOccurred(.error)
+
+        case .select: UISelectionFeedbackGenerator().selectionChanged()
+        case .start: UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        case .pause: UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.9)
+        case .resume: UIImpactFeedbackGenerator(style: .soft).impactOccurred(intensity: 0.6)
+        case .wake:
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            later(0.12) { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
+        case .milestone:
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            later(0.1) { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
+            later(0.2) { UIImpactFeedbackGenerator(style: .heavy).impactOccurred() }
+        case .near: UIImpactFeedbackGenerator(style: .light).impactOccurred(intensity: 0.6)
+        case .danger:   // a heartbeat
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+            later(0.18) { UIImpactFeedbackGenerator(style: .heavy).impactOccurred(intensity: 0.7) }
+        case .swing: UIImpactFeedbackGenerator(style: .rigid).impactOccurred(intensity: 0.8)
         }
     }
 
     private static func sound(for cue: FeedbackCue) {
+        if silent.contains(cue) { return }
         if ids[cue] == nil {
             guard let url = Bundle.module.url(forResource: "fx_\(cue.rawValue)", withExtension: "wav",
                                               subdirectory: nil) ?? Bundle.module.url(forResource: "fx_\(cue.rawValue)", withExtension: "wav", subdirectory: "Sounds")
-            else { return }
+            else { silent.insert(cue); return }     // haptic-only cue: no sound file
             var id: SystemSoundID = 0
             AudioServicesCreateSystemSoundID(url as CFURL, &id)
             ids[cue] = id

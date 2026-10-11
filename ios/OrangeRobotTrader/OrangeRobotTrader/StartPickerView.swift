@@ -51,6 +51,7 @@ struct StartPickerView: View {
                         Text("FAMOUS MOMENTS").font(.system(size: 10, weight: .heavy)).tracking(1)
                             .foregroundStyle(Theme.dim)
                         FlowChips(items: Self.presets) { p in
+                            Feedback.play(.select)
                             moment = p.date
                         }
                     }
@@ -119,6 +120,9 @@ struct StartPickerView: View {
         Preset(title: "COVID crash · Mar 2020", date: utc(2020, 3, 12, 8, 0)),
         Preset(title: "2021 top · Nov 2021", date: utc(2021, 11, 10, 9, 0)),
         Preset(title: "FTX collapse · Nov 2022", date: utc(2022, 11, 8, 9, 0)),
+        Preset(title: "Election · Nov 2024", date: utc(2024, 11, 5, 9, 0)),
+        Preset(title: "$100K · Dec 2024", date: utc(2024, 12, 5, 9, 0)),
+        Preset(title: "Record · Oct 2025", date: utc(2025, 10, 6, 9, 0)),
     ]
 
     private static func utc(_ y: Int, _ m: Int, _ d: Int, _ h: Int, _ min: Int) -> Date {

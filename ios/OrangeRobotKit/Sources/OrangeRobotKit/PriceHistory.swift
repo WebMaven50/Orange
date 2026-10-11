@@ -27,7 +27,7 @@ public struct PriceHistory: Sendable {
         return bars[((index % n) + n) % n]
     }
 
-    /// The history bundled with the package (Jul 2010 – Sep 2024).
+    /// The history bundled with the package (Jul 2010 to the last finished day when the data was last refreshed).
     public static let bundled: PriceHistory = {
         guard let url = Bundle.module.url(forResource: "btc_daily", withExtension: "json"),
               let data = try? Data(contentsOf: url),

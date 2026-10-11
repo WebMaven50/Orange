@@ -677,6 +677,94 @@
    "significant": true,
    "trigger": 50000,
    "direction": "below"
+  },
+  {
+   "date": "2024-09-20",
+   "title": "The SEC approves options on spot bitcoin ETFs, starting with BlackRock's IBIT",
+   "tag": "regulation",
+   "significant": false
+  },
+  {
+   "date": "2024-11-05",
+   "title": "Donald Trump wins the US presidential election; crypto markets surge",
+   "tag": "markets",
+   "significant": true
+  },
+  {
+   "date": "2024-11-10",
+   "title": "Bitcoin passes $80,000 for the first time",
+   "tag": "markets",
+   "significant": false,
+   "milestone": 80000,
+   "trigger": 80000
+  },
+  {
+   "date": "2024-12-05",
+   "title": "Bitcoin passes $100,000 for the first time",
+   "tag": "markets",
+   "significant": true,
+   "milestone": 100000,
+   "trigger": 100000
+  },
+  {
+   "date": "2024-12-17",
+   "title": "Bitcoin sets a new all-time record near $108,400",
+   "tag": "markets",
+   "significant": true,
+   "record": true,
+   "trigger": 108172.1
+  },
+  {
+   "date": "2025-01-20",
+   "title": "Bitcoin sets a new all-time record near $109,400 as a new US administration takes office",
+   "tag": "markets",
+   "significant": true,
+   "record": true,
+   "trigger": 109139.29
+  },
+  {
+   "date": "2025-02-21",
+   "title": "Bybit loses about $1.5 billion in the largest crypto theft on record",
+   "tag": "security",
+   "significant": true
+  },
+  {
+   "date": "2025-03-06",
+   "title": "The US president signs an order creating a Strategic Bitcoin Reserve",
+   "tag": "regulation",
+   "significant": true,
+   "detail": "The reserve is to be funded with bitcoin the government already holds from forfeitures."
+  },
+  {
+   "date": "2025-07-14",
+   "title": "Bitcoin passes $120,000 for the first time",
+   "tag": "markets",
+   "significant": true,
+   "milestone": 120000,
+   "trigger": 120000
+  },
+  {
+   "date": "2025-10-06",
+   "title": "Bitcoin sets a new all-time record near $126,300",
+   "tag": "markets",
+   "significant": true,
+   "record": true,
+   "trigger": 126043.41
+  },
+  {
+   "date": "2025-10-10",
+   "title": "Roughly $19 billion of leveraged crypto positions are liquidated in a day, the most on record, after new US-China tariff threats",
+   "tag": "markets",
+   "significant": true,
+   "detail": "Figures vary by data provider."
+  },
+  {
+   "date": "2025-11-18",
+   "title": "Bitcoin falls below $90,000 for the first time in seven months",
+   "tag": "markets",
+   "significant": true,
+   "trigger": 90000,
+   "direction": "below"
   }
  ]
 }

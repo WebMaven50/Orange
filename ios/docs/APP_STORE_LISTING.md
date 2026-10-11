@@ -39,7 +39,7 @@ Beat the market, make the leaderboard, and meet the robot.
 > Step into Bitcoin's real history and trade it.
 >
 > ORANGE ROBOT is a trading simulator and game. You start with $100,000 of
-> virtual money in a random moment from 2010 to 2024, or pick a famous moment
+> virtual money in a random moment from 2010 to today, or pick a famous moment
 > yourself. Buy, sell, short, set limit and stop orders, and try to reach
 > $1,000,000 before the market takes it away.
 >

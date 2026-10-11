@@ -20,7 +20,9 @@ struct DateSpan: Hashable {
         ("2018 bear", DateSpan(start: utc(2018, 1, 1), end: utc(2018, 12, 31))),
         ("2020–21 bull", DateSpan(start: utc(2020, 6, 1), end: utc(2021, 5, 31))),
         ("2022 crash", DateSpan(start: utc(2022, 1, 1), end: utc(2022, 12, 31))),
-        ("2023–24", DateSpan(start: utc(2023, 1, 1), end: utc(2024, 8, 31))),
+        ("2023–24", DateSpan(start: utc(2023, 1, 1), end: utc(2024, 12, 31))),
+        ("2025", DateSpan(start: utc(2025, 1, 1), end: utc(2025, 12, 31))),
+        ("2026 so far", DateSpan(start: utc(2026, 1, 1), end: utc(2026, 12, 31))),
     ]
 }
 

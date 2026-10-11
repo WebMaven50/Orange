@@ -19,8 +19,33 @@ final class PriceEngineTests: XCTestCase {
 
     func testHistoryLoads() {
         let h = PriceHistory.bundled
-        XCTAssertEqual(h.count, 5176)
-        XCTAssertEqual(h.bars.last?.close, 60309.1)
+        // The original web-game data (Jul 2010 – Sep 17 2024) must be untouched...
+        XCTAssertGreaterThanOrEqual(h.count, 5176)
+        XCTAssertEqual(h.bars[0].open, 0.0)
+        XCTAssertEqual(h.bars[5175].close, 60309.1)
+        // ...and the extension must continue it without a gap or a jump.
+        if h.count > 5176 {
+            let seam = h.bars[5176].open / h.bars[5175].close
+            XCTAssertEqual(seam, 1, accuracy: 0.05, "seam between the two data sources")
+        }
+    }
+
+    private func isConsistent(_ b: DayBar) -> Bool {
+        b.low <= b.high + 1e-9 && b.high + 1e-9 >= max(b.open, b.close) && b.low <= min(b.open, b.close) + 1e-9
+    }
+
+    /// Candles added after the original data must be strictly well-formed.
+    func testExtensionCandlesAreConsistent() {
+        let bars = PriceHistory.bundled.bars
+        for i in 5176..<bars.count { XCTAssertTrue(isConsistent(bars[i]), "day \(i)") }
+    }
+
+    /// The original (web game) data has a few known oddities in 2010–2013. They are left
+    /// alone so the web-parity tests keep meaning something; this pins how many there are.
+    func testLegacyDataAnomaliesAreUnchanged() {
+        let bars = PriceHistory.bundled.bars
+        let bad = bars[0..<5176].filter { !isConsistent($0) }.count
+        XCTAssertEqual(bad, 31)
     }
 
     /// The Swift port must reproduce the web game's prices exactly.

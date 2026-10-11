@@ -162,7 +162,7 @@ struct InfoView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     para("Daily & weekly candles are 100% real.",
-                         "Every 1D and 1W candle comes from actual historical Bitcoin prices (2010–2024). Nothing is invented at that scale.")
+                         "Every 1D and 1W candle comes from actual historical Bitcoin prices (2010 to the present day). Nothing is invented at that scale.")
                     para("15m / 1H / 4H candles are simulated within real bounds.",
                          "Minute-level history isn't available, so intraday movement is generated — but it always starts at the previous real close, touches the real high and low, and ends at the real close.")
                     para("Trading.",

@@ -195,6 +195,30 @@ add("2024-04-20", "Fourth halving: the block reward drops to 3.125 bitcoins", "t
 add("2024-05-23", "The SEC approves spot Ether ETFs", "regulation")
 add("2024-08-05", "A global market rout drags bitcoin below $50,000", "markets", sig=True, trigger=50000, direction="below")
 
+
+# --- Sep 2024 onward (dates verified against dated sources; prices computed from the data) ---
+add("2024-09-20", "The SEC approves options on spot bitcoin ETFs, starting with BlackRock's IBIT", "regulation")
+add("2024-11-05", "Donald Trump wins the US presidential election; crypto markets surge", "markets", sig=True)
+add(first_cross(80000), "Bitcoin passes $80,000 for the first time", "markets", milestone=80000, trigger=80000)
+add(first_cross(100000), "Bitcoin passes $100,000 for the first time", "markets", sig=True, milestone=100000, trigger=100000)
+rd, rh = record_day("2024-12-01", "2024-12-31")
+add(rd, "Bitcoin sets a new all-time record near $%s" % f"{round(rh, -2):,.0f}", "markets", sig=True, record=True,
+    trigger=round(rh * 0.998, 2))
+rd, rh = record_day("2025-01-01", "2025-01-31")
+add(rd, "Bitcoin sets a new all-time record near $%s as a new US administration takes office" % f"{round(rh, -2):,.0f}",
+    "markets", sig=True, record=True, trigger=round(rh * 0.998, 2))
+add("2025-02-21", "Bybit loses about $1.5 billion in the largest crypto theft on record", "security", sig=True)
+add("2025-03-06", "The US president signs an order creating a Strategic Bitcoin Reserve", "regulation", sig=True,
+    detail="The reserve is to be funded with bitcoin the government already holds from forfeitures.")
+add(first_cross(120000), "Bitcoin passes $120,000 for the first time", "markets", sig=True, milestone=120000, trigger=120000)
+rd, rh = record_day("2025-10-01", "2025-10-31")
+add(rd, "Bitcoin sets a new all-time record near $%s" % f"{round(rh, -2):,.0f}", "markets", sig=True, record=True,
+    trigger=round(rh * 0.998, 2))
+add("2025-10-10", "Roughly $19 billion of leveraged crypto positions are liquidated in a day, the most on record, after new US-China tariff threats",
+    "markets", sig=True, detail="Figures vary by data provider.")
+add("2025-11-18", "Bitcoin falls below $90,000 for the first time in seven months", "markets", sig=True,
+    trigger=90000, direction="below")
+
 for it in items:
     if "trigger" in it:
         o, h, l, c = bar_of(it["date"])

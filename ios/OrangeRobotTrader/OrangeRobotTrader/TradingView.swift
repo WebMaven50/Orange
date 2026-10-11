@@ -52,7 +52,7 @@ struct TradingView: View {
                         Spacer()
                         Button {
                             model.showIndicatorMenu.toggle()
-                            Haptics.impact()
+                            Feedback.play(.select)
                         } label: {
                             Image(systemName: "waveform.path.ecg")
                                 .font(.system(size: 13, weight: .semibold))
@@ -67,7 +67,7 @@ struct TradingView: View {
                             ForEach(ChartStyle.allCases) { st in
                                 Button {
                                     model.chartStyle = st
-                                    Haptics.impact()
+                                    Feedback.play(.select)
                                 } label: {
                                     if st == model.chartStyle {
                                         Label(st.title, systemImage: "checkmark")
@@ -242,7 +242,10 @@ struct TradingView: View {
         HStack {
             HStack(spacing: 4) {
                 ForEach([(3, "3m"), (15, "15m"), (60, "1H"), (240, "4H"), (1440, "1D"), (10080, "1W")], id: \.0) { tf, label in
-                    chip(label, active: model.timeframe == tf) { model.timeframe = tf }
+                    chip(label, active: model.timeframe == tf) {
+                        if model.timeframe != tf { Feedback.play(.select) }
+                        model.timeframe = tf
+                    }
                 }
             }
             Spacer()
