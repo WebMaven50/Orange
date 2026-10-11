@@ -7,6 +7,12 @@ struct ReplayView: View {
     @Environment(LabModel.self) private var lab
     let strategy: Strategy
     let span: DateSpan
+    /// Live tests replay on their own price history and range.
+    var engine: Backtester?
+    var fixedRange: Range<Int>?
+    var startCash = BacktestSettings().startCash
+
+    private var bt: Backtester { engine ?? lab.backtester }
 
     @State private var robot: BacktestResult?
     @State private var hold: BacktestResult?
@@ -32,9 +38,10 @@ struct ReplayView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             guard robot == nil else { return }
-            let range = lab.range(for: span)
-            robot = lab.backtester.run(strategy, days: range)
-            hold = lab.backtester.buyAndHold(days: range)
+            let range = fixedRange ?? lab.range(for: span)
+            var settings = BacktestSettings(); settings.startCash = startCash
+            robot = bt.run(strategy, days: range, settings: settings)
+            hold = bt.buyAndHold(days: range, settings: settings)
         }
         .onReceive(tick) { _ in advance() }
     }
@@ -43,18 +50,18 @@ struct ReplayView: View {
 
     private func content(_ r: BacktestResult, _ h: BacktestResult) -> some View {
         let day = r.days.lowerBound + cursor                       // absolute history day
-        let bars = lab.backtester.history.bars
+        let bars = bt.history.bars
         let bar = bars[day]
         let held = r.holding(atCloseOf: day)
         let rEq = r.equity[cursor], hEq = h.equity[min(cursor, h.equity.count - 1)]
-        let start = BacktestSettings().startCash
+        let start = startCash
 
         return ScrollView {
             VStack(spacing: 12) {
                 header(day: day, price: bar.close, held: held, total: r.days.count)
                 headline(day: day)
 
-                ReplayChart(history: lab.backtester.history, range: r.days, cursor: cursor, trades: r.trades,
+                ReplayChart(history: bt.history, range: r.days, cursor: cursor, trades: r.trades,
                             strategy: strategy, held: held)
                     .frame(height: 280)
                     .background(Theme.panel, in: RoundedRectangle(cornerRadius: 12))
@@ -81,7 +88,7 @@ struct ReplayView: View {
     private func header(day: Int, price: Double, held: Trade?, total: Int) -> some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(Fmt.date(lab.backtester.date(forDay: day)))
+                Text(Fmt.date(bt.date(forDay: day)))
                     .font(.system(size: 16, weight: .bold)).foregroundStyle(Theme.text)
                 Text("Day \(cursor + 1) of \(total)").font(.system(size: 11)).foregroundStyle(Theme.dim)
             }
@@ -99,7 +106,7 @@ struct ReplayView: View {
     /// A significant real headline from the last two weeks, for context.
     @ViewBuilder
     private func headline(day: Int) -> some View {
-        let today = Int((lab.backtester.date(forDay: day).timeIntervalSince1970 / 86_400).rounded())
+        let today = Int((bt.date(forDay: day).timeIntervalSince1970 / 86_400).rounded())
         if let item = NewsFeed.bundled.items(upTo: today).first(where: { $0.significant && today - $0.dayNumber <= 14 }) {
             HStack(alignment: .top, spacing: 8) {
                 Text("📰")
@@ -116,7 +123,7 @@ struct ReplayView: View {
         Group {
             if let e = r.latestEvent(through: day) {
                 let t = e.trade
-                let when = Fmt.date(lab.backtester.date(forDay: e.isExit ? t.exitDay : t.entryDay))
+                let when = Fmt.date(bt.date(forDay: e.isExit ? t.exitDay : t.entryDay))
                 VStack(alignment: .leading, spacing: 3) {
                     if e.isExit {
                         Text("▼ SOLD \(when) at \(Fmt.usd(t.exitPrice, decimals: 0))")
@@ -196,7 +203,7 @@ struct ReplayView: View {
         return VStack(alignment: .leading, spacing: 8) {
             SectionLabel("Trades so far: \(closed.count)" + (closed.isEmpty ? "" : "  ·  \(wins) won"))
             if let t = held {
-                row(t, openPrice: lab.backtester.history.bars[day].close, isOpen: true)
+                row(t, openPrice: bt.history.bars[day].close, isOpen: true)
             }
             ForEach(closed.reversed().prefix(12)) { row($0, openPrice: nil, isOpen: false) }
         }
@@ -207,8 +214,8 @@ struct ReplayView: View {
         let pct = openPrice.map { ($0 / t.entryPrice - 1) * 100 } ?? t.returnPercent
         return HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(isOpen ? "Open since \(Fmt.date(lab.backtester.date(forDay: t.entryDay)))"
-                            : "\(Fmt.date(lab.backtester.date(forDay: t.entryDay))) → \(Fmt.date(lab.backtester.date(forDay: t.exitDay)))")
+                Text(isOpen ? "Open since \(Fmt.date(bt.date(forDay: t.entryDay)))"
+                            : "\(Fmt.date(bt.date(forDay: t.entryDay))) → \(Fmt.date(bt.date(forDay: t.exitDay)))")
                     .font(.system(size: 12, weight: .semibold, design: .monospaced)).foregroundStyle(Theme.text)
                 Text(isOpen ? "Bought at \(Fmt.usd(t.entryPrice, decimals: 0))"
                             : "\(Fmt.usd(t.entryPrice, decimals: 0)) → \(Fmt.usd(t.exitPrice, decimals: 0)) · \(t.reason.title)")

@@ -29,6 +29,24 @@ struct HomeView: View {
                             text: "Pick a period in history. The robot tries thousands of rule sets on it, then tests the best ones on time they've never seen.")
                 }
 
+                NavigationLink { LiveTestsView() } label: {
+                    HStack(spacing: 14) {
+                        Text("🛰").font(.system(size: 30))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Live tests").font(.system(size: 17, weight: .heavy)).foregroundStyle(Theme.text)
+                            Text(lab.liveTests.isEmpty
+                                 ? "Lock a robot and judge it on days that haven't happened yet."
+                                 : "\(lab.liveTests.count) test\(lab.liveTests.count == 1 ? "" : "s") in progress or done")
+                                .font(.system(size: 12)).foregroundStyle(Theme.dim).multilineTextAlignment(.leading)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").foregroundStyle(Theme.dim)
+                    }
+                    .padding(16)
+                    .background(Theme.panel, in: RoundedRectangle(cornerRadius: 14))
+                    .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
+                }
+
                 NavigationLink { NotebookView() } label: {
                     HStack(spacing: 14) {
                         Text("📓").font(.system(size: 30))

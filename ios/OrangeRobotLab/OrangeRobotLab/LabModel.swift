@@ -46,6 +46,7 @@ final class LabModel {
            let b = try? JSONDecoder().decode(ReportBook.self, from: data) {
             book = b
         }
+        loadLive()
     }
 
     // MARK: Notebook
@@ -59,6 +60,85 @@ final class LabModel {
         guard !candidates.isEmpty else { return }
         book.add(Report.search(start: span.start, end: span.end, tries: tries, candidates: candidates))
         persistBook()
+    }
+
+    // MARK: Live (forward) tests
+
+    var liveTests: [LiveTest] = []
+    var candles: [DailyCandle] = []
+    var candleSource: String?
+    var candlesUpdated: Date?
+    var refreshing = false
+    var refreshError: String?
+
+    private let liveURL: URL = {
+        let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return dir.appendingPathComponent("lab_live.json")
+    }()
+
+    private struct LiveFile: Codable {
+        var tests: [LiveTest]; var candles: [DailyCandle]; var source: String?; var updated: Date?
+    }
+
+    private func loadLive() {
+        guard let data = try? Data(contentsOf: liveURL),
+              let f = try? JSONDecoder().decode(LiveFile.self, from: data) else { return }
+        liveTests = f.tests; candles = f.candles; candleSource = f.source; candlesUpdated = f.updated
+    }
+
+    private func persistLive() {
+        let f = LiveFile(tests: liveTests, candles: candles, source: candleSource, updated: candlesUpdated)
+        if let data = try? JSONEncoder().encode(f) { try? data.write(to: liveURL, options: .atomic) }
+    }
+
+    func startLiveTest(_ strategy: Strategy, horizon: Int) {
+        liveTests.insert(LiveTest(strategy: strategy, horizonDays: horizon), at: 0)
+        persistLive()
+        Task { await refreshLive() }
+    }
+
+    func deleteLiveTest(_ id: UUID) {
+        liveTests.removeAll { $0.id == id }
+        persistLive()
+    }
+
+    func liveStatus(_ t: LiveTest) -> LiveStatus { LiveEvaluator.evaluate(t, candles: candles) }
+
+    /// Pull the latest daily candles and refresh every running test.
+    func refreshLive() async {
+        guard !refreshing else { return }
+        refreshing = true; refreshError = nil
+        defer { refreshing = false }
+        do {
+            let fetched = try await LiveClient().fetch()
+            candles = fetched.candles
+            candleSource = fetched.source
+            candlesUpdated = Date()
+        } catch {
+            refreshError = candles.isEmpty
+                ? "Couldn't reach the price feed. Check your connection and try again."
+                : "Couldn't refresh just now, so this is the last data we have."
+        }
+        recordFinishedTests()
+        persistLive()
+    }
+
+    /// Finished tests go into the notebook on their own.
+    private func recordFinishedTests() {
+        for i in liveTests.indices where !liveTests[i].recordedInNotebook {
+            let t = liveTests[i]
+            let s = liveStatus(t)
+            guard s.phase == .finished, let r = s.robotMetrics, let h = s.holdMetrics else { continue }
+            let start = Date(timeIntervalSince1970: Double(t.startDay) * 86_400)
+            let end = Date(timeIntervalSince1970: Double(t.startDay + t.horizonDays - 1) * 86_400)
+            let report = Report.test(strategy: t.strategy, start: start, end: end, result: r, hold: h)
+            if book.add(report) {
+                book.setTitle(report.id, "Live test · \(t.name)")
+                book.setNotes(report.id, "Forward test on days that had not happened when the rules were locked. Fingerprint \(t.fingerprint.prefix(12)).")
+                persistBook()
+            }
+            liveTests[i].recordedInNotebook = true
+        }
     }
 
     func setNotes(_ id: UUID, _ text: String) { book.setNotes(id, text); persistBook() }
