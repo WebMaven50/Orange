@@ -1,7 +1,27 @@
-# Orange Robot economy — spec v0.1 (draft for review)
+# Orange Robot economy — spec v0.2
 
 Status: proposal. Nothing here is built. Numbers are starting points to tune.
 Not legal advice: items marked ⚖ need a lawyer's eye before launch.
+
+
+## 0. Decisions log (v0.2) — these override anything below that conflicts
+
+Made by the owner on 2026-10-11:
+
+1. **No unlocks of any kind for now.** Sats are for recognition only. Digital
+   rewards on the website (a "pog" image, a book chapter) are back-burnered; if
+   they ever return they must be purely digital, with no real-world value, and
+   get a legal read first. The book itself is the product, so chapters stay out.
+2. **No transfers.** Section 8 is struck. No sending sats between accounts.
+3. **Short tests are welcome.** Minimum forward test is **7 days ("Sprint")**,
+   because people want results quickly. Long tests earn a separate
+   **Marathon** award for rules that withstand the test of time (§5).
+4. **Stay clear of legal gray areas.** Where in doubt, leave it out: no cash
+   value, no purchases of sats, no redemption, no prizes, no gambling-like
+   mechanics (no stakes, no pools funded by players, no random loot boxes).
+5. **Haptics and sound** are part of the design, with a switch to turn each off.
+6. **Background engagement:** push notifications when a robot paper-buys or
+   paper-sells (see the notes on how this must work in §14).
 
 ## 1. What this is
 
@@ -52,43 +72,42 @@ theorangerobot.com.
 Global rule: total sats minted per season never exceeds the **season budget**
 (§7). When it is spent, earning pauses until the next season.
 
-## 5. Forward-test payout (the core mechanic)
+## 5. Forward-test payouts (the core mechanic)
 
-Eligibility, all required:
+Two tracks, both judged only on days that had not happened when the rules were
+locked:
 
-- Started on the website's clock: the client submits the **rule fingerprint**
-  *before* the first day closes; the server timestamps it and stores it. A
-  fingerprint first seen after its start day is rejected.
-- Ran the full horizon: 30 or 90 days (14-day tests are practice, no payout).
-- At least **2 closed trades** (a robot that never trades has no evidence).
-- The rules are not a near-duplicate of a robot already paid in this season
-  (normalized-rules hash; prevents farming the same idea).
+**Sprint (7 days)** — quick feedback, small reward.
 
-Score (computed by the server from its own stored daily candles, never the
-client's):
+- Eligible: ran the full 7 days, rules fingerprinted before day 1 closed.
+- No minimum-trade rule (a week often has 0–1 trades) — but a Sprint pays only
+  the small participation amount if it made **no** trades.
+- Payout: `base 15` + `4 × clamp(profit, 0, 15)` + `4 × clamp(excess, 0, 15)`,
+  capped at **150**. Max 2 Sprint payouts per account per day.
 
-```
-excess   = robot return − holding return        (percentage points)
-profit   = max(robot return, 0)
-safety   = max(holding max-drawdown − robot max-drawdown, 0)
+**Marathon (30 / 60 / 90 days)** — the "stood the test of time" award.
 
-payout   = base(horizon)
-         + 8  × clamp(excess, 0, 40)      // beat holding
-         + 4  × clamp(profit, 0, 40)      // made money
-         + 6  × clamp(safety, 0, 30)      // smoother ride
-         capped at payout_cap(horizon)
-```
+- Eligible: ran the full length; ≥ 2 closed trades; not a near-duplicate
+  of a robot already paid this season (normalized-rules hash).
+- Payout: `base` (40 / 90 / 150) + `8 × clamp(excess, 0, 40)` +
+  `4 × clamp(profit, 0, 40)` + `6 × clamp(safety, 0, 30)`, capped at
+  800 / 1,600 / 2,500.
+- **Marathon badge** (cosmetic, no sats) when a robot completes 30, 60, 90
+  days **and** stays ahead of just holding at the end.
+- **Longevity bonus:** a Sprint that is then *continued* as a Marathon with
+  the same locked rules keeps its original start date, so one robot can earn
+  both tracks without being re-tuned.
 
-Starting values: `base` = 40 (30-day) / 150 (90-day); `payout_cap` = 800 / 2,500.
-The mix rewards beating the market, profiting, *and* avoiding big falls, so
-sitting in cash through a crash scores something (safety) but not a lot.
+Definitions (same as before): `excess` = robot return − holding return in
+percentage points; `profit` = max(robot return, 0); `safety` = how much smaller
+the robot's worst fall was than holding's.
 
-Notes:
-- Losing robots still receive `base` only if they finish; they are never
-  charged. (Players should not be punished for experimenting.)
-- Payouts are credited **7 days after** the test ends (a short delay makes
-  coordinated gaming and data corrections easier to catch).
-- Results are public on the robot's page with the fingerprint and rules.
+Both tracks: results computed by the server from its own stored candles; paid
+7 days after the test ends; losing robots are never charged.
+
+> Because a daily-candle robot makes only ~7 decisions in a week, Sprint
+> results are mostly luck. That is why they pay little and why Marathon pays
+> much more. The app labels Sprint results "early look".
 
 ## 6. Sinks (what sats are for)
 
@@ -96,12 +115,11 @@ Sinks keep the supply from just inflating and give sats a reason to exist.
 
 - Extra concurrent live-test slots (free: 3 at once).
 - Handle change, profile flair, robot-page themes.
-- Entry to **seasonal cups** (a pool paid back out to top forward tests).
+- Cosmetic **seasonal badges** (no pools, no prizes funded by players).
 - City cosmetics (plots, signs, decorations) in the Bitcoin-city phase.
-- A small **burn** (2%) on every transfer once transfers exist.
 
-Never a sink: anything redeemable for money, goods, store discounts or
-Bitcoin. ⚖ (Store discounts need a specific legal read first.)
+Never a sink: anything redeemable for money, goods, store discounts, content
+unlocks or Bitcoin (owner decision 2026-10-11). ⚖
 
 ## 7. Emission
 
@@ -111,15 +129,10 @@ Bitcoin. ⚖ (Store discounts need a specific legal read first.)
 - The budget is public on the website ("1,820,310 of 5,000,000 minted").
 - Per-account daily caps (§4) make it impossible for one account to drain it.
 
-## 8. Transfers (phase 3 only)
+## 8. Transfers — struck (v0.2)
 
-Off by default. When enabled:
-
-- Account must be ≥ 14 days old and have completed ≥ 1 forward test.
-- Sats received in the last 7 days cannot be re-sent (stops chain-laundering).
-- Daily send limit: 500 sats; max 5 recipients/day; 2% burn.
-- Every transfer is public in the ledger with both handles.
-- Block/report is available on any account.
+No transfers between accounts. Revisit only if there is a clear reason and a
+legal read. This removes the largest abuse surface.
 
 ## 9. Anti-abuse
 
@@ -149,20 +162,19 @@ Off by default. When enabled:
 | **0** | Notebook, live tests (done, on device) | — |
 | **1** | Handles + keys, share a report to a public gallery (no sats), report/block, daily candles recorded server-side | People actually share; moderation load is manageable |
 | **2** | Fingerprint timestamping + forward-test payouts + server recompute + public robot pages + season budget | Payout mismatch rate ≈ 0; no unexplained minting |
-| **3** | Wallets visible, sinks, seasonal cups, limited transfers | Gini/whale check; abuse reports low |
+| **3** | Wallet visible, cosmetic sinks, Marathon badges | Abuse reports low |
 | **4** | Mining + other games feed the same wallet; city | — |
 
-## 12. Open decisions for you
+## 12. Open decisions
 
-1. **Handles in phase 1** — or stay anonymous until phase 2?
-2. **Are sats ever allowed to unlock anything of real value** (store
-   discount, signed copy, early chapter)? My advice: no, at least until a
-   lawyer has looked. ⚖
-3. **Public notes** — opt-in per report (my advice) or on by default?
-4. **Season length and Season-1 budget** — 90 days / 5,000,000 okay?
-5. **Do you want transfers at all**, given the abuse surface? A "gift" with
-   tight caps is the middle path.
-6. **The legacy Vault** — keep as a hall of fame (my advice), or migrate?
+Resolved in §0: unlocks (none), transfers (none), minimum test length (7 days).
+Still open:
+
+1. **Handles in phase 1**, or anonymous until phase 2? (My advice: handles —
+   people want a name on a public robot.)
+2. **Public notes:** opt-in per report (advice) or on by default?
+3. **Season length / Season-1 budget:** 90 days / 5,000,000 okay?
+4. **Legacy Vault:** keep as a hall of fame (advice) or retire?
 
 ## 13. Risks I want on record
 
@@ -174,3 +186,34 @@ Off by default. When enabled:
   need a legal check before phase 2 goes live. ⚖
 - **Small-sample luck:** 30-day, few-trade results are noisy; the min-trades
   rule and the delay mitigate but do not remove it.
+
+## 14. Background engagement (how it actually has to work)
+
+iOS does not let an app run a robot continuously in the background. What works:
+
+- **Server-side evaluation + push notifications (APNs).** The server holds
+  each locked robot, evaluates it when the daily candle closes (00:05 UTC) and
+  sends "Your robot paper-bought at $X". Reliable, battery-free, and matches
+  how daily-candle robots actually decide. Needs: a server, an APNs key from
+  the Apple Developer account, and the user's explicit notification
+  permission. Arrives with phase 2 (it needs the same server).
+- **Local best-effort (no server, earlier):** schedule a background refresh
+  that wakes the app after each daily close, recompute, and post a *local*
+  notification if the robot traded. iOS decides when/if it runs, so it may
+  arrive late or not at all; the app shows the result on next open either way.
+- **Faster robots (optional):** live tests could use hourly candles (the
+  exchange feed provides ~30 days of them) so a Sprint has ~170 decisions
+  instead of 7. More exciting, but a different kind of robot, and noisier.
+
+Notifications are opt-in, can be silenced per robot, and never contain
+anything beyond the robot's name and the paper action.
+
+## 15. Feel: haptics and sound
+
+- Haptics: buy, sell, breaking news, finished test, payout. System haptics
+  only (no private APIs).
+- Sound: short, quiet cues for the same events. Synthesised tones bundled
+  with the app, no third-party assets.
+- **Settings: separate switches for Haptics and Sound**, default on, and
+  honour the phone's silent switch and "Reduce motion".
+- Never required for play; every cue has a visual equivalent.
