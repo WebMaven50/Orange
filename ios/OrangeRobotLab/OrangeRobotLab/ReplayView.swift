@@ -231,6 +231,15 @@ struct ReplayView: View {
 
     // MARK: Playback
 
+    private func announce(from old: Int, to new: Int, in r: BacktestResult) {
+        guard new > old else { return }
+        let a = r.days.lowerBound + old, b = r.days.lowerBound + new
+        for t in r.trades {
+            if t.entryDay > a, t.entryDay <= b { Feedback.play(.buy); return }
+            if t.exitDay > a, t.exitDay <= b { Feedback.play(.sell); return }
+        }
+    }
+
     private func advance() {
         guard playing, let r = robot else { return }
         let last = r.days.count - 1
@@ -238,7 +247,9 @@ struct ReplayView: View {
         let whole = Int(carry)
         if whole > 0 {
             carry -= Double(whole)
+            let before = cursor
             cursor = min(cursor + whole, last)
+            announce(from: before, to: cursor, in: r)
             if cursor >= last { playing = false }
         }
     }

@@ -3,6 +3,7 @@ import OrangeRobotKit
 
 struct HomeView: View {
     @Environment(LabModel.self) private var lab
+    @State private var showSettings = false
 
     var body: some View {
         ScrollView {
@@ -94,6 +95,14 @@ struct HomeView: View {
         }
         .background(Theme.bg)
         .navigationBarHidden(true)
+        .overlay(alignment: .topTrailing) {
+            Button { showSettings = true } label: {
+                Image(systemName: "gearshape.fill").font(.system(size: 16, weight: .semibold))
+                    .frame(width: 38, height: 38).foregroundStyle(Theme.dim)
+            }
+            .padding(.trailing, 10).padding(.top, 4)
+        }
+        .sheet(isPresented: $showSettings) { SettingsView() }
     }
 
     private func bigCard(emoji: String, title: String, text: String) -> some View {

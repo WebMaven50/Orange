@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 import Observation
 import OrangeRobotKit
 
@@ -93,6 +94,7 @@ final class LabModel {
 
     func startLiveTest(_ strategy: Strategy, horizon: Int) {
         liveTests.insert(LiveTest(strategy: strategy, horizonDays: horizon), at: 0)
+        Feedback.play(.tap)
         persistLive()
         Task { await refreshLive() }
     }
@@ -120,7 +122,44 @@ final class LabModel {
                 : "Couldn't refresh just now, so this is the last data we have."
         }
         recordFinishedTests()
+        announceNewTrades()
+        updateReminders()
         persistLive()
+    }
+
+    // MARK: Notifications
+
+    var notificationsEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: "lab_notify") }
+        set { UserDefaults.standard.set(newValue, forKey: "lab_notify"); updateReminders() }
+    }
+
+    /// Tell the player about robot trades they haven't heard about yet.
+    private func announceNewTrades() {
+        for i in liveTests.indices {
+            let t = liveTests[i]
+            let events = LiveEvaluator.newEvents(liveStatus(t), after: t.lastNotifiedDay)
+            guard let newest = events.map(\.day).max() else { continue }
+            if notificationsEnabled {
+                for e in events.suffix(3) {
+                    LabNotifications.post(title: "Orange Robot Lab", body: e.message(robot: t.name))
+                }
+            }
+            // Always tell the player in-app, quietly.
+            if let last = events.last { Feedback.play(last.kind == .bought ? .buy : .sell) }
+            liveTests[i].lastNotifiedDay = newest
+        }
+    }
+
+    private func updateReminders() {
+        let active = liveTests.contains { liveStatus($0).phase != .finished }
+        LabNotifications.setDailyReminder(notificationsEnabled && active)
+        if active { LabNotifications.scheduleBackgroundRefresh() }
+    }
+
+    /// Called from the system's background refresh. Best effort: iOS may never run it.
+    func backgroundRefresh() async {
+        await refreshLive()
     }
 
     /// Finished tests go into the notebook on their own.

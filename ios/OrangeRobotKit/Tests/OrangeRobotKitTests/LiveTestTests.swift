@@ -134,3 +134,78 @@ final class LiveTestTests: XCTestCase {
         XCTAssertTrue(back.isIntact)
     }
 }
+
+final class LiveEventTests: XCTestCase {
+    private func at(day: Int) -> Date { Date(timeIntervalSince1970: Double(day) * 86_400 + 43_200) }
+
+    private func ramp(from startDay: Int, flat: Int = 60, up: Int = 20, down: Int = 20) -> [DailyCandle] {
+        var out: [DailyCandle] = []
+        var d = startDay - flat
+        for _ in 0..<flat { out.append(DailyCandle(day: d, open: 100, high: 100, low: 100, close: 100)); d += 1 }
+        var p = 100.0
+        for _ in 0..<up { p += 4; out.append(DailyCandle(day: d, open: p - 3, high: p + 1, low: p - 4, close: p)); d += 1 }
+        for _ in 0..<down { p -= 5; out.append(DailyCandle(day: d, open: p + 4, high: p + 5, low: p - 1, close: p)); d += 1 }
+        return out
+    }
+
+    private func test(horizon: Int) -> LiveTest {
+        var s = Strategy(name: "Trend", entry: [.priceAboveMA(period: 3)], exit: [.priceBelowMA(period: 3)],
+                         positionPercent: 100)
+        s.stopLossPercent = nil
+        return LiveTest(strategy: s, horizonDays: horizon, now: at(day: 20_000))
+    }
+
+    func testTrackIsSprintForAWeekAndMarathonForLonger() {
+        XCTAssertEqual(test(horizon: 7).track, .sprint)
+        XCTAssertEqual(test(horizon: 14).track, .sprint)
+        XCTAssertEqual(test(horizon: 30).track, .marathon)
+        XCTAssertEqual(test(horizon: 90).track, .marathon)
+    }
+
+    func testEventsListBuysAndSellsInOrder() {
+        let t = test(horizon: 40)
+        let s = LiveEvaluator.evaluate(t, candles: ramp(from: 20_000), now: at(day: 20_041))
+        let ev = LiveEvaluator.events(s)
+        XCTAssertFalse(ev.isEmpty)
+        XCTAssertEqual(ev.first?.kind, .bought)
+        XCTAssertEqual(ev.map(\.day), ev.map(\.day).sorted())
+        XCTAssertTrue(ev.contains { $0.kind == .sold })
+    }
+
+    func testNewEventsOnlyReturnsWhatWasNotAnnouncedYet() {
+        let t = test(horizon: 40)
+        let s = LiveEvaluator.evaluate(t, candles: ramp(from: 20_000), now: at(day: 20_041))
+        let all = LiveEvaluator.events(s)
+        let firstDay = all[0].day
+        XCTAssertEqual(LiveEvaluator.newEvents(s, after: nil).count, all.count)
+        XCTAssertEqual(LiveEvaluator.newEvents(s, after: firstDay).count, all.filter { $0.day > firstDay }.count)
+        XCTAssertTrue(LiveEvaluator.newEvents(s, after: all.last!.day).isEmpty)
+    }
+
+    func testNothingToAnnounceBeforeTheFirstClose() {
+        let t = test(horizon: 14)
+        let s = LiveEvaluator.evaluate(t, candles: ramp(from: 20_000), now: at(day: 20_000))
+        XCTAssertTrue(LiveEvaluator.events(s).isEmpty)
+    }
+
+    func testNewTestStartsWithNothingAlreadyAnnounced() {
+        let t = test(horizon: 14)
+        XCTAssertEqual(t.lastNotifiedDay, t.startDay - 1)
+    }
+
+    func testOldSavedTestsWithoutTheNewFieldStillLoad() throws {
+        let t = test(horizon: 14)
+        var json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(t)) as? [String: Any])
+        json.removeValue(forKey: "lastNotifiedDay")
+        let data = try JSONSerialization.data(withJSONObject: json)
+        let back = try JSONDecoder().decode(LiveTest.self, from: data)
+        XCTAssertNil(back.lastNotifiedDay)
+    }
+
+    func testMessages() {
+        let b = LiveEvent(kind: .bought, day: 1, price: 61_234.4, reason: nil, returnPercent: nil)
+        XCTAssertTrue(b.message(robot: "Trend").contains("paper-bought at $61,234"))
+        let s = LiveEvent(kind: .sold, day: 2, price: 64_000, reason: .takeProfit, returnPercent: 4.5)
+        XCTAssertTrue(s.message(robot: "Trend").contains("(+4.5%)"))
+    }
+}

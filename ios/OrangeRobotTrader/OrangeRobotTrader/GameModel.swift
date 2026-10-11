@@ -119,7 +119,13 @@ final class GameModel {
         let dt = now.timeIntervalSince(lastTick)
         lastTick = now
         guard phase == .playing else { return }
+        let fillsBefore = session.fills.count
         session.advance(seconds: dt)
+        if session.fills.count > fillsBefore, let f = session.fills.first, f.via != .market {
+            Feedback.play(f.side == .buy ? .buy : .sell)
+            flash = "\(f.via.rawValue.capitalized) \(f.side.rawValue) filled"
+            Task { try? await Task.sleep(for: .seconds(1.4)); if flash?.hasSuffix("filled") == true { flash = nil } }
+        }
         trackNews()
         if session.outcome != nil { finish() }
     }
@@ -140,7 +146,7 @@ final class GameModel {
         guard banner == nil, !session.isSleeping, !bannerQueue.isEmpty else { return }
         let item = bannerQueue.removeFirst()
         banner = item
-        Haptics.notify(.warning)
+        Feedback.play(.news)
         Task { [weak self] in
             try? await Task.sleep(for: .seconds(5.5))
             guard let self, self.banner?.id == item.id else { return }
@@ -175,7 +181,11 @@ final class GameModel {
                 totalSats = Wallet.sats
             }
         }
-        Haptics.notify(session.outcome == .bust ? .error : .success)
+        switch session.outcome {
+        case .win: Feedback.play(.win)
+        case .bust: Feedback.play(.bust)
+        default: Feedback.play(.finished)
+        }
     }
 
     // MARK: Ticket
@@ -214,7 +224,7 @@ final class GameModel {
         let level = Double(levelText.replacingOccurrences(of: ",", with: ""))
         do {
             try session.place(side: side, type: orderType, amountUSD: amountUSD, level: level)
-            Haptics.impact()
+            if orderType == .market { Feedback.play(side == .buy ? .buy : .sell) } else { Feedback.play(.tap) }
             flash = orderType == .market ? (side == .buy ? "Bought" : "Sold") : "Order placed"
             showOrderForm = false
             if session.outcome != nil { finish() }
@@ -313,9 +323,14 @@ final class GameModel {
     }
 }
 
+/// Thin wrapper so existing call sites respect the player's Haptics switch.
 enum Haptics {
-    static func impact() { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
+    static func impact() { Feedback.play(.tap) }
     static func notify(_ t: UINotificationFeedbackGenerator.FeedbackType) {
-        UINotificationFeedbackGenerator().notificationOccurred(t)
+        switch t {
+        case .success: Feedback.play(.finished)
+        case .error: Feedback.play(.bust)
+        default: Feedback.play(.news)
+        }
     }
 }

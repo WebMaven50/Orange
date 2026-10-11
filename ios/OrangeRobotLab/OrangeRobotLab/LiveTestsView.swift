@@ -4,7 +4,7 @@ import OrangeRobotKit
 struct LiveTestsView: View {
     @Environment(LabModel.self) private var lab
     @State private var choice: Strategy?
-    @State private var horizon = 30
+    @State private var horizon = 7
     @State private var confirm = false
 
     private var options: [Strategy] {
@@ -70,11 +70,14 @@ struct LiveTestsView: View {
                 }
                 Text("For how long?").font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
                 Picker("", selection: $horizon) {
-                    Text("2 weeks").tag(14); Text("30 days").tag(30); Text("90 days").tag(90)
+                    Text("7 days").tag(7); Text("30").tag(30); Text("60").tag(60); Text("90").tag(90)
                 }.pickerStyle(.segmented)
-                if horizon == 14 {
-                    Text("Two weeks is short: a daily robot may make only a trade or two, so treat it as a first look.")
+                if horizon < 30 {
+                    Text("🏃 Sprint: a quick first look. A daily robot makes only a few decisions in a week, so this is mostly luck.")
                         .font(.system(size: 11)).foregroundStyle(Theme.orange)
+                } else {
+                    Text("🏁 Marathon: the long-run test. Rules that stay ahead of just holding over \(horizon) days have really withstood time.")
+                        .font(.system(size: 11)).foregroundStyle(Theme.gold)
                 }
                 Button { confirm = true } label: {
                     Text("START LIVE TEST").font(.system(size: 15, weight: .black)).tracking(0.5)
@@ -94,7 +97,7 @@ struct LiveTestsView: View {
             HStack {
                 Text(t.name).font(.system(size: 15, weight: .heavy)).foregroundStyle(Theme.text)
                 Spacer()
-                Text(statusText(s)).font(.system(size: 10, weight: .black)).tracking(0.5)
+                Text((t.track == .sprint ? "🏃 " : "🏁 ") + statusText(s)).font(.system(size: 10, weight: .black)).tracking(0.5)
                     .padding(.horizontal, 7).padding(.vertical, 3)
                     .background((s.phase == .finished ? Theme.gold : Theme.green).opacity(0.18), in: Capsule())
                     .foregroundStyle(s.phase == .finished ? Theme.gold : Theme.green)

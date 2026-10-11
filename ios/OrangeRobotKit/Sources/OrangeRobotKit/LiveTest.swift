@@ -127,6 +127,8 @@ public struct LiveTest: Codable, Identifiable, Equatable, Sendable {
     /// SHA-256 of the locked rules, start day and horizon: proof the rules weren't changed afterwards.
     public let fingerprint: String
     public var recordedInNotebook: Bool
+    /// Last UTC day whose trades the player has already been told about.
+    public var lastNotifiedDay: Int?
 
     public init(strategy: Strategy, horizonDays: Int, now: Date = Date(), startCash: Double = 100_000) {
         let day = LiveFeed.dayNumber(now.timeIntervalSince1970)
@@ -139,6 +141,7 @@ public struct LiveTest: Codable, Identifiable, Equatable, Sendable {
         self.createdAt = now
         self.fingerprint = Self.fingerprint(strategy: strategy, startDay: day, horizon: horizonDays)
         self.recordedInNotebook = false
+        self.lastNotifiedDay = day - 1
     }
 
     public static func fingerprint(strategy: Strategy, startDay: Int, horizon: Int) -> String {
@@ -148,6 +151,11 @@ public struct LiveTest: Codable, Identifiable, Equatable, Sendable {
         data.append(contentsOf: "|\(startDay)|\(horizon)".utf8)
         return SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
     }
+
+    public enum Track: String, Sendable { case sprint, marathon }
+
+    /// 7-day tests are Sprints (an early look); 30 days and longer are Marathons.
+    public var track: Track { horizonDays >= 30 ? .marathon : .sprint }
 
     /// Rules still match what was locked.
     public var isIntact: Bool {
@@ -207,5 +215,51 @@ public enum LiveEvaluator {
                           robot: robot, robotEquity: robot.equity, holdEquity: hold,
                           history: history, days: range, latestCandleDay: closedThrough,
                           holdMetrics: holdMetrics)
+    }
+}
+
+
+/// Something the robot did that is worth telling the player about.
+public struct LiveEvent: Equatable, Sendable {
+    public enum Kind: String, Sendable { case bought, sold }
+    public let kind: Kind
+    /// UTC day number (days since 1970) the trade happened on.
+    public let day: Int
+    public let price: Double
+    public let reason: ExitReason?
+    public let returnPercent: Double?
+
+    /// Notification text.
+    public func message(robot: String) -> String {
+        switch kind {
+        case .bought:
+            return "\(robot) paper-bought at $\(Int(price.rounded()).formatted())."
+        case .sold:
+            let pct = returnPercent.map { String(format: " (%+.1f%%)", $0) } ?? ""
+            return "\(robot) paper-sold at $\(Int(price.rounded()).formatted())\(pct)."
+        }
+    }
+}
+
+public extension LiveEvaluator {
+    /// Every buy and sell in the test so far, oldest first.
+    static func events(_ status: LiveStatus) -> [LiveEvent] {
+        guard let robot = status.robot, let hist = status.history else { return [] }
+        let first = Int((hist.startDate.timeIntervalSince1970 / 86_400).rounded())
+        var out: [LiveEvent] = []
+        for t in robot.trades {
+            out.append(LiveEvent(kind: .bought, day: first + t.entryDay, price: t.entryPrice, reason: nil, returnPercent: nil))
+            // The end-of-test close is bookkeeping, not a decision the robot made.
+            if t.reason != .endOfTest {
+                out.append(LiveEvent(kind: .sold, day: first + t.exitDay, price: t.exitPrice,
+                                     reason: t.reason, returnPercent: t.returnPercent))
+            }
+        }
+        return out.sorted { ($0.day, $0.kind.rawValue) < ($1.day, $1.kind.rawValue) }
+    }
+
+    /// Events newer than the last one the player was told about.
+    static func newEvents(_ status: LiveStatus, after day: Int?) -> [LiveEvent] {
+        events(status).filter { $0.day > (day ?? Int.min) }
     }
 }

@@ -155,6 +155,8 @@ struct InfoView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(Activity.settingKey) private var shareCounts = true
     @AppStorage("live_flicker") private var liveFlicker = true
+    @AppStorage(Feedback.hapticsKey) private var haptics = true
+    @AppStorage(Feedback.soundKey) private var sound = true
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -171,6 +173,16 @@ struct InfoView: View {
                          "You don't have to wait for $1M or bankruptcy — cash out anytime to lock in your equity. You earn 1 virtual sat per dollar of profit.")
                     para("About virtual sats.",
                          "Virtual sats are game points. They have no cash value and cannot be redeemed for Bitcoin or money. All money in this game is simulated and prices are historical — it is a game, not financial advice.")
+                    VStack(alignment: .leading, spacing: 10) {
+                        Toggle(isOn: $haptics) {
+                            Text("Haptics").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.orange)
+                        }.tint(Theme.orange)
+                        Toggle(isOn: $sound) {
+                            Text("Sound effects").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.orange)
+                        }.tint(Theme.orange)
+                        Text("Small taps and tones for trades, breaking news and results. Sounds follow your phone's silent switch.")
+                            .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                    }
                     VStack(alignment: .leading, spacing: 6) {
                         Toggle(isOn: $liveFlicker) {
                             Text("Live price flicker")
