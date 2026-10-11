@@ -74,12 +74,19 @@ public struct DCAPlan: Codable, Equatable, Hashable, Sendable {
     public var intervalDays: Int
     public var dollarsPerBuy: Double?
     public var percentOfStart: Double?
+    /// When set, each purchase also adds this share (1...100) of the profit made so far,
+    /// paid from cash that is still waiting. Zero or nil means off.
+    public var reinvestPercent: Double?
 
-    public init(intervalDays: Int = 7, dollarsPerBuy: Double? = nil, percentOfStart: Double? = nil) {
+    public init(intervalDays: Int = 7, dollarsPerBuy: Double? = nil, percentOfStart: Double? = nil,
+                reinvestPercent: Double? = nil) {
         self.intervalDays = max(1, intervalDays)
         self.dollarsPerBuy = dollarsPerBuy.map { max($0, 1) }
         self.percentOfStart = percentOfStart.map { min(max($0, 0.1), 100) }
+        self.reinvestPercent = reinvestPercent.flatMap { $0 > 0 ? min($0, 100) : nil }
     }
+
+    public var reinvests: Bool { (reinvestPercent ?? 0) > 0 }
 
     public var label: String {
         switch intervalDays {
@@ -121,14 +128,20 @@ public struct DCAPlan: Codable, Equatable, Hashable, Sendable {
         var out = "Buys \(Self.money(amt)) \(label) · \(n) purchase\(n == 1 ? "" : "s") · \(Self.money(total)) in total"
         if startCash - total >= 1 { out += " · \(Self.money(startCash - total)) stays in cash" }
         if amt * Double(n) > startCash + 0.5 { out += " · stops when cash runs out" }
+        if let r = reinvestPercent, r > 0 {
+            out += " · plus \(String(format: "%g", r))% of the profit so far each time"
+        }
         return out
     }
 
     /// Short label without needing the test length.
     public var shortAmountText: String {
-        if let d = dollarsPerBuy { return Self.money(d) }
-        if let p = percentOfStart { return String(format: "%g%% of cash", p) }
-        return "an equal share of cash"
+        let base: String
+        if let d = dollarsPerBuy { base = Self.money(d) }
+        else if let p = percentOfStart { base = String(format: "%g%% of cash", p) }
+        else { base = "an equal share of cash" }
+        if let r = reinvestPercent, r > 0 { return base + String(format: " + %g%% of profit", r) }
+        return base
     }
 
     public static func money(_ x: Double) -> String { "$" + Int(x.rounded()).formatted() }

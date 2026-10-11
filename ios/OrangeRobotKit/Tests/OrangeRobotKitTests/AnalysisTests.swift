@@ -228,3 +228,62 @@ final class DCAContributionTests: XCTestCase {
         XCTAssertEqual(p.intervalDays, 7)
     }
 }
+
+final class DCAReinvestTests: XCTestCase {
+    private func rising(_ n: Int) -> PriceHistory {
+        PriceHistory(startDate: Date(timeIntervalSince1970: 1_600_000_000),
+                     bars: (0..<n).map { i in
+                         let p = 100.0 + Double(i) * 2
+                         return DayBar(open: p, high: p, low: p, close: p)
+                     })
+    }
+    private var free: BacktestSettings { var s = BacktestSettings(); s.fee = 0; s.slippage = 0; return s }
+
+    func testFirstBuyHasNoBonusLaterBuysDo() {
+        let h = rising(28)
+        let plan = DCAPlan(intervalDays: 7, dollarsPerBuy: 1_000, reinvestPercent: 50)
+        let r = Backtester(history: h).run(Strategy(name: "d", dca: plan), days: 0..<28, settings: free)
+        XCTAssertEqual(r.purchases.count, 4)
+        XCTAssertEqual(r.purchases[0].bonus, 0, accuracy: 1e-9)       // no profit yet
+        XCTAssertGreaterThan(r.purchases[1].bonus, 0)
+        XCTAssertGreaterThan(r.purchases[3].amount, r.purchases[1].amount, "contributions grow with profit")
+    }
+
+    func testBonusIsTheChosenShareOfProfit() throws {
+        let h = rising(28)
+        let plan = DCAPlan(intervalDays: 7, dollarsPerBuy: 1_000, reinvestPercent: 50)
+        let r = Backtester(history: h).run(Strategy(name: "d", dca: plan), days: 0..<28, settings: free)
+        // Before the 2nd buy (day 7): 10 BTC-equivalents bought at 100 -> shares = 10, price now 114.
+        let profit = 10 * (114 - 100)
+        XCTAssertEqual(r.purchases[1].bonus, Double(profit) * 0.5, accuracy: 1e-6)
+    }
+
+    func testNoProfitMeansNoBonus() {
+        let flat = PriceHistory(startDate: Date(timeIntervalSince1970: 1_600_000_000),
+                                bars: Array(repeating: DayBar(open: 100, high: 100, low: 100, close: 100), count: 28))
+        let plan = DCAPlan(intervalDays: 7, dollarsPerBuy: 1_000, reinvestPercent: 100)
+        let r = Backtester(history: flat).run(Strategy(name: "d", dca: plan), days: 0..<28, settings: free)
+        XCTAssertEqual(r.purchases.map(\.bonus), [0, 0, 0, 0])
+    }
+
+    func testBonusNeverSpendsMoreThanTheCashLeft() {
+        let h = rising(28)
+        let plan = DCAPlan(intervalDays: 7, dollarsPerBuy: 20_000, reinvestPercent: 100)
+        let r = Backtester(history: h).run(Strategy(name: "d", dca: plan), days: 0..<28, settings: free)
+        XCTAssertLessThanOrEqual(r.purchases.map(\.amount).reduce(0, +), 100_000 + 1e-6)
+    }
+
+    func testOffByDefaultAndOldPlansDecode() throws {
+        XCTAssertFalse(DCAPlan().reinvests)
+        let json = #"{"intervalDays":7,"dollarsPerBuy":500}"#.data(using: .utf8)!
+        let p = try JSONDecoder().decode(DCAPlan.self, from: json)
+        XCTAssertFalse(p.reinvests)
+        XCTAssertEqual(p.dollarsPerBuy, 500)
+    }
+
+    func testSummaryMentionsReinvesting() {
+        let p = DCAPlan(intervalDays: 7, dollarsPerBuy: 1_000, reinvestPercent: 50)
+        XCTAssertTrue(p.summary(startCash: 100_000, days: 365).contains("plus 50% of the profit so far"))
+        XCTAssertTrue(p.shortAmountText.contains("+ 50% of profit"))
+    }
+}

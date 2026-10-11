@@ -151,6 +151,37 @@ struct BuilderView: View {
                                 .font(.system(size: 13))
                             }
 
+                            Divider().overlay(Theme.line)
+
+                            // Reinvest a share of the profit so far into each purchase.
+                            Toggle(isOn: Binding(
+                                get: { plan.reinvests },
+                                set: { on in
+                                    var p = plan
+                                    p.reinvestPercent = on ? (p.reinvestPercent ?? 50) : nil
+                                    strategy.dca = p
+                                })) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Reinvest profits").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.text)
+                                    Text("Add a share of the profit so far to each purchase")
+                                        .font(.system(size: 11)).foregroundStyle(Theme.dim)
+                                }
+                            }.tint(Theme.orange)
+                            if plan.reinvests {
+                                HStack {
+                                    Text("Share of profit").foregroundStyle(Theme.dim)
+                                    Spacer()
+                                    Text(String(format: "%g%%", plan.reinvestPercent ?? 0))
+                                        .font(.system(size: 16, weight: .bold, design: .monospaced)).foregroundStyle(Theme.orange)
+                                    Stepper("", value: Binding(get: { plan.reinvestPercent ?? 50 },
+                                                               set: { var p = plan; p.reinvestPercent = $0; strategy.dca = p }),
+                                            in: 10...100, step: 10).labelsHidden()
+                                }
+                                .font(.system(size: 13))
+                                Text("Your gains are held in Bitcoin, so the extra comes from cash still waiting. With no cash left, nothing extra is added. Works best with Fixed $ or % of cash, which leave cash waiting.")
+                                    .font(.system(size: 11)).foregroundStyle(Theme.dim)
+                            }
+
                             // The plain-English bottom line, always visible.
                             VStack(alignment: .leading, spacing: 4) {
                                 Text("WHAT THIS MEANS").font(.system(size: 9, weight: .heavy)).tracking(1)

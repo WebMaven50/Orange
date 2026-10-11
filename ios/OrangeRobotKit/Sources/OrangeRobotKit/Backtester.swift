@@ -48,7 +48,9 @@ public struct BacktestSettings: Sendable {
 public struct Purchase: Equatable, Sendable {
     public let day: Int          // index into the price history
     public let price: Double
-    public let amount: Double    // dollars spent
+    public let amount: Double    // dollars spent (including any reinvested profit)
+    /// Part of `amount` that came from reinvesting profit.
+    public var bonus: Double = 0
 }
 
 public struct BacktestResult: Sendable {
@@ -292,13 +294,20 @@ public final class Backtester {
         var daysIn = 0
         for (k, i) in range.enumerated() {
             if k % interval == 0 {
-                let spend = min(amount, cash)
                 let price = bars[i].open * (1 + settings.slippage)
+                // Profit made so far, valued at today's open, before this purchase.
+                var bonus = 0.0
+                if plan.reinvests {
+                    let profit = max(0, cash + shares * bars[i].open - settings.startCash)
+                    bonus = profit * (plan.reinvestPercent ?? 0) / 100
+                }
+                let spend = min(amount + bonus, cash)
                 if spend > 1, price > 0 {
                     shares += spend * (1 - settings.fee) / price
                     grossQty += spend / price
                     spent += spend; cash -= spend
-                    purchases.append(Purchase(day: i, price: price, amount: spend))
+                    purchases.append(Purchase(day: i, price: price, amount: spend,
+                                              bonus: max(0, spend - amount)))
                 }
             }
             if shares > 0 { daysIn += 1 }

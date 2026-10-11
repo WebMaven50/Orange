@@ -103,6 +103,16 @@ public enum Analyzer {
             let idle = max(settings.startCash - spent, 0)
             add(.note, "How it works",
                 "\(n) purchases of \(DCAPlan.money(result.purchases.first?.amount ?? 0)), \(plan.label): \(DCAPlan.money(spent)) invested in total. Fees and slippage were charged on each.")
+            if plan.reinvests {
+                let extra = result.purchases.map(\.bonus).reduce(0, +)
+                if extra > 0 {
+                    add(.note, "Reinvested profits",
+                        "\(String(format: "%g", plan.reinvestPercent ?? 0))% of the profit so far was added to each purchase: \(DCAPlan.money(extra)) extra in total, paid from cash that was waiting.")
+                } else {
+                    add(.note, "Reinvesting did nothing here",
+                        "There was no profit to reinvest at the time of any purchase (or no cash left), so every buy was the plain amount.")
+                }
+            }
             if idle >= settings.startCash * 0.05 {
                 add(.note, "Part of your cash never went in",
                     "\(DCAPlan.money(idle)) of the \(DCAPlan.money(settings.startCash)) stayed in cash the whole test, which lowers the return compared with holding, because holding invests everything on day one.",
