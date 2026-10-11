@@ -91,8 +91,9 @@ struct LiveTestsView: View {
 
     private func row(_ t: LiveTest) -> some View {
         let s = lab.liveStatus(t)
-        let r = s.robotEquity.last.map { $0 / t.startCash - 1 }
-        let h = s.holdEquity.last.map { $0 / t.startCash - 1 }
+        let base = s.base > 0 ? s.base : t.startCash
+        let r = s.robotEquity.last.map { $0 / base - 1 }
+        let h = s.holdEquity.last.map { $0 / base - 1 }
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text(t.name).font(.system(size: 15, weight: .heavy)).foregroundStyle(Theme.text)
@@ -157,8 +158,9 @@ struct LiveTestDetailView: View {
 
     @ViewBuilder
     private func content(_ t: LiveTest, _ s: LiveStatus) -> some View {
-        let r = s.robotEquity.last.map { $0 / t.startCash - 1 }
-        let h = s.holdEquity.last.map { $0 / t.startCash - 1 }
+        let base = s.base > 0 ? s.base : t.startCash
+        let r = s.robotEquity.last.map { $0 / base - 1 }
+        let h = s.holdEquity.last.map { $0 / base - 1 }
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 Card {

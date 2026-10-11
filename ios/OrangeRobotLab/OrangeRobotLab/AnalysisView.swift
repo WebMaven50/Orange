@@ -10,7 +10,7 @@ struct AnalysisView: View {
     var body: some View {
         let range = lab.range(for: span)
         let robot = lab.backtester.run(strategy, days: range)
-        let hold = lab.backtester.buyAndHold(days: range)
+        let hold = lab.backtester.benchmark(for: robot, days: range)
         let a = Analyzer.analyze(strategy: strategy, result: robot, hold: hold, history: lab.backtester.history)
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {

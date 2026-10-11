@@ -287,3 +287,78 @@ final class DCAReinvestTests: XCTestCase {
         XCTAssertTrue(p.shortAmountText.contains("+ 50% of profit"))
     }
 }
+
+final class FairBenchmarkTests: XCTestCase {
+    private func history(_ prices: [Double]) -> PriceHistory {
+        PriceHistory(startDate: Date(timeIntervalSince1970: 1_600_000_000),
+                     bars: prices.map { DayBar(open: $0, high: $0, low: $0, close: $0) })
+    }
+    private var free: BacktestSettings { var s = BacktestSettings(); s.fee = 0; s.slippage = 0; return s }
+
+    func testBasisIsWhatWasActuallyInvested() {
+        let h = history(Array(repeating: 100, count: 28))
+        let plan = DCAPlan(intervalDays: 7, dollarsPerBuy: 1_000)
+        let r = Backtester(history: h).run(Strategy(name: "d", dca: plan), days: 0..<28, settings: free)
+        XCTAssertEqual(r.basis ?? 0, 4_000, accuracy: 1e-9)
+        XCTAssertEqual(r.equity.first ?? 0, 4_000, accuracy: 1e-9)       // measured on $4,000, not $100,000
+    }
+
+    func testHoldingIsGivenTheSameDollars() throws {
+        let h = history((0..<28).map { 100 + Double($0) })
+        let bt = Backtester(history: h)
+        let plan = DCAPlan(intervalDays: 7, dollarsPerBuy: 1_000)
+        let r = bt.run(Strategy(name: "d", dca: plan), days: 0..<28, settings: free)
+        let hold = bt.benchmark(for: r, days: 0..<28, settings: free)
+        XCTAssertEqual(hold.equity.first ?? 0, 4_000, accuracy: 1e-6)
+        // 4,000 at 100 -> 40 units; at 127 -> 5,080.
+        XCTAssertEqual(hold.equity.last ?? 0, 4_000 * 127 / 100, accuracy: 1e-6)
+        XCTAssertEqual(hold.metrics.totalReturn, 0.27, accuracy: 1e-9)
+    }
+
+    func testIdleCashNoLongerDistortsTheScore() {
+        // Flat market, no costs: an unfunded plan must score exactly even with holding.
+        let h = history(Array(repeating: 100, count: 28))
+        let bt = Backtester(history: h)
+        let plan = DCAPlan(intervalDays: 7, dollarsPerBuy: 1_000)
+        let r = bt.run(Strategy(name: "d", dca: plan), days: 0..<28, settings: free)
+        let hold = bt.benchmark(for: r, days: 0..<28, settings: free)
+        XCTAssertEqual(Score.vsHold(robotReturn: r.metrics.totalReturn, holdReturn: hold.metrics.totalReturn), 0, accuracy: 1e-9)
+    }
+
+    func testRisingMarketStillFavoursHoldingOnTheSameMoney() {
+        let h = history((0..<56).map { 100 + Double($0) * 2 })
+        let bt = Backtester(history: h)
+        let r = bt.run(Strategy(name: "d", dca: DCAPlan(intervalDays: 7, dollarsPerBuy: 2_000)), days: 0..<56, settings: free)
+        let hold = bt.benchmark(for: r, days: 0..<56, settings: free)
+        XCTAssertLessThan(r.metrics.totalReturn, hold.metrics.totalReturn)
+        XCTAssertLessThan(Score.vsHold(robotReturn: r.metrics.totalReturn, holdReturn: hold.metrics.totalReturn), 0)
+    }
+
+    func testSignalRobotsAreUnchanged() {
+        let h = history((0..<30).map { 100 + Double($0) })
+        let bt = Backtester(history: h)
+        let r = bt.run(Strategy(name: "s", entry: [.priceAbove(price: 110)]), days: 0..<30, settings: free)
+        XCTAssertNil(r.basis)
+        let hold = bt.benchmark(for: r, days: 0..<30, settings: free)
+        XCTAssertEqual(hold.equity.first ?? 0, 100_000, accuracy: 1e-6)
+    }
+
+    func testReinvestedBasisIncludesTheBonus() {
+        let h = history((0..<28).map { 100 + Double($0) * 2 })
+        let plan = DCAPlan(intervalDays: 7, dollarsPerBuy: 1_000, reinvestPercent: 50)
+        let r = Backtester(history: h).run(Strategy(name: "d", dca: plan), days: 0..<28, settings: free)
+        XCTAssertEqual(r.basis ?? 0, r.purchases.map(\.amount).reduce(0, +), accuracy: 1e-9)
+        XCTAssertGreaterThan(r.basis ?? 0, 4_000)
+    }
+
+    func testLiveHoldingUsesTheRobotsBasis() {
+        func day(_ d: Int) -> Date { Date(timeIntervalSince1970: Double(d) * 86_400 + 43_200) }
+        var candles: [DailyCandle] = []
+        for d in 19_900..<20_030 { candles.append(DailyCandle(day: d, open: 100, high: 100, low: 100, close: 100)) }
+        let t = LiveTest(strategy: Strategy(name: "d", dca: DCAPlan(intervalDays: 7, dollarsPerBuy: 1_000)),
+                         horizonDays: 14, now: day(20_000))
+        let s = LiveEvaluator.evaluate(t, candles: candles, now: day(20_020))
+        XCTAssertEqual(s.holdEquity.first ?? 0, 2_000, accuracy: 1e-6)   // 2 buys of $1,000 in 14 days
+        XCTAssertEqual(s.base, 2_000, accuracy: 1e-6)
+    }
+}

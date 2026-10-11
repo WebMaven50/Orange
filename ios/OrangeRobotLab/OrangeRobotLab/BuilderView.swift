@@ -189,7 +189,7 @@ struct BuilderView: View {
                                 Text(plan.summary(startCash: BacktestSettings().startCash, days: days))
                                     .font(.system(size: 13, weight: .semibold)).foregroundStyle(Theme.text)
                                     .fixedSize(horizontal: false, vertical: true)
-                                Text("Based on \(BacktestSettings().startCash.formatted(.currency(code: "USD").precision(.fractionLength(0)))) starting cash over \(days) days.")
+                                Text("Based on \(BacktestSettings().startCash.formatted(.currency(code: "USD").precision(.fractionLength(0)))) starting cash over \(days) days. Holding is compared using the same dollars you invest.")
                                     .font(.system(size: 11)).foregroundStyle(Theme.dim)
                             }
                             .padding(12).frame(maxWidth: .infinity, alignment: .leading)

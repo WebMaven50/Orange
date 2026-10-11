@@ -10,7 +10,7 @@ struct ResultView: View {
     var body: some View {
         let range = lab.range(for: span)
         let robot = lab.backtester.run(strategy, days: range)
-        let hold = lab.backtester.buyAndHold(days: range)
+        let hold = lab.backtester.benchmark(for: robot, days: range)
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 headline(robot, hold)
@@ -62,7 +62,7 @@ struct ResultView: View {
             // Every test goes in the notebook automatically.
             let range = lab.range(for: span)
             let r = lab.backtester.run(strategy, days: range)
-            let h = lab.backtester.buyAndHold(days: range)
+            let h = lab.backtester.benchmark(for: r, days: range)
             lab.recordTest(strategy: strategy, span: span, result: r.metrics, hold: h.metrics)
         }
         .navigationTitle(strategy.name)
@@ -78,6 +78,15 @@ struct ResultView: View {
                 WinnerBox(title: "JUST HOLDING", value: h.metrics.totalReturn, wins: !robotWins)
             }
             ScoreBanner(score: score, headline: scoreLine(r, h, robotWins))
+            if let basis = r.basis {
+                HStack(alignment: .top, spacing: 8) {
+                    Text("⚖️")
+                    Text("Fair comparison: \"just holding\" was given the same \(DCAPlan.money(basis)) your robot actually invested, and both returns are measured on that amount.")
+                        .font(.system(size: 11)).foregroundStyle(Theme.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
             if r.metrics.trades < 6 && strategy.dca == nil {
                 Text("⚠️ Only \(r.metrics.trades) trade\(r.metrics.trades == 1 ? "" : "s"): too few to say much about skill.")
                     .font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.orange)

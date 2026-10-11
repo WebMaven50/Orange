@@ -177,6 +177,8 @@ public struct LiveStatus: Sendable {
     public var latestCandleDay: Int?
     public var robotMetrics: Metrics? { robot?.metrics }
     public let holdMetrics: Metrics?
+    /// The dollars both sides are measured on (cost basis for DCA, otherwise the starting cash).
+    public var base: Double { holdEquity.first ?? 0 }
 }
 
 public enum LiveEvaluator {
@@ -203,13 +205,16 @@ public enum LiveEvaluator {
         var settings = BacktestSettings(); settings.startCash = test.startCash
         let robot = bt.run(test.strategy, days: range, settings: settings)
 
-        // Holding starts at the first open that comes *after* the test began.
-        var hold = [Double](repeating: test.startCash, count: robot.equity.count)
+        // Holding starts at the first open that comes *after* the test began, and is given the
+        // same dollars the robot actually invested (its cost basis).
+        let base = robot.base(startCash: test.startCash)
+        var hold = [Double](repeating: base, count: robot.equity.count)
         if range.count > 1 {
-            let h = bt.buyAndHold(days: (from + 1)..<to, settings: settings)
+            var hs = settings; hs.startCash = base
+            let h = bt.buyAndHold(days: (from + 1)..<to, settings: hs)
             for (i, v) in h.equity.enumerated() { hold[i + 1] = v }
         }
-        let holdMetrics = Backtester.metrics(equity: hold, trades: [], daysIn: hold.count, start: test.startCash)
+        let holdMetrics = Backtester.metrics(equity: hold, trades: [], daysIn: hold.count, start: base)
         return LiveStatus(phase: elapsed >= test.horizonDays ? .finished : .running,
                           elapsedDays: elapsed, horizonDays: test.horizonDays,
                           robot: robot, robotEquity: robot.equity, holdEquity: hold,

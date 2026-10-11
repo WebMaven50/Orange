@@ -60,6 +60,13 @@ public struct BacktestResult: Sendable {
     public let metrics: Metrics
     /// Filled only by DCA robots.
     public var purchases: [Purchase] = []
+    /// For DCA robots: the total dollars actually invested. Equity and metrics are measured
+    /// on this amount (money that never went in is left out), so the comparison with
+    /// holding can use the same dollars. Nil for signal robots (basis = starting cash).
+    public var basis: Double?
+
+    /// The money every percentage on this result is measured against.
+    public func base(startCash: Double) -> Double { basis ?? startCash }
 }
 
 /// Runs a `Strategy` over real daily candles.
@@ -314,6 +321,9 @@ public final class Backtester {
             equity.append(cash + shares * bars[i].close)
         }
         guard let last = range.last else { fatalError() }
+        // Money the plan never invested just sits in cash; leave it out so the result
+        // (and the comparison with holding) is about the dollars that were actually used.
+        let idle = settings.startCash - spent
         var trades: [Trade] = []
         if shares > 0, let first = purchases.first {
             let proceeds = shares * bars[last].close * (1 - settings.fee)
@@ -323,11 +333,21 @@ public final class Backtester {
                                 entryPrice: spent / max(grossQty, 1e-12), exitPrice: bars[last].close,
                                 returnPercent: (proceeds / spent - 1) * 100, reason: .endOfTest))
         }
-        var r = BacktestResult(days: range, equity: equity, trades: trades,
-                               metrics: Self.metrics(equity: equity, trades: trades, daysIn: daysIn,
-                                                     start: settings.startCash))
+        let basisEquity = equity.map { $0 - idle }
+        let base = max(spent, 1)
+        var r = BacktestResult(days: range, equity: basisEquity, trades: trades,
+                               metrics: Self.metrics(equity: basisEquity, trades: trades, daysIn: daysIn, start: base))
         r.purchases = purchases
+        r.basis = spent
         return r
+    }
+
+    /// The fair "just holding" comparison for a result: holding is given the same dollars.
+    public func benchmark(for result: BacktestResult, days: Range<Int>,
+                          settings: BacktestSettings = BacktestSettings()) -> BacktestResult {
+        var s = settings
+        if let b = result.basis, b > 0 { s.startCash = b }
+        return buyAndHold(days: days, settings: s)
     }
 
     /// Put everything in at the first open and hold to the last close, with the same costs.

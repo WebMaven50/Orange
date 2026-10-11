@@ -91,8 +91,8 @@ public enum Analyzer {
                 }
             }
             if holdRet > robotRet, holdRet > 0 {
-                add(.wrong, "Some of the money sat waiting in cash",
-                    "DCA only invests a little at a time, so in a rising market part of your money was not yet working. That's the price of spreading risk.")
+                add(.wrong, "Money went in a little at a time",
+                    "Holding put all \(DCAPlan.money(result.purchases.map(\.amount).reduce(0, +))) to work on day one, while DCA invested it in steps. In a rising market that lag costs return; it's the price of spreading risk.")
             }
             if holdRet < 0, robotRet > holdRet {
                 add(.right, "Smaller falls",
@@ -115,9 +115,8 @@ public enum Analyzer {
             }
             if idle >= settings.startCash * 0.05 {
                 add(.note, "Part of your cash never went in",
-                    "\(DCAPlan.money(idle)) of the \(DCAPlan.money(settings.startCash)) stayed in cash the whole test, which lowers the return compared with holding, because holding invests everything on day one.",
+                    "\(DCAPlan.money(idle)) of the \(DCAPlan.money(settings.startCash)) stayed in cash the whole test. It's left out of the comparison: holding was given the same \(DCAPlan.money(spent)) you actually invested, so the score is like for like.",
                     nil)
-                tips.append("Raise the amount per purchase (or choose \"spread evenly\") to compare like with like against holding.")
             }
             tips.append("DCA is about steady habit, not beating the market. Try a different interval, or compare the same plan over a falling year to see what it's for.")
             return Analysis(score: score, headline: headline, findings: out, suggestions: tips)

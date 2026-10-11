@@ -40,8 +40,9 @@ struct ReplayView: View {
             guard robot == nil else { return }
             let range = fixedRange ?? lab.range(for: span)
             var settings = BacktestSettings(); settings.startCash = startCash
-            robot = bt.run(strategy, days: range, settings: settings)
-            hold = bt.buyAndHold(days: range, settings: settings)
+            let r = bt.run(strategy, days: range, settings: settings)
+            robot = r
+            hold = bt.benchmark(for: r, days: range, settings: settings)
         }
         .onReceive(tick) { _ in advance() }
     }
@@ -54,7 +55,7 @@ struct ReplayView: View {
         let bar = bars[day]
         let held = r.holding(atCloseOf: day)
         let rEq = r.equity[cursor], hEq = h.equity[min(cursor, h.equity.count - 1)]
-        let start = startCash
+        let start = r.base(startCash: startCash)
 
         return ScrollView {
             VStack(spacing: 12) {
