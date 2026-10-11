@@ -22,7 +22,7 @@ struct SplashView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(Theme.text)
                     .multilineTextAlignment(.center)
-                Text("AI trading agents")
+                Text("Robot trading agents")
                     .font(.system(size: 14, weight: .bold)).tracking(2)
                     .textCase(.uppercase)
                     .foregroundStyle(Theme.dim)
