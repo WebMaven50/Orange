@@ -89,3 +89,54 @@ final class ChartViewportTests: XCTestCase {
         XCTAssertLessThanOrEqual(abs(e15 - e60), 60)
     }
 }
+
+final class PriceScaleTests: XCTestCase {
+    /// The bug: a 3-minute window on a $19,000 coin moves ~$20. It must fill the plot,
+    /// not be squashed into a ±2% band (±$380).
+    func testSmallMovesFillTheChart() {
+        let s = PriceScale.fit(dataHigh: 19_020, dataLow: 19_000, price: 19_010)
+        XCTAssertLessThan(s.high - s.low, 40, "range should hug the $20 of movement")
+        XCTAssertLessThan(s.low, 19_000)
+        XCTAssertGreaterThan(s.high, 19_020)
+        let fill = 20 / (s.high - s.low)
+        XCTAssertGreaterThan(fill, 0.8, "the data should use most of the plot height")
+    }
+
+    func testNormalRangesGetEvenPadding() {
+        let s = PriceScale.fit(dataHigh: 110, dataLow: 100, price: 105)
+        XCTAssertEqual(s.low, 100 - 10 * PriceScale.padding, accuracy: 1e-9)
+        XCTAssertEqual(s.high, 110 + 10 * PriceScale.padding, accuracy: 1e-9)
+    }
+
+    func testTrulyFlatDataGetsASmallBandNotAWideOne() {
+        let s = PriceScale.fit(dataHigh: 100, dataLow: 100, price: 100)
+        XCTAssertGreaterThan(s.high, 100)
+        XCTAssertLessThan(s.low, 100)
+        XCTAssertLessThan(s.high - s.low, 0.2, "about ±0.05%, not ±2%")
+    }
+
+    func testZoomStretchesAroundThePriceAndIsAdjustableAtTinyRanges() {
+        let base = PriceScale.fit(dataHigh: 19_020, dataLow: 19_000, price: 19_015)
+        let zoomed = PriceScale.fit(dataHigh: 19_020, dataLow: 19_000, price: 19_015, zoom: 4)
+        XCTAssertLessThan(zoomed.high - zoomed.low, (base.high - base.low) / 3,
+                          "zoom must work even when the data range is tiny")
+        XCTAssertEqual((zoomed.high + zoomed.low) / 2, 19_015, accuracy: 1e-6, "centred on the price")
+        let out = PriceScale.fit(dataHigh: 19_020, dataLow: 19_000, price: 19_015, zoom: 0.5)
+        XCTAssertGreaterThan(out.high - out.low, (base.high - base.low) * 1.5)
+    }
+
+    func testNeverGoesBelowZeroAndHandlesTinyPrices() {
+        let a = PriceScale.fit(dataHigh: 0.12, dataLow: 0.08, price: 0.1, zoom: 0.4)
+        XCTAssertGreaterThanOrEqual(a.low, 0)
+        let b = PriceScale.fit(dataHigh: 0.1001, dataLow: 0.1, price: 0.1)
+        XCTAssertGreaterThan(b.high - b.low, 0)
+    }
+
+    func testLabelPrecisionGrowsAsTheRangeShrinks() {
+        XCTAssertEqual(PriceScale.decimals(forSpan: 2_000), 0)
+        XCTAssertEqual(PriceScale.decimals(forSpan: 20), 1)
+        XCTAssertEqual(PriceScale.decimals(forSpan: 2), 2)
+        XCTAssertEqual(PriceScale.decimals(forSpan: 0.1), 3)
+        XCTAssertEqual(PriceScale.decimals(forSpan: 0.01), 4)
+    }
+}

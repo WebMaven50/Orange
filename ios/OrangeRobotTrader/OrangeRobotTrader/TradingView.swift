@@ -5,6 +5,8 @@ struct TradingView: View {
     @Bindable var model: GameModel
     @State private var panLast: CGFloat = 0
     @State private var zoomLast: CGFloat = 0
+    @State private var crosshair: CGPoint?
+    @State private var crosshairIndex = -1
 
     var body: some View {
         let s = model.session
@@ -33,7 +35,10 @@ struct TradingView: View {
                                              showBands: model.indicators.contains(.bollinger))
                             },
                             bottomFraction: panelShare,
-                            priceZoom: model.viewport.priceZoom)
+                            priceZoom: model.viewport.priceZoom,
+                            crosshair: crosshair,
+                            candleStarts: crosshair == nil ? [] : model.visibleCandleStarts(count: shown.count),
+                            timeLabel: { model.timeLabel(forMinute: $0) })
                 chartGestures
                 // RSI / MACD peek panels slide up over the bottom of the chart
                 if let ind, model.indicators.contains(.rsi) || model.indicators.contains(.macd) {
@@ -136,7 +141,7 @@ struct TradingView: View {
                 if model.showChartHint {
                     VStack {
                         Spacer()
-                        Text("Drag the chart to scroll back · drag the price scale to stretch it")
+                        Text("Drag to scroll back · drag the price scale to stretch · press and hold to measure")
                             .font(.system(size: 11, weight: .semibold))
                             .padding(.horizontal, 12).padding(.vertical, 7)
                             .background(Color.black.opacity(0.85), in: Capsule())
@@ -229,6 +234,20 @@ struct TradingView: View {
             HStack(spacing: 0) {
                 // Drag the chart itself to move through time.
                 Color.clear.contentShape(Rectangle())
+                    // Press and hold, then drag: crosshair with price, date and time.
+                    .highPriorityGesture(
+                        LongPressGesture(minimumDuration: 0.22, maximumDistance: 12)
+                            .sequenced(before: DragGesture(minimumDistance: 0))
+                            .onChanged { value in
+                                guard case .second(true, let drag?) = value else { return }
+                                if crosshair == nil { Feedback.play(.tap) }
+                                crosshair = drag.location
+                                let w = max((g.size.width - axis) / 48, 1)
+                                let i = Int(drag.location.x / w)
+                                if i != crosshairIndex { crosshairIndex = i; Feedback.play(.select) }
+                            }
+                            .onEnded { _ in crosshair = nil; crosshairIndex = -1 }
+                    )
                     .gesture(
                         DragGesture(minimumDistance: 6)
                             .onChanged { v in

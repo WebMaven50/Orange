@@ -39,6 +39,11 @@ struct CandleChart: View {
     /// How many candle slots span the plot. Fewer candles hug the right edge,
     /// so a brand-new run reads like a real chart that is just getting started.
     var slots = 48
+    /// A finger held on the chart: shows crosshair lines with the price, date and time.
+    var crosshair: CGPoint?
+    /// Game-minute at which each of `candles` starts (same order), for the time label.
+    var candleStarts: [Double] = []
+    var timeLabel: ((Double) -> String)?
 
     var body: some View {
         Canvas { ctx, size in
@@ -57,18 +62,13 @@ struct CandleChart: View {
                 if ov.showMA { extra += ov.data.ma20 + ov.data.ma50 }
                 for v in extra.compactMap({ $0 }) { hi = max(hi, v); lo = min(lo, v) }
             }
-            if abs(priceZoom - 1) > 0.001 {
-                let mid = lastPrice
-                let half = max(hi - lo, mid * 0.002) / 2 / priceZoom
-                hi = mid + half
-                lo = max(0, mid - half)
+            // Fit the scale to the data so candles fill the plot, at any timeframe.
+            let fit = PriceScale.fit(dataHigh: hi, dataLow: lo, price: lastPrice, zoom: priceZoom)
+            hi = fit.high; lo = fit.low
+            let span = hi - lo
+            func priceText(_ p: Double) -> String {
+                span >= 1_000 ? Fmt.axis(p) : Fmt.usd(p, decimals: PriceScale.decimals(forSpan: span))
             }
-            if hi - lo < hi * 0.002 {          // flat market: give it a visible band
-                let mid = (hi + lo) / 2
-                hi = mid * 1.02; lo = mid * 0.98
-            }
-            let pad = (hi - lo) * 0.06
-            hi += pad; lo = max(0, lo - pad)  // a price axis never goes below zero
             func y(_ p: Double) -> CGFloat { plot.minY + plot.height * CGFloat(1 - (p - lo) / (hi - lo)) }
 
             // Grid + axis labels
@@ -77,7 +77,7 @@ struct CandleChart: View {
                 let gy = y(p)
                 var g = Path(); g.move(to: CGPoint(x: 0, y: gy)); g.addLine(to: CGPoint(x: plot.maxX, y: gy))
                 ctx.stroke(g, with: .color(Theme.line.opacity(0.6)), lineWidth: 0.5)
-                ctx.draw(Text(Fmt.axis(p)).font(.system(size: 9, design: .monospaced))
+                ctx.draw(Text(priceText(p)).font(.system(size: 9, design: .monospaced))
                     .foregroundColor(Theme.dim),
                          at: CGPoint(x: plot.maxX + 4, y: gy), anchor: .leading)
             }
@@ -192,8 +192,53 @@ struct CandleChart: View {
                        style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
             let tag = CGRect(x: plot.maxX + 1, y: ly - 8, width: labelW - 2, height: 16)
             ctx.fill(Path(roundedRect: tag, cornerRadius: 3), with: .color(Theme.orange))
-            ctx.draw(Text(Fmt.axis(lastPrice)).font(.system(size: 9, weight: .bold, design: .monospaced))
+            ctx.draw(Text(priceText(lastPrice)).font(.system(size: 9, weight: .bold, design: .monospaced))
                 .foregroundColor(.black), at: CGPoint(x: tag.midX, y: tag.midY))
+
+            // Crosshair (press and hold, then drag)
+            if let p = crosshair {
+                let w2 = plot.width / CGFloat(max(slots, candles.count))
+                let fromRight = Int(floor((plot.maxX - p.x) / w2))
+                let idx = min(max(candles.count - 1 - fromRight, 0), candles.count - 1)
+                let cx = x(idx)
+                let cy = min(max(p.y, plot.minY), plot.maxY)
+                let price = lo + (hi - lo) * Double(1 - (cy - plot.minY) / plot.height)
+                let c = candles[idx]
+                let lineColor = Color.white.opacity(0.75)
+
+                var v = Path(); v.move(to: CGPoint(x: cx, y: plot.minY)); v.addLine(to: CGPoint(x: cx, y: plot.maxY))
+                var hz = Path(); hz.move(to: CGPoint(x: 0, y: cy)); hz.addLine(to: CGPoint(x: plot.maxX, y: cy))
+                let dash = StrokeStyle(lineWidth: 0.8, dash: [3, 3])
+                ctx.stroke(v, with: .color(lineColor), style: dash)
+                ctx.stroke(hz, with: .color(lineColor), style: dash)
+                ctx.fill(Path(ellipseIn: CGRect(x: cx - 3.5, y: cy - 3.5, width: 7, height: 7)), with: .color(.white))
+
+                // price tag on the axis
+                let ptag = CGRect(x: plot.maxX + 1, y: cy - 9, width: labelW - 2, height: 18)
+                ctx.fill(Path(roundedRect: ptag, cornerRadius: 3), with: .color(Color.white))
+                ctx.draw(Text(priceText(price)).font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundColor(.black), at: CGPoint(x: ptag.midX, y: ptag.midY))
+
+                // date / time tag along the bottom
+                if let label = timeLabel, idx < candleStarts.count {
+                    let text = Text(label(candleStarts[idx])).font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundColor(.black)
+                    let tw: CGFloat = 156
+                    let tx = min(max(cx - tw / 2, 2), plot.maxX - tw + labelW - 4)
+                    let ttag = CGRect(x: tx, y: plot.maxY - 20, width: tw, height: 18)
+                    ctx.fill(Path(roundedRect: ttag, cornerRadius: 3), with: .color(Color.white))
+                    ctx.draw(text, at: CGPoint(x: ttag.midX, y: ttag.midY))
+                }
+
+                // O H L C readout
+                func bare(_ v: Double) -> String { priceText(v).replacingOccurrences(of: "$", with: "") }
+                let readout = "O \(bare(c.open))  H \(bare(c.high))  L \(bare(c.low))  C \(bare(c.close))"
+                let r = CGRect(x: 6, y: plot.minY + 2, width: min(size.width - 150, 250), height: 18)
+                ctx.fill(Path(roundedRect: r, cornerRadius: 4), with: .color(Color.black.opacity(0.78)))
+                ctx.draw(Text(readout).font(.system(size: 9, weight: .semibold, design: .monospaced))
+                    .foregroundColor(c.close >= c.open ? Theme.green : Theme.red),
+                         at: CGPoint(x: r.minX + 8, y: r.midY), anchor: .leading)
+            }
         }
         .background(Theme.panel)
     }

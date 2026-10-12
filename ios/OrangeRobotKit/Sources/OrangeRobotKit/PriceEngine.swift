@@ -63,11 +63,12 @@ public final class PriceEngine {
         if envelope <= 0 { return base }
         let bar = history.bar(at: dayIdx)
         let range = max(bar.high - bar.low, bar.close * 0.002)
-        let amp = range * 0.010
+        let amp = range * 0.020
         let minute = f * 1440
+        let fast = Self.valueNoise(day: dayIdx, t: minute * 12, salt: 3)         // ~5 game-seconds
         let fine = Self.valueNoise(day: dayIdx, t: minute * 4, salt: 1)          // ~15 game-seconds
         let slow = Self.valueNoise(day: dayIdx, t: minute / 3, salt: 2)          // ~3 game-minutes
-        let noisy = base + amp * envelope * (0.7 * fine + 1.1 * slow)
+        let noisy = base + amp * envelope * (0.5 * fast + 0.8 * fine + 1.1 * slow)
         // Never leave the day's real range (unless the path itself starts outside it).
         return min(max(noisy, min(bar.low, base)), max(bar.high, base))
     }

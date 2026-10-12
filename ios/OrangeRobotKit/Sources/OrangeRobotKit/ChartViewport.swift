@@ -50,3 +50,48 @@ public struct ChartViewport: Equatable, Sendable {
     public mutating func resetZoom() { priceZoom = 1 }
     public mutating func reset() { end = nil; priceZoom = 1 }
 }
+
+/// Picks the price range a chart should display so the candles fill the plot.
+public enum PriceScale {
+    /// Share of the data range added above and below.
+    public static let padding = 0.08
+    /// If the data is flatter than this share of the price, show a thin band around it
+    /// instead (a perfectly flat line would otherwise have no scale at all).
+    public static let flatShare = 0.0001
+    public static let flatBand = 0.0005
+
+    /// - Parameters:
+    ///   - dataHigh/dataLow: the highest and lowest value that must stay on screen.
+    ///   - price: the current price (the anchor when the scale is stretched).
+    ///   - zoom: 1 fits the data; above 1 stretches in around `price`, below 1 squeezes out.
+    public static func fit(dataHigh: Double, dataLow: Double, price: Double, zoom: Double = 1)
+        -> (low: Double, high: Double) {
+        var hi = max(dataHigh, dataLow), lo = min(dataHigh, dataLow)
+        let anchor = price > 0 ? price : (hi + lo) / 2
+
+        if hi - lo < anchor * flatShare {                      // a truly flat stretch
+            hi = anchor * (1 + flatBand); lo = anchor * (1 - flatBand)
+        }
+        if abs(zoom - 1) > 0.001, zoom > 0 {
+            // Stretch around the price, keeping the same overall span the data would have used.
+            let half = (hi - lo) / 2 / zoom
+            hi = anchor + half
+            lo = anchor - half
+        } else {
+            let pad = (hi - lo) * padding
+            hi += pad; lo -= pad
+        }
+        return (max(0, lo), hi)
+    }
+
+    /// How many decimals a price label needs so neighbouring grid lines look different.
+    public static func decimals(forSpan span: Double) -> Int {
+        switch span {
+        case ..<0.02: return 4
+        case ..<0.2: return 3
+        case ..<5: return 2
+        case ..<50: return 1
+        default: return 0
+        }
+    }
+}

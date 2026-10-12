@@ -314,6 +314,29 @@ final class GameModel {
         return session.engine.candles(timeframeMinutes: timeframe, count: count, atMinute: end)
     }
 
+    /// Start minute (game clock) of each of the last `count` candles, in order.
+    func visibleCandleStarts(count: Int) -> [Double] {
+        let tf = timeframe
+        let end = viewport.effectiveEnd(timeframe: tf, liveMinute: session.absMinute)
+        let lastBucket: Int
+        if tf >= 1440 {
+            lastBucket = Int(floor(end / 1440)) / (tf / 1440)     // same bucketing as the engine
+        } else {
+            lastBucket = Int(floor(end / Double(tf)))
+        }
+        return (0..<count).map { k in Double(lastBucket - (count - 1 - k)) * Double(tf) }
+    }
+
+    /// "Mar 8, 2017 · 9:15 AM" (or just the date for daily and longer candles).
+    func timeLabel(forMinute m: Double) -> String {
+        let date = Fmt.date(session.engine.date(forDayOffset: Int(floor(m / 1440))))
+        if timeframe >= 10_080 { return "Week of " + date }
+        if timeframe >= 1_440 { return date }
+        var mod = m.truncatingRemainder(dividingBy: 1440)
+        if mod < 0 { mod += 1440 }
+        return date + " · " + Fmt.clock(minuteOfDay: Int(mod))
+    }
+
     /// The date at the chart's right edge when scrolled back; nil when live.
     var viewedDate: Date? {
         guard !viewport.isLive else { return nil }
