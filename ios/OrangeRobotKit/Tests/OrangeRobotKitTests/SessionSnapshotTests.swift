@@ -48,7 +48,7 @@ final class SessionSnapshotTests: XCTestCase {
     func testSleepInFlightIsCompletedInTheSnapshot() throws {
         var s = try played()
         let start = s.absMinute
-        XCTAssertTrue(s.startDaySkip())
+        XCTAssertTrue(s.skipDays(1))
         let snap = try XCTUnwrap(s.snapshot())
         XCTAssertEqual(snap.absMinute, start + 1440, accuracy: 1e-9)
     }
@@ -59,16 +59,38 @@ final class SessionSnapshotTests: XCTestCase {
         XCTAssertNil(GameSession(snapshot: snap))
     }
 
-    func testDaySkipMovesAFullDayAndKeepsOrdersWorking() throws {
+    func testDaySkipIsInstantAndNotASleep() throws {
         var s = try played()
         let start = s.absMinute
-        XCTAssertTrue(s.startDaySkip())
-        XCTAssertTrue(s.isSleeping)
-        XCTAssertFalse(s.startSleep(), "already skipping")
-        var frames = 0
-        while s.isSleeping && frames < 1000 { s.advance(seconds: 0.05); frames += 1 }
-        XCTAssertLessThan(frames, 1000)
-        XCTAssertFalse(s.isSleeping)
+        XCTAssertTrue(s.skipDays(1))
+        XCTAssertFalse(s.isSleeping, "a day skip is not a sleep")
         XCTAssertEqual(s.absMinute, start + 1440, accuracy: 1e-6)
+    }
+
+    func testSeveralPressesStackDays() throws {
+        var s = try played()
+        let start = s.absMinute
+        for _ in 0..<7 { XCTAssertTrue(s.skipDays(1)) }
+        XCTAssertEqual(s.absMinute, start + 7 * 1440, accuracy: 1e-6)
+    }
+
+    func testSkipFillsALimitThatWouldHaveTriggeredOnTheWay() throws {
+        var s = GameSession.starting(at: Date(timeIntervalSince1970: 1_580_000_000))
+        try s.place(side: .buy, type: .market, amountUSD: 10_000)
+        let now = s.absMinute
+        // The real intraday peak of the next day, sampled on the same path the skip walks.
+        let peak = (0...144).map { s.engine.price(atMinute: now + Double($0) * 10) }.max()!
+        XCTAssertGreaterThan(peak, s.lastPrice, "pick a day that rises, or the test proves nothing")
+        try s.place(side: .sell, type: .limit, amountUSD: 10_000, level: peak * 0.9999)
+        XCTAssertEqual(s.pendingOrders.count, 1)
+        XCTAssertTrue(s.skipDays(1))
+        XCTAssertTrue(s.pendingOrders.isEmpty, "the limit should have filled during the skipped day")
+        XCTAssertEqual(s.fills.first?.via, .limit)
+    }
+
+    func testSkipDoesNothingWhilePaused() throws {
+        var s = try played()
+        s.pause()
+        XCTAssertFalse(s.skipDays(1))
     }
 }

@@ -33,9 +33,8 @@ public struct GameSession {
     public static let winTarget = 1_000_000.0
     public static let sleepGameMinutes = 480.0
     public static let sleepRealSeconds = 3.0
-    /// A day-long skip ("check back tomorrow"): a little longer on screen than the 8 hours.
-    public static let daySkipGameMinutes = 1440.0
-    public static let daySkipRealSeconds = 5.0
+    /// How finely a day skip checks resting orders as it passes through the day.
+    public static let skipStepMinutes = 10.0
 
     public let engine: PriceEngine
     public private(set) var absMinute: Double
@@ -201,11 +200,21 @@ public struct GameSession {
         return true
     }
 
-    /// Skip a whole day: same rules as sleeping, three times as far.
+    /// Jump ahead by whole days instantly. Every step through the skipped time is checked
+    /// against resting orders, so a limit or stop that would have triggered still fills at
+    /// its own level. Stops early if the run ends. Returns false when the jump isn't allowed.
     @discardableResult
-    public mutating func startDaySkip() -> Bool {
-        guard isRunning, !isSleeping, !isPaused else { return false }
-        sleep = (absMinute, 0, Self.daySkipGameMinutes, Self.daySkipRealSeconds)
+    public mutating func skipDays(_ days: Int = 1) -> Bool {
+        guard isRunning, !isSleeping, !isPaused, days > 0 else { return false }
+        let steps = Int((Double(days) * 1440 / Self.skipStepMinutes).rounded())
+        for _ in 0..<steps {
+            absMinute += Self.skipStepMinutes
+            lastPrice = engine.price(atMinute: absMinute)
+            checkPendingOrders()
+            bestEquity = max(bestEquity, equity)
+            checkEndConditions()
+            if !isRunning { break }
+        }
         return true
     }
 

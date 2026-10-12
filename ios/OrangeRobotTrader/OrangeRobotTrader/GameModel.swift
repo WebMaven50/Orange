@@ -530,8 +530,16 @@ final class GameModel {
     }
 
     func sleep() { if session.startSleep() { Feedback.play(.pause) } }
-    /// Skip a whole day, for the "check back tomorrow" style of play.
-    func skipDay() { if session.startDaySkip() { Feedback.play(.pause) } }
+    /// Jump ahead one day at a time. Each press is instant and stacks: seven presses is a week.
+    func skipDay() {
+        guard session.skipDays(1) else { return }
+        Feedback.play(.select)
+        trackNews()
+        trackMoments()
+        if session.outcome != nil { finish() } else { saveRun() }
+        flash = "Jumped to \(Fmt.date(session.currentDate))"
+        Task { try? await Task.sleep(for: .seconds(1.6)); if flash?.hasPrefix("Jumped") == true { flash = nil } }
+    }
     func cashOut() { session.cashOut(); finish() }
     func cancel(_ id: Int) { session.cancelOrder(id: id); Feedback.play(.select) }
     func updateOrder(id: Int, level: Double, fraction: Double) throws {
