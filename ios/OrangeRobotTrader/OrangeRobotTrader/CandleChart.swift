@@ -64,12 +64,23 @@ struct CandleChart: View {
             }
             // Fit the scale to the data so candles fill the plot, at any timeframe.
             let fit = PriceScale.fit(dataHigh: hi, dataLow: lo, price: lastPrice, zoom: priceZoom)
+            let dataTop = hi, dataBottom = lo
             hi = fit.high; lo = fit.low
             let span = hi - lo
             func priceText(_ p: Double) -> String {
                 span >= 1_000 ? Fmt.axis(p) : Fmt.usd(p, decimals: PriceScale.decimals(forSpan: span))
             }
             func y(_ p: Double) -> CGFloat { plot.minY + plot.height * CGFloat(1 - (p - lo) / (hi - lo)) }
+            // Price stretched past the edge (price zoom): say so, instead of looking cut off.
+            let edgeText = { (t: String) in
+                Text(t).font(.system(size: 10, weight: .bold)).foregroundColor(Theme.orange)
+            }
+            if dataTop > hi {
+                ctx.draw(edgeText("▲ higher prices off the scale"), at: CGPoint(x: plot.midX, y: plot.minY + 14))
+            }
+            if dataBottom < lo {
+                ctx.draw(edgeText("▼ lower prices off the scale"), at: CGPoint(x: plot.midX, y: plot.maxY - 14))
+            }
 
             // Grid + axis labels
             for k in 0...4 {
