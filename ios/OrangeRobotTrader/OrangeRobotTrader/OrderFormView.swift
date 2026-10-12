@@ -160,7 +160,25 @@ struct OrderFormView: View {
                     nudge("Market") { model.levelText = String(format: "%.2f", s.lastPrice) }
                 }
             }
+            if let warning = limitWarning(s) {
+                Text(warning).font(.system(size: 12, weight: .semibold)).foregroundStyle(Theme.orange)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
         }
+    }
+
+    /// A limit on the wrong side of the market fills at once, at the market price.
+    private func limitWarning(_ s: GameSession) -> String? {
+        guard model.orderType == .limit,
+              let v = Double(model.levelText.replacingOccurrences(of: ",", with: "")), v > 0 else { return nil }
+        let now = Fmt.usd(s.lastPrice, decimals: s.lastPrice < 1000 ? 2 : 0)
+        if model.side == .sell && v < s.lastPrice {
+            return "Below the market (\(now)): this will sell right away at the market price. Raise the limit to wait for a higher price."
+        }
+        if model.side == .buy && v > s.lastPrice {
+            return "Above the market (\(now)): this will buy right away at the market price. Lower the limit to wait for a dip."
+        }
+        return nil
     }
 
     private func nudge(_ t: String, _ run: @escaping () -> Void) -> some View {
@@ -178,19 +196,32 @@ struct OrderFormView: View {
     private func amountSection(_ s: GameSession) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("AMOUNT (USD)").font(.system(size: 10, weight: .heavy)).tracking(1).foregroundStyle(Theme.dim)
+                Text(model.amountInBTC ? "AMOUNT (BTC)" : "AMOUNT (USD)")
+                    .font(.system(size: 10, weight: .heavy)).tracking(1).foregroundStyle(Theme.dim)
                 Spacer()
-                Text("Max \(Fmt.usd(model.maxAmount, decimals: 0))")
+                Text(model.amountInBTC ? "Max \(String(format: "%.6f", model.maxQuantity)) ₿"
+                                       : "Max \(Fmt.usd(model.maxAmount, decimals: 0))")
                     .font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.dim)
+                HStack(spacing: 0) {
+                    unitTab("USD", inBTC: false)
+                    unitTab("BTC", inBTC: true)
+                }
+                .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 7))
             }
             HStack(spacing: 6) {
-                Text("$").font(.system(size: 22, weight: .bold, design: .monospaced)).foregroundStyle(Theme.dim)
+                Text(model.amountInBTC ? "₿" : "$")
+                    .font(.system(size: 22, weight: .bold, design: .monospaced)).foregroundStyle(Theme.dim)
                 TextField("0", text: Binding(
-                    get: { focus == .amount ? amountDraft : String(format: "%.2f", model.amountUSD) },
+                    get: {
+                        if focus == .amount { return amountDraft }
+                        return model.amountInBTC ? String(format: "%.6f", model.quantity)
+                                                 : String(format: "%.2f", model.amountUSD)
+                    },
                     set: { new in
                         amountDraft = new
-                        let v = Double(new.replacingOccurrences(of: ",", with: ""))
-                        if let v, model.maxAmount > 0 { model.fraction = min(max(v / model.maxAmount, 0), 1) }
+                        guard let v = Double(new.replacingOccurrences(of: ",", with: "")) else { return }
+                        if model.amountInBTC { model.setQuantity(v) }
+                        else if model.maxAmount > 0 { model.fraction = min(max(v / model.maxAmount, 0), 1) }
                     }))
                     .keyboardType(.decimalPad)
                     .focused($focus, equals: .amount)
@@ -203,7 +234,8 @@ struct OrderFormView: View {
             HStack(spacing: 6) {
                 ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { p in
                     Button { focus = nil; model.fraction = p } label: {
-                        Text("\(Int(p * 100))%").font(.system(size: 13, weight: .bold))
+                        Text(p == 1.0 && model.side == .sell && s.btc > 0 ? "All" : "\(Int(p * 100))%")
+                            .font(.system(size: 13, weight: .bold))
                             .frame(maxWidth: .infinity).padding(.vertical, 9)
                             .background(abs(model.fraction - p) < 0.001 ? Theme.orange : Theme.panel2,
                                         in: RoundedRectangle(cornerRadius: 8))
@@ -219,18 +251,35 @@ struct OrderFormView: View {
         }
     }
 
+    private func unitTab(_ t: String, inBTC: Bool) -> some View {
+        Button {
+            focus = nil
+            if model.amountInBTC != inBTC { Feedback.play(.select) }
+            model.amountInBTC = inBTC
+        } label: {
+            Text(t).font(.system(size: 11, weight: .heavy))
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(model.amountInBTC == inBTC ? Theme.orange : Color.clear,
+                            in: RoundedRectangle(cornerRadius: 7))
+                .foregroundStyle(model.amountInBTC == inBTC ? Color.black : Theme.dim)
+        }
+    }
+
     // MARK: Summary
 
     private func summary(_ s: GameSession) -> some View {
-        let amt = model.amountUSD
-        let qty = s.lastPrice > 0 ? amt / s.lastPrice : 0
-        let fee = amt * GameSession.fee
+        let ref = model.referencePrice
+        let qty = model.quantity
+        let atLevel = model.orderType == .limit || model.orderType == .stop
+        let gross = model.side == .buy ? model.amountUSD : qty * ref
+        let fee = gross * GameSession.fee
         let isShort = model.side == .sell && s.btc <= 0
         return VStack(spacing: 6) {
-            row("Quantity", String(format: "≈ %.5f ₿", qty))
+            row("Quantity", String(format: "%.6f ₿", qty))
+            if atLevel { row("At price", Fmt.usd(ref, decimals: ref < 1000 ? 2 : 0)) }
             row("Fee (0.26%)", Fmt.usd(fee))
             row(model.side == .buy ? "You pay" : "You receive",
-                Fmt.usd(model.side == .buy ? amt : amt - fee), bold: true)
+                Fmt.usd(model.side == .buy ? gross : gross - fee), bold: true)
             if isShort {
                 Text("You hold no BTC, so this opens a **short**: you borrow BTC and profit if the price falls. Losses can wipe you out.")
                     .font(.system(size: 11)).foregroundStyle(Theme.orange)
@@ -286,7 +335,9 @@ struct OrderFormView: View {
             focus = nil
             model.submit()
         } label: {
-            Text("\(verb) \(Fmt.compact(model.amountUSD)) OF BTC\(kind)")
+            Text(model.amountInBTC
+                 ? "\(verb) \(String(format: "%.5f", model.quantity)) ₿\(kind)"
+                 : "\(verb) \(Fmt.compact(model.amountUSD)) OF BTC\(kind)")
                 .font(.system(size: 16, weight: .black)).tracking(0.5)
                 .frame(maxWidth: .infinity).padding(.vertical, 16)
                 .background(model.side == .buy ? Theme.green : Theme.red, in: RoundedRectangle(cornerRadius: 12))
@@ -294,6 +345,7 @@ struct OrderFormView: View {
         }
         .disabled(s.isSleeping || model.amountUSD < 1)
         .opacity(s.isSleeping || model.amountUSD < 1 ? 0.45 : 1)
+        .accessibilityLabel(Text("\(verb) order"))
         .padding(.horizontal, 16).padding(.vertical, 10)
         .background(Theme.panel)
         .overlay(alignment: .top) { Rectangle().fill(Theme.line).frame(height: 1) }

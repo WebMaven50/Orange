@@ -252,6 +252,28 @@ final class GameModel {
     var amountUSD: Double { maxAmount * fraction }
     var needsLevel: Bool { orderType != .market }
 
+    /// Whether the ticket's amount field is in BTC (otherwise USD).
+    var amountInBTC = false
+
+    /// Price the order is sized at: the limit/stop level when one is typed, else the market.
+    var referencePrice: Double {
+        if orderType == .limit || orderType == .stop,
+           let v = Double(levelText.replacingOccurrences(of: ",", with: "")), v > 0 { return v }
+        return session.lastPrice
+    }
+    /// Most BTC this order could be for. Selling a position is exactly what you hold.
+    var maxQuantity: Double {
+        if side == .sell && session.btc > 0 { return session.btc }
+        let p = referencePrice
+        guard p > 0 else { return 0 }
+        return maxAmount * (side == .buy ? (1 - GameSession.fee) : 1) / p
+    }
+    var quantity: Double { maxQuantity * fraction }
+    func setQuantity(_ q: Double) {
+        guard maxQuantity > 0 else { return }
+        fraction = min(max(q / maxQuantity, 0), 1)
+    }
+
     func toggleIndicator(_ k: IndicatorKind) {
         if indicators.contains(k) { indicators.remove(k) } else { indicators.insert(k) }
         Feedback.play(.select)
