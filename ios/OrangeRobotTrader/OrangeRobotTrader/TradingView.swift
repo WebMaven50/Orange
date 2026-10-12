@@ -3,13 +3,16 @@ import OrangeRobotKit
 
 struct TradingView: View {
     @Bindable var model: GameModel
+    @State private var panLast: CGFloat = 0
+    @State private var zoomLast: CGFloat = 0
 
     var body: some View {
         let s = model.session
         // Indicators need history before the visible window to warm up.
         let wanted = model.indicators.isEmpty ? 48 : 48 + 130
-        let series = s.candles(timeframeMinutes: model.timeframe, count: wanted)
+        let series = model.visibleCandles(count: wanted)
         let shown = Array(series.suffix(48))
+        let displayPrice = model.viewport.isLive ? s.lastPrice : (shown.last?.close ?? s.lastPrice)
         let panelCount = (model.indicators.contains(.rsi) ? 1 : 0) + (model.indicators.contains(.macd) ? 1 : 0)
         let panelShare = CGFloat(panelCount) * 0.22
         let ind: IndicatorData? = model.indicators.isEmpty ? nil
@@ -23,13 +26,15 @@ struct TradingView: View {
             ZStack {
                 CandleChart(style: model.chartStyle,
                             candles: shown,
-                            lastPrice: s.lastPrice, orders: s.pendingOrders,
+                            lastPrice: displayPrice, orders: s.pendingOrders,
                             overlay: ind.map {
                                 ChartOverlay(data: $0,
                                              showMA: model.indicators.contains(.ma),
                                              showBands: model.indicators.contains(.bollinger))
                             },
-                            bottomFraction: panelShare)
+                            bottomFraction: panelShare,
+                            priceZoom: model.viewport.priceZoom)
+                chartGestures
                 // RSI / MACD peek panels slide up over the bottom of the chart
                 if let ind, model.indicators.contains(.rsi) || model.indicators.contains(.macd) {
                     GeometryReader { g in
@@ -100,6 +105,46 @@ struct TradingView: View {
                     }
                     .padding(.top, 40)
                     .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+                // Pills that bring the chart back: to the present, and to automatic scaling
+                if !model.viewport.isLive || !model.viewport.isDefaultZoom {
+                    VStack(alignment: .leading, spacing: 6) {
+                        if let d = model.viewedDate {
+                            Button { model.chartGoLive() } label: {
+                                Label("\(Fmt.date(d)) · Latest", systemImage: "forward.end.fill")
+                                    .font(.system(size: 11, weight: .heavy))
+                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .background(Theme.orange, in: Capsule())
+                                    .foregroundStyle(.black)
+                            }
+                        }
+                        if !model.viewport.isDefaultZoom {
+                            Button { model.resetPriceScale() } label: {
+                                Label("Auto scale", systemImage: "arrow.up.and.down")
+                                    .font(.system(size: 11, weight: .heavy))
+                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .background(Theme.panel2.opacity(0.95), in: Capsule())
+                                    .overlay(Capsule().stroke(Theme.orange))
+                                    .foregroundStyle(Theme.orange)
+                            }
+                        }
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, 6).padding(.top, s.isRandomStart ? 8 : 34)
+                }
+                if model.showChartHint {
+                    VStack {
+                        Spacer()
+                        Text("Drag the chart to scroll back · drag the price scale to stretch it")
+                            .font(.system(size: 11, weight: .semibold))
+                            .padding(.horizontal, 12).padding(.vertical, 7)
+                            .background(Color.black.opacity(0.85), in: Capsule())
+                            .foregroundStyle(Theme.text)
+                            .padding(.bottom, 10)
+                    }
+                    .transition(.opacity)
+                    .allowsHitTesting(false)
                 }
                 if !s.isRandomStart {
                     VStack {
@@ -175,12 +220,47 @@ struct TradingView: View {
         .animation(.easeOut(duration: 0.2), value: model.flash)
     }
 
+    // MARK: Chart gestures
+
+    @ViewBuilder
+    private var chartGestures: some View {
+        GeometryReader { g in
+            let axis: CGFloat = 62
+            HStack(spacing: 0) {
+                // Drag the chart itself to move through time.
+                Color.clear.contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 6)
+                            .onChanged { v in
+                                let dx = v.translation.width - panLast
+                                panLast = v.translation.width
+                                let perCandle = max((g.size.width - axis) / 48, 1)
+                                model.panChart(candlesBack: Double(dx / perCandle))
+                            }
+                            .onEnded { _ in panLast = 0 }
+                    )
+                // Drag the price scale up/down to stretch it, like an exchange chart.
+                Color.clear.frame(width: axis).contentShape(Rectangle())
+                    .gesture(
+                        DragGesture(minimumDistance: 2)
+                            .onChanged { v in
+                                let dy = v.translation.height - zoomLast
+                                zoomLast = v.translation.height
+                                model.zoomPrice(by: exp(-Double(dy) / 140))
+                            }
+                            .onEnded { _ in zoomLast = 0 }
+                    )
+                    .onTapGesture(count: 2) { model.resetPriceScale() }
+            }
+        }
+    }
+
     // MARK: Sections
 
     private var topBar: some View {
         HStack {
             HStack(spacing: 8) {
-                Text("🤖").font(.system(size: 14))
+                Image("RobotEmojiOrange").resizable().scaledToFit().frame(width: 20, height: 20)
                     .frame(width: 26, height: 26)
                     .background(LinearGradient(colors: [Theme.orange, Theme.orangeDim],
                                                startPoint: .topLeading, endPoint: .bottomTrailing),

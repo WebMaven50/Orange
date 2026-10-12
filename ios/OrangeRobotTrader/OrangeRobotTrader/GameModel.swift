@@ -18,6 +18,9 @@ final class GameModel {
     var phase: Phase = .intro
     var session: GameSession = .random()
     var timeframe = 15
+    /// Where the chart is looking: live, or pinned back in time, plus the price-scale zoom.
+    private(set) var viewport = ChartViewport()
+    var showChartHint = false
     /// Indicators the player has switched on for this run (peek tools, off by default).
     var indicators: Set<IndicatorKind> = []
     var showIndicatorMenu = false
@@ -90,9 +93,11 @@ final class GameModel {
         indicators = []
         showIndicatorMenu = false
         autoPaused = false
+        viewport.reset()
         moments = MomentMonitor()
         wasSleeping = false
         Feedback.play(.start)
+        maybeShowChartHint()
         showOrderForm = false
         showPositions = false
         showNews = false
@@ -299,6 +304,40 @@ final class GameModel {
         speed = new
         session.speed = new
         Feedback.play(.select)
+    }
+
+    // MARK: Chart viewport
+
+    /// Candles for the chart, ending at the pinned moment when scrolled back.
+    func visibleCandles(count: Int) -> [Candle] {
+        let end = viewport.effectiveEnd(timeframe: timeframe, liveMinute: session.absMinute)
+        return session.engine.candles(timeframeMinutes: timeframe, count: count, atMinute: end)
+    }
+
+    /// The date at the chart's right edge when scrolled back; nil when live.
+    var viewedDate: Date? {
+        guard !viewport.isLive else { return nil }
+        let end = viewport.effectiveEnd(timeframe: timeframe, liveMinute: session.absMinute)
+        return session.engine.date(forDayOffset: Int(floor(end / 1440)))
+    }
+
+    func panChart(candlesBack n: Double) {
+        let wasLive = viewport.isLive
+        viewport.pan(candlesBack: n, timeframe: timeframe, liveMinute: session.absMinute,
+                     startDay: session.engine.startDay)
+        if !wasLive && viewport.isLive { Feedback.play(.select) }
+    }
+
+    func chartGoLive() { viewport.goLive(); Feedback.play(.select) }
+    func zoomPrice(by f: Double) { viewport.zoom(by: f) }
+    func resetPriceScale() { viewport.resetZoom(); Feedback.play(.select) }
+
+    /// A one-time hint about the chart gestures.
+    func maybeShowChartHint() {
+        guard !UserDefaults.standard.bool(forKey: "chart_hint_seen") else { return }
+        UserDefaults.standard.set(true, forKey: "chart_hint_seen")
+        showChartHint = true
+        Task { try? await Task.sleep(for: .seconds(6)); showChartHint = false }
     }
 
     // MARK: Pause

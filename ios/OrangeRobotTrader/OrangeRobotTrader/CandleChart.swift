@@ -34,6 +34,8 @@ struct CandleChart: View {
     /// Share of the chart's height covered by peek panels (RSI / MACD) at the bottom.
     /// The price scale fits the space above them so candles are never hidden.
     var bottomFraction: CGFloat = 0
+    /// 1 = fit the data; > 1 stretches the price scale in around the current price.
+    var priceZoom: Double = 1
     /// How many candle slots span the plot. Fewer candles hug the right edge,
     /// so a brand-new run reads like a real chart that is just getting started.
     var slots = 48
@@ -54,6 +56,12 @@ struct CandleChart: View {
                 if ov.showBands { extra += ov.data.bbUpper + ov.data.bbLower }
                 if ov.showMA { extra += ov.data.ma20 + ov.data.ma50 }
                 for v in extra.compactMap({ $0 }) { hi = max(hi, v); lo = min(lo, v) }
+            }
+            if abs(priceZoom - 1) > 0.001 {
+                let mid = lastPrice
+                let half = max(hi - lo, mid * 0.002) / 2 / priceZoom
+                hi = mid + half
+                lo = max(0, mid - half)
             }
             if hi - lo < hi * 0.002 {          // flat market: give it a visible band
                 let mid = (hi + lo) / 2

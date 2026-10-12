@@ -27,26 +27,15 @@ struct StartPickerView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 18) {
-                    // Random
-                    Button { start(.random) } label: {
-                        VStack(spacing: 4) {
-                            Text("🎲  RANDOM DATE").font(.system(size: 17, weight: .black)).tracking(1)
-                            Text("A surprise window of real history.\nCounts for the leaderboard and virtual sats.")
-                                .font(.system(size: 12)).multilineTextAlignment(.center).opacity(0.8)
-                        }
-                        .frame(maxWidth: .infinity).padding(.vertical, 16)
-                        .background(Theme.orange, in: RoundedRectangle(cornerRadius: 14))
-                        .foregroundStyle(.black)
+                    // 1. Pick a moment
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("SELECT A DATE").font(.system(size: 11, weight: .heavy)).tracking(1.5)
+                            .foregroundStyle(Theme.orange)
+                        Text("Start from a famous moment, or spin the wheels to any date and time.")
+                            .font(.system(size: 12)).foregroundStyle(Theme.dim)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                    HStack {
-                        Rectangle().fill(Theme.line).frame(height: 1)
-                        Text("OR PICK YOUR MOMENT").font(.system(size: 10, weight: .heavy)).tracking(1)
-                            .foregroundStyle(Theme.dim).fixedSize()
-                        Rectangle().fill(Theme.line).frame(height: 1)
-                    }
-
-                    // Famous moments
                     VStack(alignment: .leading, spacing: 8) {
                         Text("FAMOUS MOMENTS").font(.system(size: 10, weight: .heavy)).tracking(1)
                             .foregroundStyle(Theme.dim)
@@ -56,36 +45,53 @@ struct StartPickerView: View {
                         }
                     }
 
-                    // Date + time
-                    VStack(spacing: 12) {
-                        HStack {
-                            Text("Date").foregroundStyle(Theme.text)
-                            Spacer()
-                            DatePicker("", selection: $moment, in: range, displayedComponents: .date)
-                                .labelsHidden().datePickerStyle(.compact)
-                        }
-                        HStack {
-                            Text("Time").foregroundStyle(Theme.text)
-                            Spacer()
-                            DatePicker("", selection: $moment, in: range, displayedComponents: .hourAndMinute)
-                                .labelsHidden().datePickerStyle(.compact)
-                        }
+                    // 2. The wheels
+                    VStack(spacing: 4) {
+                        Text(Fmt.date(moment) + " · " + Self.timeText(moment))
+                            .font(.system(size: 15, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Theme.orange)
+                        DatePicker("", selection: $moment, in: range, displayedComponents: .date)
+                            .labelsHidden().datePickerStyle(.wheel)
+                            .frame(maxWidth: .infinity).frame(height: 130).clipped()
+                        DatePicker("", selection: $moment, in: range, displayedComponents: .hourAndMinute)
+                            .labelsHidden().datePickerStyle(.wheel)
+                            .frame(maxWidth: .infinity).frame(height: 100).clipped()
                         Text("Game time is UTC. Data covers Jul 2010 – \(Self.lastPlayable(range)).")
                             .font(.system(size: 11)).foregroundStyle(Theme.dim)
                     }
                     .padding(14)
                     .background(Theme.panel, in: RoundedRectangle(cornerRadius: 12))
                     .environment(\.timeZone, TimeZone(identifier: "UTC")!)
+                    .environment(\.colorScheme, .dark)
 
                     Button { start(.moment(moment)) } label: {
                         VStack(spacing: 3) {
-                            Text("START FROM THIS MOMENT").font(.system(size: 15, weight: .black)).tracking(0.5)
+                            Text("START FROM THIS DATE").font(.system(size: 15, weight: .black)).tracking(0.5)
                             Text("Practice run — doesn't count for the leaderboard or virtual sats.")
                                 .font(.system(size: 11)).opacity(0.7).multilineTextAlignment(.center)
                         }
                         .frame(maxWidth: .infinity).padding(.vertical, 14)
                         .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.orange, lineWidth: 1.5))
                         .foregroundStyle(Theme.orange)
+                    }
+
+                    // 3. Random, last
+                    HStack {
+                        Rectangle().fill(Theme.line).frame(height: 1)
+                        Text("OR").font(.system(size: 10, weight: .heavy)).tracking(1)
+                            .foregroundStyle(Theme.dim).fixedSize()
+                        Rectangle().fill(Theme.line).frame(height: 1)
+                    }
+
+                    Button { start(.random) } label: {
+                        VStack(spacing: 4) {
+                            Text("🎲  RANDOM DAY").font(.system(size: 17, weight: .black)).tracking(1)
+                            Text("A surprise moment in real history.\nCounts for the leaderboard and virtual sats.")
+                                .font(.system(size: 12)).multilineTextAlignment(.center).opacity(0.8)
+                        }
+                        .frame(maxWidth: .infinity).padding(.vertical, 16)
+                        .background(Theme.orange, in: RoundedRectangle(cornerRadius: 14))
+                        .foregroundStyle(.black)
                     }
                 }
                 .padding(20)
@@ -128,6 +134,12 @@ struct StartPickerView: View {
     private static func utc(_ y: Int, _ m: Int, _ d: Int, _ h: Int, _ min: Int) -> Date {
         var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "UTC")!
         return c.date(from: DateComponents(year: y, month: m, day: d, hour: h, minute: min))!
+    }
+
+    private static func timeText(_ d: Date) -> String {
+        var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "UTC")!
+        let m = c.component(.hour, from: d) * 60 + c.component(.minute, from: d)
+        return Fmt.clock(minuteOfDay: m)
     }
 
     private static func lastPlayable(_ r: ClosedRange<Date>) -> String { Fmt.date(r.upperBound) }
