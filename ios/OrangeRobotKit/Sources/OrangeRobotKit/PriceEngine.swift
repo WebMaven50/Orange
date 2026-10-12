@@ -59,16 +59,20 @@ public final class PriceEngine {
 
         // Flicker: zero at both ends of every anchor segment, so anchors
         // (including the real high, low and close) are hit exactly.
-        let envelope = 4 * t * (1 - t)
+        let envelope = min(1, 6 * t * (1 - t))
         if envelope <= 0 { return base }
         let bar = history.bar(at: dayIdx)
         let range = max(bar.high - bar.low, bar.close * 0.002)
-        let amp = range * 0.020
         let minute = f * 1440
-        let fast = Self.valueNoise(day: dayIdx, t: minute * 12, salt: 3)         // ~5 game-seconds
-        let fine = Self.valueNoise(day: dayIdx, t: minute * 4, salt: 1)          // ~15 game-seconds
-        let slow = Self.valueNoise(day: dayIdx, t: minute / 3, salt: 2)          // ~3 game-minutes
-        let noisy = base + amp * envelope * (0.5 * fast + 0.8 * fine + 1.1 * slow)
+        // Fractal texture: each octave's size grows with the square root of its time scale,
+        // like a real tape, so candles at every timeframe get believable bodies and wicks.
+        func octave(_ lattice: Double, _ salt: UInt32) -> Double {
+            let size = 1.3 * (lattice / 1440).squareRoot()
+            return size * Self.valueNoise(day: dayIdx, t: minute / lattice, salt: salt)
+        }
+        let texture = octave(30, 4) + octave(10, 5) + octave(3, 2) + octave(1, 6)
+                    + octave(0.25, 1) + octave(1.0 / 12, 3)
+        let noisy = base + range * envelope * texture
         // Never leave the day's real range (unless the path itself starts outside it).
         return min(max(noisy, min(bar.low, base)), max(bar.high, base))
     }
