@@ -29,6 +29,9 @@ public enum OrderError: Error, Equatable, Sendable {
     case amountTooSmall
     case invalidPrice
     case orderNotFound
+    /// A stop on the wrong side of the market would trigger instantly (a sell stop above the
+    /// price, a buy stop below it). `limit` is true when a limit order is what they meant.
+    case stopOnWrongSide(side: Side)
 }
 
 public enum GameOutcome: String, Codable, Sendable {

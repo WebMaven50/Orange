@@ -291,12 +291,18 @@ final class GameModel {
             switch error as? OrderError {
             case .invalidPrice: flash = needsLevel ? "Enter a valid \(orderType == .trailing ? "trail %" : "price")" : nil
             case .amountTooSmall: flash = "Nothing to trade"
+            case .stopOnWrongSide(let s):
+                let now = Fmt.usd(session.lastPrice, decimals: session.lastPrice < 1000 ? 2 : 0)
+                flash = s == .sell
+                    ? "A sell stop must sit below the market (\(now)). To sell higher, use Limit."
+                    : "A buy stop must sit above the market (\(now)). To buy lower, use Limit."
             default: flash = nil
             }
         }
         if flash != nil {
             let msg = flash
-            Task { try? await Task.sleep(for: .seconds(1.2)); if flash == msg { flash = nil } }
+            let secs = (msg?.count ?? 0) > 30 ? 3.2 : 1.2
+            Task { try? await Task.sleep(for: .seconds(secs)); if flash == msg { flash = nil } }
         }
     }
 

@@ -233,6 +233,7 @@ public struct GameSession {
         }
 
         guard let level, level.isFinite, level > 0 else { throw OrderError.invalidPrice }
+        try checkStopSide(side: side, type: type, level: level)
         let maxNow = maxAmount(for: side)
         let fraction = maxNow > 0 ? min(max(amountUSD / maxNow, 0), 1) : 0
         let order = PendingOrder(id: nextOrderID, type: type, side: side,
@@ -258,11 +259,21 @@ public struct GameSession {
         guard let i = pendingOrders.firstIndex(where: { $0.id == id }) else { throw OrderError.orderNotFound }
         if let level {
             guard level.isFinite, level > 0 else { throw OrderError.invalidPrice }
+            try checkStopSide(side: pendingOrders[i].side, type: pendingOrders[i].type, level: level)
             pendingOrders[i].level = level
         }
         if let amountFraction {
             guard amountFraction.isFinite, amountFraction > 0 else { throw OrderError.amountTooSmall }
             pendingOrders[i].amountFraction = min(amountFraction, 1)
+        }
+    }
+
+    /// A stop that is already past its trigger would fire the moment it is placed, which is
+    /// never what the player meant (usually they wanted a limit order). Refuse it instead.
+    private func checkStopSide(side: Side, type: OrderType, level: Double) throws {
+        guard type == .stop else { return }
+        if (side == .sell && level >= lastPrice) || (side == .buy && level <= lastPrice) {
+            throw OrderError.stopOnWrongSide(side: side)
         }
     }
 
@@ -306,9 +317,10 @@ public struct GameSession {
                 break
             case .limit:
                 if o.side == .buy, price <= o.level {
-                    executeBuy(liveAmount(for: o), at: o.level, via: o.type); filled = true
+                    // A limit never fills worse than its level, and a marketable one gets the market.
+                    executeBuy(liveAmount(for: o), at: min(o.level, price), via: o.type); filled = true
                 } else if o.side == .sell, price >= o.level {
-                    executeSell(liveAmount(for: o), at: o.level, via: o.type); filled = true
+                    executeSell(liveAmount(for: o), at: max(o.level, price), via: o.type); filled = true
                 }
             case .stop:
                 if o.side == .buy, price >= o.level {

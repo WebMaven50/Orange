@@ -46,16 +46,42 @@ final class GameSessionTests: XCTestCase {
         XCTAssertEqual(s.pendingOrders.count, 1)
         s.advance(seconds: 0.016)
         XCTAssertTrue(s.pendingOrders.isEmpty)
-        XCTAssertEqual(s.btc, 10_000 * (1 - 0.0026) / (p * 1.5), accuracy: 1e-9)
+        // A buy limit above the market is marketable: it fills at the market, not at the limit.
+        XCTAssertEqual(s.btc, 10_000 * (1 - 0.0026) / s.lastPrice, accuracy: 1e-9)
     }
 
     func testStopSellFillsWhenPriceFalls() throws {
         var s = session()
         try s.place(side: .buy, type: .market, amountUSD: 50_000)
-        try s.place(side: .sell, type: .stop, amountUSD: 50_000, level: s.lastPrice * 2)
-        s.advance(seconds: 0.016) // price already below trigger
+        // Trigger just under the market, then let the price fall through it.
+        try s.place(side: .sell, type: .stop, amountUSD: 50_000, level: s.lastPrice * 0.9999999)
+        for _ in 0..<2000 where !s.pendingOrders.isEmpty { s.advance(seconds: 0.5) }
         XCTAssertTrue(s.pendingOrders.isEmpty)
         XCTAssertEqual(s.btc, 0, accuracy: 1e-9) // 100% sells the whole position, no dust
+    }
+
+    func testStopOnTheWrongSideOfTheMarketIsRefused() throws {
+        var s = session()
+        try s.place(side: .buy, type: .market, amountUSD: 50_000)
+        XCTAssertThrowsError(try s.place(side: .sell, type: .stop, amountUSD: 10_000, level: s.lastPrice * 1.5)) {
+            XCTAssertEqual($0 as? OrderError, .stopOnWrongSide(side: .sell))
+        }
+        XCTAssertThrowsError(try s.place(side: .buy, type: .stop, amountUSD: 10_000, level: s.lastPrice * 0.5))
+        XCTAssertTrue(s.pendingOrders.isEmpty)
+        // The right side is fine, and a limit above the market is a normal take-profit.
+        try s.place(side: .sell, type: .stop, amountUSD: 10_000, level: s.lastPrice * 0.9)
+        try s.place(side: .sell, type: .limit, amountUSD: 10_000, level: s.lastPrice * 1.5)
+        XCTAssertEqual(s.pendingOrders.count, 2)
+    }
+
+    func testSellLimitAboveMarketRests() throws {
+        var s = session()
+        try s.place(side: .buy, type: .market, amountUSD: 50_000)
+        let before = s.btc
+        try s.place(side: .sell, type: .limit, amountUSD: 50_000, level: s.lastPrice * 1.5)
+        s.advance(seconds: 0.016)
+        XCTAssertEqual(s.pendingOrders.count, 1)
+        XCTAssertEqual(s.btc, before, accuracy: 1e-12)
     }
 
     func testTrailingStopFollowsHighs() throws {
@@ -303,7 +329,8 @@ final class GameSessionTests: XCTestCase {
         try s.modifyOrder(id: o.id, level: p * 3)
         s.advance(seconds: 0.016)
         XCTAssertTrue(s.pendingOrders.isEmpty)
-        XCTAssertEqual(s.fills.first?.price ?? 0, p * 3, accuracy: 1e-9)
+        // Moved above the market, the limit is marketable and fills at the market price.
+        XCTAssertEqual(s.fills.first?.price ?? 0, s.lastPrice, accuracy: 1e-9)
     }
 
     func testTrailingEditKeepsBestPriceMemory() throws {

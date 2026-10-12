@@ -150,6 +150,10 @@ struct EditOrderView: View {
         do {
             try model.updateOrder(id: o.id, level: level, fraction: fraction)
             dismiss()
+        } catch OrderError.stopOnWrongSide(let side) {
+            self.error = side == .sell
+                ? "A sell stop must sit below the current price. To sell higher, use a limit order."
+                : "A buy stop must sit above the current price. To buy lower, use a limit order."
         } catch {
             self.error = "Couldn't change the order right now."
         }
