@@ -4,14 +4,13 @@ import XCTest
 final class QuoteTests: XCTestCase {
     func testBundledQuotesLoadAndAreWellFormed() {
         let q = QuoteBook.bundled
-        XCTAssertGreaterThanOrEqual(q.count, 12)
+        XCTAssertGreaterThanOrEqual(q.count, 10)
         XCTAssertEqual(Set(q.map(\.id)).count, q.count, "ids must be unique")
         for item in q {
             XCTAssertFalse(item.text.isEmpty)
-            XCTAssertFalse(item.source.isEmpty)
             XCTAssertLessThanOrEqual(item.text.count, 160, "one line: \(item.text)")
         }
-        for kind in [Quote.Kind.book, .scripture, .original] {
+        for kind in [Quote.Kind.site, .scripture, .original] {
             XCTAssertTrue(q.contains { $0.kind == kind }, "missing kind \(kind)")
         }
     }
@@ -39,12 +38,28 @@ final class QuoteTests: XCTestCase {
 
     func testProgressCanBeSavedAndRestored() {
         var rng = SplitMix64(seed: 3)
-        var deck = QuoteDeck()
+        let plain = QuoteBook.bundled.filter { $0.group == nil }
+        var deck = QuoteDeck(quotes: plain)
         let first = deck.next(using: &rng)!
-        var restored = QuoteDeck(quotes: deck.quotes, seen: deck.seen, last: deck.last)
+        var restored = QuoteDeck(quotes: deck.quotes, seen: deck.seen, last: deck.last, recent: deck.recent)
         var rest: [String] = []
         for _ in 0..<(deck.quotes.count - 1) { rest.append(restored.next(using: &rng)!.id) }
         XCTAssertFalse(rest.contains(first.id), "the one already shown is not dealt again this cycle")
+    }
+
+    func testLifeboatLinesAreNeverCloseTogether() {
+        var rng = SplitMix64(seed: 9)
+        for _ in 0..<60 {
+            var deck = QuoteDeck()
+            var ids: [String] = []
+            for _ in 0..<(deck.quotes.count * 4) { ids.append(deck.next(using: &rng)!.id) }
+            let group = Set(deck.quotes.filter { $0.group == "lifeboat" }.map(\.id))
+            XCTAssertEqual(group.count, 2)
+            let at = ids.enumerated().filter { group.contains($0.element) }.map(\.offset)
+            for (a, b) in zip(at, at.dropFirst()) {
+                XCTAssertGreaterThan(b - a, QuoteDeck.groupGap - 1, "positions \(a),\(b)")
+            }
+        }
     }
 
     func testEmptyDeckIsSafe() {

@@ -24,6 +24,11 @@ struct RootView: View {
             case .playing: TradingView(model: model)
             case .ended: EndView(model: model)
             }
+            if let q = model.quote {
+                QuoteCardView(quote: q) { model.dismissQuote() }
+                    .transition(.opacity)
+                    .zIndex(10)
+            }
         }
         .onAppear { Activity.track(.appOpen) }
         .onChange(of: model.anySheetOpen) { _, open in

@@ -45,6 +45,29 @@ final class GameModel {
     var showPositions = false
     var showNews = false
 
+    // Quote shown before each run
+    static let showQuotesKey = "show_quotes"
+    private(set) var quote: Quote?
+    private var quoteDeck = GameModel.loadQuoteDeck()
+    private static func loadQuoteDeck() -> QuoteDeck {
+        let d = UserDefaults.standard
+        return QuoteDeck(seen: Set(d.stringArray(forKey: "quotes_seen") ?? []),
+                         last: d.string(forKey: "quotes_last"),
+                         recent: d.stringArray(forKey: "quotes_recent") ?? [])
+    }
+    func dismissQuote() {
+        withAnimation(.easeOut(duration: 0.25)) { quote = nil }
+    }
+    private func presentQuote() {
+        guard UserDefaults.standard.object(forKey: Self.showQuotesKey) as? Bool ?? true,
+              let next = quoteDeck.next() else { return }
+        let d = UserDefaults.standard
+        d.set(Array(quoteDeck.seen), forKey: "quotes_seen")
+        d.set(quoteDeck.last, forKey: "quotes_last")
+        d.set(quoteDeck.recent, forKey: "quotes_recent")
+        quote = next
+    }
+
     // News
     private(set) var newsTracker = NewsTracker(startDay: 0)
     private(set) var banner: NewsItem?
@@ -81,7 +104,7 @@ final class GameModel {
     // MARK: Lifecycle
 
     /// True while any sheet is covering the game, so the market can wait.
-    var anySheetOpen: Bool { showInfo || showLeaderboard || showPrologue || showStartPicker || showPositions || showNews }
+    var anySheetOpen: Bool { showInfo || showLeaderboard || showPrologue || showStartPicker || showPositions || showNews || quote != nil }
 
     func startNewRun(_ choice: StartChoice = .random) {
         switch choice {
@@ -114,6 +137,7 @@ final class GameModel {
         banked = false
         savedInitials = nil; savedRank = nil; vaultTotal = nil; saveError = nil; isSaving = false
         Activity.track(.gameStart)
+        presentQuote()
         resetLevel()
         lastTick = Date()
         timer?.invalidate()

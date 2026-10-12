@@ -11,7 +11,7 @@ struct QuoteCardView: View {
         switch quote.kind {
         case .book: return "FROM THE BOOK"
         case .site: return "FROM THE ORANGE ROBOT"
-        case .scripture: return "SCRIPTURE"
+        case .scripture: return ""
         case .original: return "FROM THE WORLD OF THE ORANGE ROBOT"
         }
     }
@@ -22,9 +22,12 @@ struct QuoteCardView: View {
             VStack(spacing: 22) {
                 Image("RobotEmojiOrange").resizable().scaledToFit().frame(width: 54, height: 54)
                     .opacity(0.95)
-                Text(caption)
-                    .font(.system(size: 10, weight: .heavy)).tracking(2.4)
-                    .foregroundStyle(Theme.orange)
+                if !caption.isEmpty {
+                    Text(caption)
+                        .font(.system(size: 10, weight: .heavy)).tracking(2.4)
+                        .foregroundStyle(Theme.orange)
+                        .multilineTextAlignment(.center)
+                }
                 Text("“\(quote.text)”")
                     .font(.system(size: 24, weight: .medium, design: .serif))
                     .foregroundStyle(Theme.text)
@@ -32,11 +35,13 @@ struct QuoteCardView: View {
                     .lineSpacing(5)
                     .padding(.horizontal, 30)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("— " + quote.source)
-                    .font(.system(size: 13, weight: .regular, design: .serif)).italic()
-                    .foregroundStyle(Theme.dim)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 30)
+                if !quote.source.isEmpty {
+                    Text("— " + quote.source)
+                        .font(.system(size: 13, weight: .regular, design: .serif)).italic()
+                        .foregroundStyle(Theme.dim)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 30)
+                }
                 Text("tap to begin")
                     .font(.system(size: 11, weight: .semibold)).tracking(1.5)
                     .foregroundStyle(Theme.dim.opacity(0.8))

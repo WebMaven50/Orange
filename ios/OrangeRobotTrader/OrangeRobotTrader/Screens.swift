@@ -155,6 +155,7 @@ struct InfoView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage(Activity.settingKey) private var shareCounts = true
     @AppStorage("live_flicker") private var liveFlicker = true
+    @AppStorage(GameModel.showQuotesKey) private var showQuotes = true
     @AppStorage(Feedback.hapticsKey) private var haptics = true
     @AppStorage(Feedback.soundKey) private var sound = true
     var body: some View {
@@ -181,6 +182,14 @@ struct InfoView: View {
                             Text("Sound effects").font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.orange)
                         }.tint(Theme.orange)
                         Text("Small taps and tones for trades, breaking news and results. Sounds follow your phone's silent switch.")
+                            .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                    }
+                    VStack(alignment: .leading, spacing: 6) {
+                        Toggle(isOn: $showQuotes) {
+                            Text("Quote before each run")
+                                .font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.orange)
+                        }.tint(Theme.orange)
+                        Text("One line to think on before the market opens. Tap to begin.")
                             .font(.system(size: 12)).foregroundStyle(Theme.dim)
                     }
                     VStack(alignment: .leading, spacing: 6) {
