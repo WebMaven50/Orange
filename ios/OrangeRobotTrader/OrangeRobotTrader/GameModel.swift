@@ -41,7 +41,15 @@ final class GameModel {
     var showLeaderboard = false
     var showPrologue = false
     var showStartPicker = false
-    var showOrderForm = false
+    /// While the order ticket is open the market waits on Normal and Fast, where prices move
+    /// too quickly to type an order against. Actual speed (real time) keeps running.
+    var showOrderForm = false {
+        didSet {
+            guard phase == .playing, showOrderForm != oldValue else { return }
+            if showOrderForm { if speed != .actual { autoPause() } }
+            else { autoResume() }
+        }
+    }
     var showPositions = false
     var showNews = false
 
@@ -433,7 +441,7 @@ final class GameModel {
 
     /// Undo an automatic pause when the sheet closes. A pause the player chose stays.
     func autoResume() {
-        guard autoPaused else { return }
+        guard autoPaused, !showOrderForm else { return }
         autoPaused = false
         if phase == .playing { session.resume() }
     }
