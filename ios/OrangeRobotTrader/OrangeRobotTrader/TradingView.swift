@@ -40,6 +40,7 @@ struct TradingView: View {
                             candleStarts: crosshair == nil ? [] : model.visibleCandleStarts(count: shown.count),
                             timeLabel: { model.timeLabel(forMinute: $0) })
                 chartGestures
+                if s.isLive { realTimeBanner }
                 // RSI / MACD peek panels slide up over the bottom of the chart
                 if let ind, model.indicators.contains(.rsi) || model.indicators.contains(.macd) {
                     GeometryReader { g in
@@ -486,14 +487,34 @@ struct TradingView: View {
                 tradeButton("SELL", .sell, Theme.red, s)
             }
             HStack(spacing: 8) {
-                action("😴 Sleep 8h") { model.sleep() }.disabled(s.isSleeping || s.isPaused)
-                action("🌅 +24h") { model.skipDay() }.disabled(s.isSleeping || s.isPaused)
+                action("😴 Sleep 8h") { model.sleep() }.disabled(s.isSleeping || s.isPaused || s.isLive)
+                action("🌅 +24h") { model.skipDay() }.disabled(s.isSleeping || s.isPaused || s.isLive)
                 action("💰 Cash Out") { model.cashOut() }.disabled(s.isSleeping)
                 action("↻ New") { model.showStartPicker = true }
             }
         }
         .padding(12)
         .background(Theme.panel)
+    }
+
+    /// Shown over the chart once the game is in real time (past the end of the real data).
+    private var realTimeBanner: some View {
+        VStack {
+            HStack(spacing: 6) {
+                Circle().fill(model.liveFeedFailed ? Theme.orange : Theme.green).frame(width: 7, height: 7)
+                Text("REAL TIME").font(.system(size: 10, weight: .heavy)).tracking(1.5)
+                Text(model.liveFeedFailed ? "· feed offline, holding last price"
+                                          : "· live price, updates every 15 s")
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .foregroundStyle(Theme.text)
+            .padding(.horizontal, 10).padding(.vertical, 5)
+            .background(Theme.panel.opacity(0.92), in: Capsule())
+            .overlay(Capsule().stroke((model.liveFeedFailed ? Theme.orange : Theme.green).opacity(0.7)))
+            Spacer()
+        }
+        .padding(.top, 6)
+        .allowsHitTesting(false)
     }
 
     private func tradeButton(_ t: String, _ side: Side, _ c: Color, _ s: GameSession) -> some View {

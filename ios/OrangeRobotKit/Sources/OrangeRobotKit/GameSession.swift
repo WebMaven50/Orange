@@ -66,6 +66,12 @@ public struct GameSession {
 
     public var isSleeping: Bool { sleep != nil }
 
+    /// Where the real daily history ends. Past this moment the clock runs in real time on the live price.
+    public var dataEndMinute: Double { Double(engine.history.count - engine.startDay) * 1440 }
+    public var isLive: Bool { absMinute >= dataEndMinute }
+    /// Real-time prices received so far, in order (they drive the chart after the data ends).
+    public private(set) var liveTape: [LiveSample] = []
+
     var sleepTargetMinute: Double? { sleep.map { $0.startMinute + $0.gameMinutes } }
     var nextOrderIDValue: Int { nextOrderID }
     var nextFillIDValue: Int { nextFillID }
@@ -75,6 +81,8 @@ public struct GameSession {
         averageEntry = s.averageEntry; realizedPL = s.realizedPL; feesPaid = s.feesPaid
         fills = s.fills; pendingOrders = s.pendingOrders; speed = s.speed
         nextOrderID = s.nextOrderID; nextFillID = s.nextFillID
+        liveTape = s.liveTape ?? []
+        lastPrice = priceAt(absMinute)
         isPaused = true // come back paused so the player can get their bearings
     }
     public var isRunning: Bool { outcome == nil }
@@ -178,9 +186,9 @@ public struct GameSession {
             absMinute = s.startMinute + s.gameMinutes * t
             sleep = t >= 1 ? nil : s
         } else {
-            absMinute += speed.minutesPerSecond * dt
+            absMinute += (isLive ? PlaybackSpeed.actual : speed).minutesPerSecond * dt
         }
-        lastPrice = engine.price(atMinute: absMinute)
+        lastPrice = priceAt(absMinute)
         // Orders keep working while you sleep (the web version skipped them).
         checkPendingOrders()
         bestEquity = max(bestEquity, equity)
@@ -195,9 +203,52 @@ public struct GameSession {
     /// Skip 8 game-hours. Prices keep moving and resting orders still fill.
     @discardableResult
     public mutating func startSleep() -> Bool {
-        guard isRunning, !isSleeping, !isPaused else { return false }
+        guard isRunning, !isSleeping, !isPaused, !isLive else { return false }
         sleep = (absMinute, 0, Self.sleepGameMinutes, Self.sleepRealSeconds)
         return true
+    }
+
+    /// A real-time price from the feed. Only accepted once the clock is past the real data.
+    @discardableResult
+    public mutating func recordLivePrice(_ price: Double) -> Bool {
+        guard isLive, price.isFinite, price > 0 else { return false }
+        liveTape.append(LiveSample(minute: absMinute, price: price))
+        if liveTape.count > 50_000 { liveTape.removeFirst(liveTape.count - 50_000) }
+        lastPrice = price
+        checkPendingOrders()
+        bestEquity = max(bestEquity, equity)
+        checkEndConditions()
+        return true
+    }
+
+    /// The price at a game minute: the real path until the data ends, then the live tape.
+    private func priceAt(_ minute: Double) -> Double {
+        if minute < dataEndMinute { return engine.price(atMinute: minute) }
+        return liveTape.last?.price ?? engine.price(atMinute: dataEndMinute - 0.01)
+    }
+
+    /// Chart candles ending at `end`. Before the data ends they come from the real path;
+    /// after, from the live tape, carrying the last price across quiet stretches.
+    public func candles(timeframeMinutes tf: Int, count: Int, atMinute end: Double) -> [Candle] {
+        guard end >= dataEndMinute else { return engine.candles(timeframeMinutes: tf, count: count, atMinute: end) }
+        let tfD = Double(tf)
+        let lastB = Int(floor(end / tfD))
+        let firstB = lastB - count + 1
+        let liveB = Int(floor(dataEndMinute / tfD))
+        var out: [Candle] = []
+        if liveB > firstB {
+            out = engine.candles(timeframeMinutes: tf, count: liveB - firstB, atMinute: dataEndMinute - 0.01)
+        }
+        var carry = out.last?.close ?? engine.price(atMinute: dataEndMinute - 0.01)
+        for b in max(firstB, liveB)...lastB {
+            let ticks = liveTape.filter { Int(floor($0.minute / tfD)) == b }.map(\.price)
+            let o = ticks.first ?? carry
+            let c = ticks.last ?? carry
+            let h = max(ticks.max() ?? carry, o, c), l = min(ticks.min() ?? carry, o, c)
+            out.append(Candle(open: o, high: h, low: l, close: c))
+            carry = c
+        }
+        return out
     }
 
     /// Jump ahead by whole days instantly. Every step through the skipped time is checked
@@ -205,11 +256,12 @@ public struct GameSession {
     /// its own level. Stops early if the run ends. Returns false when the jump isn't allowed.
     @discardableResult
     public mutating func skipDays(_ days: Int = 1) -> Bool {
-        guard isRunning, !isSleeping, !isPaused, days > 0 else { return false }
+        guard isRunning, !isSleeping, !isPaused, !isLive, days > 0 else { return false }
         let steps = Int((Double(days) * 1440 / Self.skipStepMinutes).rounded())
         for _ in 0..<steps {
+            if absMinute >= dataEndMinute { break }   // stop at the newest data; real time takes over
             absMinute += Self.skipStepMinutes
-            lastPrice = engine.price(atMinute: absMinute)
+            lastPrice = priceAt(absMinute)
             checkPendingOrders()
             bestEquity = max(bestEquity, equity)
             checkEndConditions()

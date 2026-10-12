@@ -24,6 +24,8 @@ public struct SessionSnapshot: Codable, Equatable, Sendable {
     public var nextFillID: Int
     /// When it was saved (wall clock), for showing "last played".
     public var savedAt: Date
+    /// Real-time prices after the data ended (nil for runs still on the real path).
+    public var liveTape: [LiveSample]? = nil
 }
 
 extension GameSession {
@@ -35,7 +37,8 @@ extension GameSession {
             absMinute: sleepTargetMinute ?? absMinute, cash: cash, btc: btc, bestEquity: bestEquity,
             trades: trades, averageEntry: averageEntry, realizedPL: realizedPL, feesPaid: feesPaid,
             fills: fills, pendingOrders: pendingOrders, speed: speed,
-            nextOrderID: nextOrderIDValue, nextFillID: nextFillIDValue, savedAt: savedAt)
+            nextOrderID: nextOrderIDValue, nextFillID: nextFillIDValue, savedAt: savedAt,
+            liveTape: liveTape.isEmpty ? nil : liveTape)
     }
 
     /// Rebuild a run from a snapshot; nil if it no longer fits the bundled history.

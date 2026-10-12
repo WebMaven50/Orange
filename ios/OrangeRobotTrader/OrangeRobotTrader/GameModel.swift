@@ -147,6 +147,7 @@ final class GameModel {
         viewport.reset()
         moments = MomentMonitor()
         wasSleeping = false
+        stopLiveFeed()
         showOrderForm = false; showPositions = false; showNews = false
         banner = nil; bannerQueue = []
         quote = nil
@@ -177,6 +178,9 @@ final class GameModel {
     }
 
     private var timer: Timer?
+    /// Real-time feed: polls the live price once the clock has caught up with the data.
+    private var liveFeedTask: Task<Void, Never>?
+    private(set) var liveFeedFailed = false
     private var moments = MomentMonitor()
     private var wasSleeping = false
     private var lastTick = Date()
@@ -193,6 +197,7 @@ final class GameModel {
     var anySheetOpen: Bool { showInfo || showLeaderboard || showPrologue || showStartPicker || showPositions || showNews || quote != nil }
 
     func startNewRun(_ choice: StartChoice = .random) {
+        stopLiveFeed()
         switch choice {
         case .random: session = .random(microMoves: Self.liveFlicker)
         case .moment(let d): session = .starting(at: d, microMoves: Self.liveFlicker)
@@ -226,6 +231,7 @@ final class GameModel {
         presentQuote()
         resetLevel()
         startTimer()
+        if session.isLive { enterRealTime(announce: false) }
         saveRun()
     }
 
@@ -236,6 +242,7 @@ final class GameModel {
         guard phase == .playing else { return }
         let fillsBefore = session.fills.count
         session.advance(seconds: dt)
+        if session.isLive && liveFeedTask == nil { enterRealTime(announce: true) }
         if session.fills.count > fillsBefore, let f = session.fills.first, f.via != .market {
             Feedback.play(f.side == .buy ? .buy : .sell)
             flash = "\(f.via.rawValue.capitalized) \(f.side.rawValue) filled"
@@ -303,9 +310,43 @@ final class GameModel {
         }
     }
 
+    /// The game has caught up with the newest real data: run at Actual speed on the live price.
+    private func enterRealTime(announce: Bool) {
+        speed = .actual
+        session.speed = .actual
+        startLiveFeed()
+        guard announce else { return }
+        flash = "Caught up with the latest data. Now in real time."
+        Task { try? await Task.sleep(for: .seconds(3.2)); if flash?.hasPrefix("Caught up") == true { flash = nil } }
+    }
+
+    private func startLiveFeed() {
+        liveFeedTask?.cancel()
+        liveFeedTask = Task { [weak self] in
+            while !Task.isCancelled {
+                do {
+                    let price = try await LivePrice.fetch()
+                    guard let self, !Task.isCancelled else { return }
+                    self.session.recordLivePrice(price)
+                    self.liveFeedFailed = false
+                } catch {
+                    self?.liveFeedFailed = true
+                }
+                try? await Task.sleep(for: .seconds(15))
+            }
+        }
+    }
+
+    private func stopLiveFeed() {
+        liveFeedTask?.cancel()
+        liveFeedTask = nil
+        liveFeedFailed = false
+    }
+
     private func finish() {
         timer?.invalidate()
         timer = nil
+        stopLiveFeed()
         clearSavedRun()
         showOrderForm = false
         showPositions = false
@@ -436,6 +477,7 @@ final class GameModel {
     }
 
     func setSpeed(_ new: PlaybackSpeed) {
+        guard !session.isLive else { return }   // real time is always Actual
         speed = new
         session.speed = new
         Feedback.play(.select)
@@ -446,7 +488,7 @@ final class GameModel {
     /// Candles for the chart, ending at the pinned moment when scrolled back.
     func visibleCandles(count: Int) -> [Candle] {
         let end = viewport.effectiveEnd(timeframe: timeframe, liveMinute: session.absMinute)
-        return session.engine.candles(timeframeMinutes: timeframe, count: count, atMinute: end)
+        return session.candles(timeframeMinutes: timeframe, count: count, atMinute: end)
     }
 
     /// Start minute (game clock) of each of the last `count` candles, in order.

@@ -220,7 +220,9 @@ public final class PriceEngine {
     /// Calendar date shown to the player for a given day offset into the run.
     public func date(forDayOffset dayOffset: Int) -> Date {
         let n = history.count
-        let wrapped = (((startDay + dayOffset) % n) + n) % n
+        let index = startDay + dayOffset
+        // Past the end of the real data the date keeps counting forward (real time), instead of wrapping.
+        let wrapped = index >= n ? index : (((index % n) + n) % n)
         return Self.utc.date(byAdding: .day, value: wrapped, to: history.startDate)!
     }
 }
