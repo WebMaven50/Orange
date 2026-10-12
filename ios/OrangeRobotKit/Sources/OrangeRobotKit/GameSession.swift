@@ -1,7 +1,7 @@
 import Foundation
 
 /// How fast the game clock runs relative to the real one.
-public enum PlaybackSpeed: String, CaseIterable, Sendable {
+public enum PlaybackSpeed: String, CaseIterable, Sendable, Codable {
     /// Real time: one game minute per real minute.
     case actual
     /// Game speed: four game minutes per real second.
@@ -33,6 +33,9 @@ public struct GameSession {
     public static let winTarget = 1_000_000.0
     public static let sleepGameMinutes = 480.0
     public static let sleepRealSeconds = 3.0
+    /// A day-long skip ("check back tomorrow"): a little longer on screen than the 8 hours.
+    public static let daySkipGameMinutes = 1440.0
+    public static let daySkipRealSeconds = 5.0
 
     public let engine: PriceEngine
     public private(set) var absMinute: Double
@@ -60,9 +63,21 @@ public struct GameSession {
 
     private var nextOrderID = 1
     private var nextFillID = 1
-    private var sleep: (startMinute: Double, elapsed: Double)?
+    private var sleep: (startMinute: Double, elapsed: Double, gameMinutes: Double, realSeconds: Double)?
 
     public var isSleeping: Bool { sleep != nil }
+
+    var sleepTargetMinute: Double? { sleep.map { $0.startMinute + $0.gameMinutes } }
+    var nextOrderIDValue: Int { nextOrderID }
+    var nextFillIDValue: Int { nextFillID }
+
+    mutating func restore(from s: SessionSnapshot) {
+        cash = s.cash; btc = s.btc; bestEquity = s.bestEquity; trades = s.trades
+        averageEntry = s.averageEntry; realizedPL = s.realizedPL; feesPaid = s.feesPaid
+        fills = s.fills; pendingOrders = s.pendingOrders; speed = s.speed
+        nextOrderID = s.nextOrderID; nextFillID = s.nextFillID
+        isPaused = true // come back paused so the player can get their bearings
+    }
     public var isRunning: Bool { outcome == nil }
 
     // MARK: Lifecycle
@@ -160,8 +175,8 @@ public struct GameSession {
         let dt = min(dt, 0.05) // clamp like the web game so a stall can't skip the market
         if var s = sleep {
             s.elapsed += dt
-            let t = min(max(s.elapsed / Self.sleepRealSeconds, 0), 1)
-            absMinute = s.startMinute + Self.sleepGameMinutes * t
+            let t = min(max(s.elapsed / s.realSeconds, 0), 1)
+            absMinute = s.startMinute + s.gameMinutes * t
             sleep = t >= 1 ? nil : s
         } else {
             absMinute += speed.minutesPerSecond * dt
@@ -182,7 +197,15 @@ public struct GameSession {
     @discardableResult
     public mutating func startSleep() -> Bool {
         guard isRunning, !isSleeping, !isPaused else { return false }
-        sleep = (absMinute, 0)
+        sleep = (absMinute, 0, Self.sleepGameMinutes, Self.sleepRealSeconds)
+        return true
+    }
+
+    /// Skip a whole day: same rules as sleeping, three times as far.
+    @discardableResult
+    public mutating func startDaySkip() -> Bool {
+        guard isRunning, !isSleeping, !isPaused else { return false }
+        sleep = (absMinute, 0, Self.daySkipGameMinutes, Self.daySkipRealSeconds)
         return true
     }
 

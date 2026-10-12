@@ -98,6 +98,84 @@ final class GameModel {
     var lastInitials = UserDefaults.standard.string(forKey: "tor_initials") ?? ""
     private let leaderboard = LeaderboardClient()
 
+    // Saved run (so closing or losing the app never loses a game)
+    private struct SavedRun: Codable {
+        var snapshot: SessionSnapshot
+        var timeframe: Int
+        var lastSeenNewsDay: Int
+        var summary: String
+    }
+    private static let savedRunKey = "saved_run_v1"
+    private var savedRun: SavedRun? = GameModel.loadSavedRun()
+    private var lastSave = Date.distantPast
+    /// "Mar 12, 2020 · $104.2K" for the Continue button, nil when there is nothing to continue.
+    var savedRunSummary: String? { savedRun?.summary }
+
+    private static func loadSavedRun() -> SavedRun? {
+        guard let data = UserDefaults.standard.data(forKey: savedRunKey) else { return nil }
+        return try? JSONDecoder().decode(SavedRun.self, from: data)
+    }
+
+    /// Write the current run to disk. Cheap; called on backgrounding, every few seconds, and
+    /// whenever the run's shape changes.
+    func saveRun() {
+        guard phase == .playing, let snap = session.snapshot() else { return }
+        lastSave = Date()
+        let run = SavedRun(snapshot: snap, timeframe: timeframe, lastSeenNewsDay: lastSeenNewsDay,
+                           summary: "\(Fmt.date(session.currentDate)) · \(Fmt.compact(session.equity)) equity")
+        savedRun = run
+        if let data = try? JSONEncoder().encode(run) {
+            UserDefaults.standard.set(data, forKey: Self.savedRunKey)
+        }
+    }
+
+    private func clearSavedRun() {
+        savedRun = nil
+        UserDefaults.standard.removeObject(forKey: Self.savedRunKey)
+    }
+
+    /// Pick the previous game back up, paused, exactly where it was left.
+    func continueSavedRun() {
+        guard phase != .playing, let saved = savedRun,
+              let restored = GameSession(snapshot: saved.snapshot) else { clearSavedRun(); return }
+        session = restored
+        speed = saved.snapshot.speed
+        timeframe = saved.timeframe
+        indicators = []
+        showIndicatorMenu = false
+        autoPaused = false
+        viewport.reset()
+        moments = MomentMonitor()
+        wasSleeping = false
+        showOrderForm = false; showPositions = false; showNews = false
+        banner = nil; bannerQueue = []
+        quote = nil
+        // Headlines already passed stay in the feed; nothing floods the screen on return.
+        let startDay = Int((session.engine.date(forDayOffset: 0).timeIntervalSince1970 / 86_400).rounded())
+        newsTracker = NewsTracker(startDay: startDay)
+        _ = newsTracker.update(day: session.currentDayNumber, price: session.lastPrice)
+        lastSeenNewsDay = saved.lastSeenNewsDay
+        phase = .playing
+        side = .buy
+        orderType = .market
+        fraction = 0.75
+        banked = false
+        savedInitials = nil; savedRank = nil; vaultTotal = nil; saveError = nil; isSaving = false
+        resetLevel()
+        startTimer()
+        Feedback.play(.select)
+    }
+
+    private func startTimer() {
+        lastTick = Date()
+        timer?.invalidate()
+        let t = Timer(timeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.step() }
+        }
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
+    }
+
     private var timer: Timer?
     private var moments = MomentMonitor()
     private var wasSleeping = false
@@ -147,13 +225,8 @@ final class GameModel {
         Activity.track(.gameStart)
         presentQuote()
         resetLevel()
-        lastTick = Date()
-        timer?.invalidate()
-        let t = Timer(timeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.step() }
-        }
-        RunLoop.main.add(t, forMode: .common)
-        timer = t
+        startTimer()
+        saveRun()
     }
 
     private func step() {
@@ -171,6 +244,7 @@ final class GameModel {
         trackNews()
         trackMoments()
         if session.outcome != nil { finish() }
+        else if Date().timeIntervalSince(lastSave) > 5 { saveRun() }
     }
 
     // MARK: News
@@ -232,6 +306,7 @@ final class GameModel {
     private func finish() {
         timer?.invalidate()
         timer = nil
+        clearSavedRun()
         showOrderForm = false
         showPositions = false
         showNews = false
@@ -451,9 +526,12 @@ final class GameModel {
         guard phase == .playing else { return }
         autoPaused = false
         session.pause()
+        saveRun()
     }
 
     func sleep() { if session.startSleep() { Feedback.play(.pause) } }
+    /// Skip a whole day, for the "check back tomorrow" style of play.
+    func skipDay() { if session.startDaySkip() { Feedback.play(.pause) } }
     func cashOut() { session.cashOut(); finish() }
     func cancel(_ id: Int) { session.cancelOrder(id: id); Feedback.play(.select) }
     func updateOrder(id: Int, level: Double, fraction: Double) throws {

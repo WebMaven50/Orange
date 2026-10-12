@@ -487,6 +487,7 @@ struct TradingView: View {
             }
             HStack(spacing: 8) {
                 action("😴 Sleep 8h") { model.sleep() }.disabled(s.isSleeping || s.isPaused)
+                action("🌅 +24h") { model.skipDay() }.disabled(s.isSleeping || s.isPaused)
                 action("💰 Cash Out") { model.cashOut() }.disabled(s.isSleeping)
                 action("↻ New") { model.showStartPicker = true }
             }
@@ -509,6 +510,7 @@ struct TradingView: View {
     private func action(_ t: String, _ run: @escaping () -> Void) -> some View {
         Button(action: run) {
             Text(t).font(.system(size: 12, weight: .bold))
+                .lineLimit(1).minimumScaleFactor(0.75)
                 .frame(maxWidth: .infinity).padding(.vertical, 10)
                 .background(Theme.panel2, in: RoundedRectangle(cornerRadius: 8))
                 .overlay(RoundedRectangle(cornerRadius: 8).stroke(Theme.line))

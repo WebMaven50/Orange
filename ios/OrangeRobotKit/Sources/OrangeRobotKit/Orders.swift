@@ -9,7 +9,7 @@ public enum OrderType: String, Codable, Sendable { case market, limit, stop, tra
 /// `amountFraction` is stored as a share of whatever is tradable *when it
 /// fills*, so a "100%" order always means "everything" even if the balance
 /// changed while it waited.
-public struct PendingOrder: Identifiable, Equatable, Sendable {
+public struct PendingOrder: Identifiable, Equatable, Sendable, Codable {
     public let id: Int
     public let type: OrderType
     public let side: Side
@@ -41,7 +41,7 @@ public enum GameOutcome: String, Codable, Sendable {
 }
 
 /// One executed trade (a market order, or a resting order that triggered).
-public struct Fill: Identifiable, Equatable, Sendable {
+public struct Fill: Identifiable, Equatable, Sendable, Codable {
     public let id: Int
     /// Game clock (minutes since the start of the run) when it filled.
     public let absMinute: Double

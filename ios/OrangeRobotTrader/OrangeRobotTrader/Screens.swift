@@ -20,8 +20,22 @@ struct IntroView: View {
              + Text("$1,000,000").bold().foregroundColor(Theme.orange) + Text(" before you go broke."))
                 .font(.system(size: 14)).foregroundStyle(Theme.dim)
                 .multilineTextAlignment(.center).padding(.horizontal, 28)
+            if let summary = model.savedRunSummary {
+                Button { model.continueSavedRun() } label: {
+                    VStack(spacing: 3) {
+                        Text("CONTINUE PREVIOUS GAME").font(.system(size: 16, weight: .black)).tracking(1)
+                        Text(summary).font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(Theme.orange.opacity(0.85))
+                    }
+                    .frame(maxWidth: .infinity).padding(.vertical, 12)
+                    .background(Theme.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
+                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.orange, lineWidth: 1.5))
+                    .foregroundStyle(Theme.orange)
+                }.padding(.horizontal, 32)
+            }
             Button { model.showStartPicker = true } label: {
-                Text("START TRADING").font(.system(size: 16, weight: .black)).tracking(1)
+                Text(model.savedRunSummary == nil ? "START TRADING" : "START A NEW GAME")
+                    .font(.system(size: 16, weight: .black)).tracking(1)
                     .frame(maxWidth: .infinity).padding(.vertical, 15)
                     .background(Theme.orange, in: RoundedRectangle(cornerRadius: 12))
                     .foregroundStyle(.black)
@@ -169,7 +183,9 @@ struct InfoView: View {
                     para("Trading.",
                          "A 0.26% fee applies to every order, like a real exchange. Selling more BTC than you hold opens a short position — powerful, but liquidation is real.")
                     para("Sleep.",
-                         "Passes 8 game-hours in 3 real seconds. Price keeps moving, and your resting limit, stop and trailing orders still fill while you sleep.")
+                         "Sleep 8h passes 8 game-hours in 3 real seconds; +24h skips a whole day in 5. Price keeps moving, and your resting limit, stop and trailing orders still fill while you're away.")
+                    para("Your game is saved.",
+                         "If you switch apps or the phone closes the game, you can pick the same run back up from the start screen with Continue previous game.")
                     para("Cash Out.",
                          "You don't have to wait for $1M or bankruptcy — cash out anytime to lock in your equity. You earn 1 virtual sat per dollar of profit.")
                     para("About virtual sats.",
