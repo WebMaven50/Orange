@@ -44,6 +44,12 @@ struct RootView: View {
                 .presentationDetents([.large])
         }
         .sheet(isPresented: $model.showInfo) { InfoView() }
+        .alert("Stay in touch?", isPresented: $model.showNotifyPrompt) {
+            Button("Yes, keep me posted") { Task { await GameNotifications.answerPrompt(yes: true) } }
+            Button("Not now", role: .cancel) { Task { await GameNotifications.answerPrompt(yes: false) } }
+        } message: {
+            Text("Get a rare message when there's something worth your time, like news, a podcast or a deal. Also an alert when Bitcoin moves 5% in a day. You can change this anytime in Info.")
+        }
         .sheet(isPresented: $model.showLeaderboard) { LeaderboardSheet() }
         .sheet(isPresented: $model.showPrologue) { PrologueView() }
         .sheet(isPresented: $model.showNews) { NewsView(model: model).presentationDetents([.large]) }

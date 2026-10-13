@@ -43,6 +43,7 @@ final class GameModel {
     var showStartPicker = false
     /// While the order ticket is open the market waits on Normal and Fast, where prices move
     /// too quickly to type an order against. Actual speed (real time) keeps running.
+    var showNotifyPrompt = false
     var showOrderForm = false {
         didSet {
             guard phase == .playing, showOrderForm != oldValue else { return }
@@ -347,6 +348,11 @@ final class GameModel {
         timer?.invalidate()
         timer = nil
         stopLiveFeed()
+        // Ask once, after the first finished game. Declining keeps everything off.
+        if !UserDefaults.standard.bool(forKey: GameNotifications.askedKey) {
+            UserDefaults.standard.set(true, forKey: GameNotifications.askedKey)
+            showNotifyPrompt = true
+        }
         clearSavedRun()
         showOrderForm = false
         showPositions = false

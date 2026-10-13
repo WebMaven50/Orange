@@ -9,6 +9,8 @@ import UserNotifications
 enum GameNotifications {
     static let messagesKey = "notify_messages"
     static let alertsKey = "notify_price_alerts"
+    /// Set once the player has been asked after a finished game. The question is never repeated.
+    static let askedKey = "notify_asked"
     private static let tokenKey = "push_token"
 
     /// The notify Worker. Set once it's deployed.
@@ -17,6 +19,19 @@ enum GameNotifications {
     private static var messages: Bool { UserDefaults.standard.bool(forKey: messagesKey) }
     private static var alerts: Bool { UserDefaults.standard.bool(forKey: alertsKey) }
     private static var storedToken: String? { UserDefaults.standard.string(forKey: tokenKey) }
+
+    /// The one-time question: both on, or both off. Returns false if iOS refused permission.
+    @discardableResult
+    static func answerPrompt(yes: Bool) async -> Bool {
+        UserDefaults.standard.set(yes, forKey: messagesKey)
+        UserDefaults.standard.set(yes, forKey: alertsKey)
+        let ok = await apply()
+        if !ok {
+            UserDefaults.standard.set(false, forKey: messagesKey)
+            UserDefaults.standard.set(false, forKey: alertsKey)
+        }
+        return ok
+    }
 
     /// Apply the two switches. Registers when either is on, removes the token when both are off.
     @discardableResult
