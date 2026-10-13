@@ -135,6 +135,25 @@ struct EndView: View {
                 .background(Theme.panel, in: RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal, 24)
 
+                // Coming soon: the Lab. No link until it's on the App Store.
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("COMING SOON")
+                        .font(.system(size: 10, weight: .black)).tracking(1.5)
+                        .padding(.horizontal, 7).padding(.vertical, 3)
+                        .background(Theme.orange, in: RoundedRectangle(cornerRadius: 4))
+                        .foregroundStyle(.black)
+                    Text("Orange Robot Lab")
+                        .font(.system(size: 17, weight: .bold)).foregroundStyle(Theme.text)
+                    Text("Build your own trading robot simulator and test it in real history.")
+                        .font(.system(size: 13)).foregroundStyle(Theme.dim)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Theme.panel, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.orange.opacity(0.5), lineWidth: 1))
+                .padding(.horizontal, 24)
+
                 // Book hook
                 VStack(spacing: 10) {
                     Text(outcome == .bust ? "The robot saw this coming."
