@@ -49,6 +49,15 @@ enum GameNotifications {
         return true
     }
 
+    /// Testing only (hidden on the intro screen): forget the answer and turn both switches off,
+    /// as if the app were freshly installed. The question comes back after the next game.
+    static func resetForTesting() async {
+        UserDefaults.standard.removeObject(forKey: askedKey)
+        UserDefaults.standard.set(false, forKey: messagesKey)
+        UserDefaults.standard.set(false, forKey: alertsKey)
+        await apply()
+    }
+
     /// Called by the app delegate when iOS hands over a token.
     static func received(token data: Data) {
         let hex = data.map { String(format: "%02x", $0) }.joined()

@@ -4,6 +4,9 @@ import OrangeRobotKit
 
 struct IntroView: View {
     let model: GameModel
+    @State private var coverTaps = 0
+    @State private var resetNote = false
+
     var body: some View {
         VStack(spacing: 18) {
             Spacer()
@@ -11,6 +14,21 @@ struct IntroView: View {
                 .resizable().scaledToFit().frame(height: 220)
                 .clipShape(RoundedRectangle(cornerRadius: 8))
                 .shadow(color: Theme.orange.opacity(0.4), radius: 24)
+                // Hidden testing switch: five taps on the cover resets the notification question.
+                .onTapGesture {
+                    coverTaps += 1
+                    guard coverTaps >= 5 else { return }
+                    coverTaps = 0
+                    Task {
+                        await GameNotifications.resetForTesting()
+                        resetNote = true
+                        try? await Task.sleep(for: .seconds(2.5))
+                        resetNote = false
+                    }
+                }
+            if resetNote {
+                Text("Notification question reset").font(.system(size: 11, weight: .bold)).foregroundStyle(Theme.gold)
+            }
             Text("ORANGE ROBOT TRADER")
                 .font(.system(size: 24, weight: .black)).foregroundStyle(Theme.orange)
             Text("BITCOIN TRADING SIMULATOR")
