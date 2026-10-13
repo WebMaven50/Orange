@@ -17,7 +17,7 @@ struct IntroView: View {
                 .font(.system(size: 11, weight: .heavy)).tracking(2).foregroundStyle(Theme.dim)
                 .padding(.top, -10)
             (Text("You've got ") + Text("$100,000").bold().foregroundColor(.white)
-             + Text(". Pick a moment in Bitcoin's real history — or let fate choose. Trade your way to ")
+             + Text(" in play money. Pick a moment in Bitcoin's real history — or let fate choose. Trade your way to ")
              + Text("$1,000,000").bold().foregroundColor(Theme.orange) + Text(" before you go broke."))
                 .font(.system(size: 14)).foregroundStyle(Theme.dim)
                 .multilineTextAlignment(.center).padding(.horizontal, 28)
