@@ -282,9 +282,11 @@ struct TradingView: View {
             HStack(spacing: 8) {
                 Image("RobotEmojiOrange").resizable().scaledToFit().frame(width: 20, height: 20)
                     .frame(width: 26, height: 26)
-                    .background(LinearGradient(colors: [Theme.orange, Theme.orangeDim],
+                    .background(LinearGradient(colors: [Color(red: 0.10, green: 0.20, blue: 0.36),
+                                                        Color(red: 0.04, green: 0.09, blue: 0.18)],
                                                startPoint: .topLeading, endPoint: .bottomTrailing),
                                 in: RoundedRectangle(cornerRadius: 7))
+                    .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color(red: 0.47, green: 0.75, blue: 1, ).opacity(0.6), lineWidth: 1))
                 (Text("ORANGE").foregroundColor(Theme.text) + Text("ROBOT").foregroundColor(Theme.orange)
                  + Text(" TRADER").foregroundColor(Theme.text))
                     .font(.system(size: 13, weight: .black))
