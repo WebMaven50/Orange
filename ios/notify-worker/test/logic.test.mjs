@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isValidToken, safeEqual, percentChange, priceAlert, buildPayload, checkMessage } from "../src/logic.js";
+import { isValidToken, safeEqual, percentChange, priceAlert, buildPayload, checkMessage, clampThreshold } from "../src/logic.js";
 
 test("tokens must be 64 lowercase hex characters", () => {
   assert.ok(isValidToken("a".repeat(64)));
@@ -39,4 +39,18 @@ test("admin messages are checked before sending", () => {
   assert.ok(checkMessage({ title: "x", body: "x", url: "http://insecure.example" }));
   assert.ok(checkMessage({ title: "x", body: "x", url: "not a url" }));
   assert.equal(checkMessage({ title: "x", body: "x", url: "https://example.com/podcast" }), null);
+});
+
+test("each phone's threshold is kept in 1-20%, defaulting to 5", () => {
+  assert.equal(clampThreshold(undefined), 5);
+  assert.equal(clampThreshold(3), 3);
+  assert.equal(clampThreshold(0), 5);
+  assert.equal(clampThreshold(50), 5);
+  assert.equal(clampThreshold("abc"), 5);
+});
+
+test("a per-phone threshold changes which moves alert", () => {
+  assert.notEqual(priceAlert(2.5, 2), null);
+  assert.equal(priceAlert(2.5, 3), null);
+  assert.match(priceAlert(-2.5, 2).title, /down/);
 });

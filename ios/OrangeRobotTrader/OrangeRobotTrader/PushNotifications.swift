@@ -11,6 +11,9 @@ enum GameNotifications {
     static let alertsKey = "notify_price_alerts"
     /// Set once the player has been asked after a finished game. The question is never repeated.
     static let askedKey = "notify_asked"
+    /// The move, in percent, that triggers a price alert. Default 5.
+    static let thresholdKey = "notify_alert_percent"
+    static let thresholdChoices = [2, 3, 5, 10]
     private static let tokenKey = "push_token"
 
     /// The notify Worker. Set once it's deployed.
@@ -19,6 +22,10 @@ enum GameNotifications {
     private static var messages: Bool { UserDefaults.standard.bool(forKey: messagesKey) }
     private static var alerts: Bool { UserDefaults.standard.bool(forKey: alertsKey) }
     private static var storedToken: String? { UserDefaults.standard.string(forKey: tokenKey) }
+    private static var threshold: Int {
+        let v = UserDefaults.standard.integer(forKey: thresholdKey)
+        return thresholdChoices.contains(v) ? v : 5
+    }
 
     /// The one-time question: both on, or both off. Returns false if iOS refused permission.
     @discardableResult
@@ -77,6 +84,7 @@ enum GameNotifications {
             "sandbox": sandbox,
             "messages": messages,
             "alerts": alerts,
+            "threshold": threshold,
         ])
     }
 

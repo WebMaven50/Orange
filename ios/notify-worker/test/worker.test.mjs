@@ -26,7 +26,8 @@ test("registering stores only the token, sandbox flag and alert choice", async (
   const res = await worker.fetch(req("/device", { token, sandbox: true, messages: true, alerts: false, extra: "nope" }), env);
   assert.equal(res.status, 200);
   const stored = JSON.parse(env.DEVICES.m.get(`d:${token}`));
-  assert.deepEqual(Object.keys(stored).sort(), ["added", "alerts", "messages", "sandbox"]);
+  assert.deepEqual(Object.keys(stored).sort(), ["added", "alerts", "messages", "sandbox", "threshold"]);
+  assert.equal(stored.threshold, 5, "defaults to 5%");
   assert.equal(stored.alerts, false);
 });
 

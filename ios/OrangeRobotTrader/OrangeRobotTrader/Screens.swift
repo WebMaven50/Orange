@@ -191,6 +191,7 @@ struct InfoView: View {
     @AppStorage(GameModel.showQuotesKey) private var showQuotes = true
     @AppStorage(GameNotifications.messagesKey) private var notifyMessages = false
     @AppStorage(GameNotifications.alertsKey) private var notifyAlerts = false
+    @AppStorage(GameNotifications.thresholdKey) private var alertPercent = 5
     @AppStorage(Feedback.hapticsKey) private var haptics = true
     @AppStorage(Feedback.soundKey) private var sound = true
     /// Registers or unregisters with the server. If iOS says no, the switches go back off.
@@ -258,7 +259,20 @@ struct InfoView: View {
                         }
                         .tint(Theme.orange)
                         .onChange(of: notifyAlerts) { _, _ in notificationsChanged() }
-                        Text("Off unless you turn them on. Messages are rare, and only when there's something worth your time: news, a podcast, a deal. A price alert comes when Bitcoin moves 5% in a day. Turn both off and your device's token is deleted from our server.")
+                        if notifyAlerts {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("Alert me when Bitcoin moves by")
+                                    .font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.dim)
+                                Picker("Alert threshold", selection: $alertPercent) {
+                                    ForEach(GameNotifications.thresholdChoices, id: \.self) { p in
+                                        Text("\(p)%").tag(p)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                                .onChange(of: alertPercent) { _, _ in notificationsChanged() }
+                            }
+                        }
+                        Text("Off unless you turn them on. Messages are rare, and only when there's something worth your time: news, a podcast, a deal. A price alert comes when Bitcoin moves by the percentage you pick, from today's opening price. Turn both off and your device's token is deleted from our server.")
                             .font(.system(size: 12)).foregroundStyle(Theme.dim)
                         Button {
                             if let url = URL(string: UIApplication.openNotificationSettingsURLString) {

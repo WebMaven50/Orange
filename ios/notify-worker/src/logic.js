@@ -18,6 +18,12 @@ export function safeEqual(a, b) {
   return diff === 0;
 }
 
+/** A phone's alert threshold, in percent. Anything missing or out of range falls back to 5. */
+export function clampThreshold(v) {
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 1 && n <= 20 ? n : 5;
+}
+
 /** Percent change of `price` against `open`. Null when there is no usable open. */
 export function percentChange(price, open) {
   if (!(price > 0) || !(open > 0)) return null;

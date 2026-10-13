@@ -4,7 +4,7 @@
 // whether it is sandbox, and whether it wants price alerts. No accounts, no IP
 // addresses, no logs of tokens. Turning notifications off deletes the token.
 
-import { isValidToken, safeEqual, percentChange, priceAlert, buildPayload, checkMessage } from "./logic.js";
+import { isValidToken, safeEqual, percentChange, priceAlert, buildPayload, checkMessage, clampThreshold } from "./logic.js";
 import { makeProviderToken, sendPush } from "./apns.js";
 
 const JSON_HEADERS = { "content-type": "application/json", "cache-control": "no-store" };
@@ -37,6 +37,7 @@ async function registerDevice(request, env) {
     sandbox: body.sandbox === true,
     messages: body.messages === true,
     alerts: body.alerts === true,
+    threshold: clampThreshold(body.threshold),
     added: new Date().toISOString().slice(0, 10),
   }));
   return json({ ok: true });
@@ -50,33 +51,41 @@ async function removeDevice(request, env) {
   return json({ ok: true });
 }
 
-/** Sends to every stored device that passes `wants`. Removes tokens Apple says are gone. */
-async function sendToAll(env, payload, wants = () => true) {
-  const jwt = await providerJwt(env);
-  const tally = { sent: 0, failed: 0, removed: 0 };
+/** Sends one push and removes the device if Apple says its token is gone. */
+async function pushDevice(env, jwt, name, device, payload, tally) {
+  const r = await sendPush({
+    token: name.slice(2), sandbox: device.sandbox, payload, topic: env.APNS_TOPIC, jwt,
+  });
+  if (r.status === 200) { tally.sent++; return; }
+  if (r.status === 410 || r.reason === "BadDeviceToken" || r.reason === "Unregistered") {
+    await env.DEVICES.delete(name);
+    tally.removed++;
+  } else {
+    tally.failed++;
+  }
+}
+
+/** Walks every stored device in pages, calling `each(name, device)` for those that pass `wants`. */
+async function forEachDevice(env, wants, each) {
   let cursor;
   do {
     const page = await env.DEVICES.list({ prefix: "d:", cursor });
     cursor = page.list_complete ? undefined : page.cursor;
-    const keys = page.keys.map((k) => k.name);
-    for (let i = 0; i < keys.length; i += 25) {
-      await Promise.all(keys.slice(i, i + 25).map(async (name) => {
+    const names = page.keys.map((k) => k.name);
+    for (let i = 0; i < names.length; i += 25) {
+      await Promise.all(names.slice(i, i + 25).map(async (name) => {
         const device = JSON.parse((await env.DEVICES.get(name)) ?? "null");
-        if (!device || !wants(device)) return;
-        const token = name.slice(2);
-        const r = await sendPush({
-          token, sandbox: device.sandbox, payload, topic: env.APNS_TOPIC, jwt,
-        });
-        if (r.status === 200) { tally.sent++; return; }
-        if (r.status === 410 || r.reason === "BadDeviceToken" || r.reason === "Unregistered") {
-          await env.DEVICES.delete(name);
-          tally.removed++;
-        } else {
-          tally.failed++;
-        }
+        if (device && wants(device)) await each(name, device);
       }));
     }
   } while (cursor);
+}
+
+/** Sends to every stored device that passes `wants`. */
+async function sendToAll(env, payload, wants = () => true) {
+  const jwt = await providerJwt(env);
+  const tally = { sent: 0, failed: 0, removed: 0 };
+  await forEachDevice(env, wants, (name, device) => pushDevice(env, jwt, name, device, payload, tally));
   return tally;
 }
 
@@ -91,7 +100,8 @@ async function adminSend(request, env) {
   return json({ ok: true, ...tally });
 }
 
-/** Once a day at most: if Bitcoin is far enough from its UTC open, tell the price-alert devices. */
+/** Each device sets its own threshold. Once a day per direction, the alert goes to each
+ *  device whose threshold the move has reached. */
 async function checkPriceMoves(env) {
   const [ticker, daily] = await Promise.all([
     fetch("https://api.kraken.com/0/public/Ticker?pair=XBTUSD").then((r) => r.json()),
@@ -100,15 +110,20 @@ async function checkPriceMoves(env) {
   const tickerKey = Object.keys(ticker.result ?? {})[0];
   const price = Number(ticker.result?.[tickerKey]?.c?.[0]);
   const rows = daily.result?.[Object.keys(daily.result ?? {}).find((k) => k !== "last")] ?? [];
-  const today = rows[rows.length - 1];
-  const open = Number(today?.[1]);
-  const alert = priceAlert(percentChange(price, open));
-  if (!alert) return;
+  const open = Number(rows[rows.length - 1]?.[1]);
+  const change = percentChange(price, open);
+  if (change == null) return;
+  const dir = change > 0 ? "up" : "down";
   const day = new Date().toISOString().slice(0, 10);
-  const marker = `alerted:${day}:${alert.dir}`;
-  if (await env.DEVICES.get(marker)) return;
-  await env.DEVICES.put(marker, "1", { expirationTtl: 2 * 24 * 3600 });
-  await sendToAll(env, buildPayload({ title: alert.title, body: alert.body }), (d) => d.alerts);
+  const jwt = await providerJwt(env);
+  const tally = { sent: 0, failed: 0, removed: 0 };
+  await forEachDevice(env, (d) => d.alerts && Math.abs(change) >= clampThreshold(d.threshold), async (name, device) => {
+    const marker = `alerted:${day}:${dir}:${name}`;
+    if (await env.DEVICES.get(marker)) return;
+    await env.DEVICES.put(marker, "1", { expirationTtl: 2 * 24 * 3600 });
+    const alert = priceAlert(change, clampThreshold(device.threshold));
+    await pushDevice(env, jwt, name, device, buildPayload({ title: alert.title, body: alert.body }), tally);
+  });
 }
 
 const ADMIN_HTML = `<!doctype html>
