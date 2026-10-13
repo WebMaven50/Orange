@@ -1,0 +1,16 @@
+{
+  // Deploy only after the secrets below are set (see README) and the KV namespace exists.
+  "name": "orange-robot-notify",
+  "main": "src/index.js",
+  "compatibility_date": "2026-01-01",
+  "kv_namespaces": [
+    // Create with: wrangler kv namespace create DEVICES  — then paste the id here.
+    { "binding": "DEVICES", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }
+  ],
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "vars": {
+    // The app's bundle identifier. Pushes are addressed to this topic.
+    "APNS_TOPIC": "com.theorangerobot.trader"
+  }
+  // Secrets (never committed): ADMIN_PASSWORD, APNS_KEY_P8, APNS_KEY_ID, APNS_TEAM_ID
+}

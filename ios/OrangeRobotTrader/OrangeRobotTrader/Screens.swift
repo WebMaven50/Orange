@@ -170,8 +170,18 @@ struct InfoView: View {
     @AppStorage(Activity.settingKey) private var shareCounts = true
     @AppStorage("live_flicker") private var liveFlicker = true
     @AppStorage(GameModel.showQuotesKey) private var showQuotes = true
+    @AppStorage(GameNotifications.messagesKey) private var notifyMessages = false
+    @AppStorage(GameNotifications.alertsKey) private var notifyAlerts = false
     @AppStorage(Feedback.hapticsKey) private var haptics = true
     @AppStorage(Feedback.soundKey) private var sound = true
+    /// Registers or unregisters with the server. If iOS says no, the switches go back off.
+    private func notificationsChanged() {
+        Task {
+            let ok = await GameNotifications.apply()
+            if !ok { notifyMessages = false; notifyAlerts = false }
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -214,6 +224,22 @@ struct InfoView: View {
                                 .font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.orange)
                         }.tint(Theme.orange)
                         Text("Adds small tick-by-tick movement between the day's real prices so the market feels alive, especially at Actual speed. The day's real open, high, low and close never change. Applies to your next run.")
+                            .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle(isOn: $notifyMessages) {
+                            Text("Game messages & deals")
+                                .font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.orange)
+                        }
+                        .tint(Theme.orange)
+                        .onChange(of: notifyMessages) { _, _ in notificationsChanged() }
+                        Toggle(isOn: $notifyAlerts) {
+                            Text("Bitcoin price alerts")
+                                .font(.system(size: 14, weight: .bold)).foregroundStyle(Theme.orange)
+                        }
+                        .tint(Theme.orange)
+                        .onChange(of: notifyAlerts) { _, _ in notificationsChanged() }
+                        Text("Off unless you turn them on. Messages are rare, and only when there's something worth your time: news, a podcast, a deal. A price alert comes when Bitcoin moves 5% in a day. Turn both off and your device's token is deleted from our server.")
                             .font(.system(size: 12)).foregroundStyle(Theme.dim)
                     }
                     VStack(alignment: .leading, spacing: 6) {

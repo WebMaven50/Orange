@@ -1,8 +1,10 @@
+import UIKit
 import SwiftUI
 
 @main
 struct OrangeRobotTraderApp: App {
     @State private var model = GameModel()
+    @UIApplicationDelegateAdaptor(PushAppDelegate.self) private var pushDelegate
 
     var body: some Scene {
         WindowGroup {
