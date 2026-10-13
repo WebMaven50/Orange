@@ -1,0 +1,3 @@
+
+# Apple push keys must never be committed
+*.p8

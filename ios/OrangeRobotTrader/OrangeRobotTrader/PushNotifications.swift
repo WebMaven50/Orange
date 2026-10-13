@@ -14,7 +14,7 @@ enum GameNotifications {
     private static let tokenKey = "push_token"
 
     /// The notify Worker. Set once it's deployed.
-    static let endpoint = URL(string: "https://orange-robot-notify.REPLACE_ME.workers.dev")!
+    static let endpoint = URL(string: "https://orange-robot-notify.victor-cb4.workers.dev")!
 
     private static var messages: Bool { UserDefaults.standard.bool(forKey: messagesKey) }
     private static var alerts: Bool { UserDefaults.standard.bool(forKey: alertsKey) }

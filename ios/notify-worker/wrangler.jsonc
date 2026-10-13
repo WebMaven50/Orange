@@ -5,7 +5,7 @@
   "compatibility_date": "2026-01-01",
   "kv_namespaces": [
     // Create with: wrangler kv namespace create DEVICES  — then paste the id here.
-    { "binding": "DEVICES", "id": "REPLACE_WITH_KV_NAMESPACE_ID" }
+    { "binding": "DEVICES", "id": "875f58f438fa4be1be944ac01cc68b71" }
   ],
   "triggers": { "crons": ["*/5 * * * *"] },
   "vars": {
