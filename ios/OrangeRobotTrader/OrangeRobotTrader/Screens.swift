@@ -1,3 +1,4 @@
+import UIKit
 import SwiftUI
 import OrangeRobotKit
 
@@ -241,6 +242,15 @@ struct InfoView: View {
                         .onChange(of: notifyAlerts) { _, _ in notificationsChanged() }
                         Text("Off unless you turn them on. Messages are rare, and only when there's something worth your time: news, a podcast, a deal. A price alert comes when Bitcoin moves 5% in a day. Turn both off and your device's token is deleted from our server.")
                             .font(.system(size: 12)).foregroundStyle(Theme.dim)
+                        Button {
+                            if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            Label("Keep messages on screen: open notification settings", systemImage: "gearshape")
+                                .font(.system(size: 12, weight: .bold)).foregroundStyle(Theme.orange)
+                        }
+                        .padding(.top, 2)
                     }
                     VStack(alignment: .leading, spacing: 6) {
                         Toggle(isOn: $shareCounts) {
@@ -255,7 +265,7 @@ struct InfoView: View {
                 }.padding(20)
             }
             .background(Theme.bg)
-            .navigationTitle("How the market works")
+            .navigationTitle("Settings & info")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Done") { dismiss() } } }
         }

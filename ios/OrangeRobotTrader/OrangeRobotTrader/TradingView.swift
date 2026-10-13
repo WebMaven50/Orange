@@ -304,12 +304,14 @@ struct TradingView: View {
             }
             .accessibilityLabel(model.session.isPaused ? "Resume" : "Pause")
             Button { model.showInfo = true } label: {
-                Text("ⓘ").font(.system(size: 13, weight: .bold))
-                    .frame(width: 26, height: 26)
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 17, weight: .bold))
+                    .frame(width: 38, height: 38)
                     .background(Theme.panel2, in: Circle())
-                    .overlay(Circle().stroke(Theme.line))
-                    .foregroundStyle(Theme.dim)
+                    .overlay(Circle().stroke(Theme.orange, lineWidth: 2))
+                    .foregroundStyle(Theme.orange)
             }
+            .accessibilityLabel("Settings and info")
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.line).frame(height: 1) }
