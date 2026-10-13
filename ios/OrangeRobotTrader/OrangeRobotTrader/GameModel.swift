@@ -351,7 +351,10 @@ final class GameModel {
         // Ask once, after the first finished game. Declining keeps everything off.
         if !UserDefaults.standard.bool(forKey: GameNotifications.askedKey) {
             UserDefaults.standard.set(true, forKey: GameNotifications.askedKey)
-            showNotifyPrompt = true
+            // Someone who already turned either switch on has answered; don't ask again.
+            let alreadyOn = UserDefaults.standard.bool(forKey: GameNotifications.messagesKey)
+                || UserDefaults.standard.bool(forKey: GameNotifications.alertsKey)
+            showNotifyPrompt = !alreadyOn
         }
         clearSavedRun()
         showOrderForm = false
