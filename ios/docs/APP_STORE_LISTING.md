@@ -51,9 +51,11 @@ Beat the market, make the leaderboard, and meet the robot.
 > • Sleep, pause and three game speeds
 > • A global leaderboard
 > • Hear the prologue of the novel The Orange Robot
+> • Optional messages and price alerts (off unless you turn them on)
 >
-> This is a game. All money is virtual, prices are historical, and virtual sats
-> have no cash value. Nothing here is financial advice.
+> This is a game played with play money. You start with $100,000 in play money.
+> All money is virtual, prices are historical, and virtual sats have no cash
+> value. Nothing here is financial advice.
 >
 > The game is part of the world of The Orange Robot, a novel by V.J. Alden.
 
@@ -107,9 +109,12 @@ Apple asks what each app collects. Answer honestly; both are very light.
 |---|---|---|---|---|
 | Usage / product interaction (anonymous counters such as "prologue played") | Yes | No | No | Analytics |
 | Other user content (3-letter initials and score if the player posts to the leaderboard) | Yes | No | No | App functionality |
-| Identifiers, location, contacts, purchases, health | No | – | – | – |
+| Device ID: push notification token (only if the player turns on messages or price alerts) | Yes | No | No | App functionality |
+| Location, contacts, purchases, health | No | – | – | – |
 
 - Tracking: **No**. No ads, no third-party SDKs.
+- The push token is random, not tied to a name or account. Turning both
+  notification switches off deletes it from the server.
 - The player can turn the counters off in the Info screen.
 
 ### Lab
@@ -130,6 +135,12 @@ Apple asks what each app collects. Answer honestly; both are very light.
 > with no cash value. The leaderboard accepts 1–3 letter initials. Links open
 > the author's own website, theorangerobot.com. The prologue audio is the
 > author's own work. No login is required.
+>
+> Notifications are optional and off by default. The app asks once, after the
+> first finished game, whether the player wants occasional messages and price
+> alerts. Messages come from the author; price alerts come from public Kraken
+> prices. Both can be turned off in the Info screen. The "Coming soon" card at
+> the end of a game names the Lab app but has no link.
 
 **Lab**
 > Orange Robot Lab is an educational backtesting simulator. It runs simple
@@ -147,8 +158,15 @@ Apple asks what each app collects. Answer honestly; both are very light.
 > We built these apps to collect as little as possible.
 >
 > **What we do not collect:** your name, email, phone number, location,
-> contacts, device identifiers or advertising identifiers. There are no
-> accounts and no ads, and we do not use third-party analytics or tracking.
+> contacts or advertising identifiers. There are no accounts and no ads, and
+> we do not use third-party analytics or tracking.
+>
+> **Notifications (game):** if you turn on game messages or Bitcoin price
+> alerts, the game sends our server a random push token for your device, plus
+> your choices (messages on or off, alerts on or off, and the alert
+> percentage). The token is not linked to your name or any account. Turning
+> both switches off deletes it. Messages are sent by us, rarely, and only to
+> people who opted in.
 >
 > **What stays on your device:** your robots, rules, reports, notes, settings
 > and live tests.
@@ -164,7 +182,8 @@ Apple asks what each app collects. Answer honestly; both are very light.
 > **Prices:** the Lab downloads public daily Bitcoin prices from Kraken and
 > Coinbase. Those requests do not include any personal information.
 >
-> **Notifications (Lab):** optional, generated on your device.
+> **Notifications (Lab):** optional, generated on your device, and not sent to
+> our server.
 >
 > **Children:** the apps are not directed at children and collect no personal
 > information.
@@ -176,7 +195,8 @@ Apple asks what each app collects. Answer honestly; both are very light.
 
 ## 6. Screenshots (required)
 
-Apple requires at least one set at 6.9" (1320 × 2868). Suggested six per app:
+Apple requires at least one set at 6.9" (1320 × 2868). Capture them on the
+**iPhone 18 Pro Max** simulator, which produces exactly that size. Suggested six per app:
 
 Game: start screen with cover · live chart with candles · order form ·
 positions & orders · news banner · results with leaderboard.
@@ -209,5 +229,34 @@ I can capture these from the simulator once the layout is final.
   wording visible, as it is today.
 - **User-generated content (Lab notes, leaderboard initials):** initials are
   public; Apple may ask about filtering. The Lab's notes never leave the phone.
-- **Icons:** the game's icon is built from a 1800px cover, so it is a bit
-  soft at full size. A higher-resolution source would be better.
+- **Icons:** the game's icon is a crop of the robot head on a navy background.
+  Check it at full size in App Store Connect's preview before submitting.
+- **Test features:** the hidden five-tap reset on the start screen (for
+  testing the notification question) must be removed before submission.
+
+## 9. Where to click (developer site and App Store Connect)
+
+- **Developer account:** https://developer.apple.com/account → Certificates,
+  Identifiers & Profiles. Bundle IDs live under **Identifiers**; the push key
+  lives under **Keys**.
+- **App Store Connect:** https://appstoreconnect.apple.com → **Apps** → **+** →
+  **New App**. Create one record per app.
+- **Inside an app record:**
+  - **App Information:** name, subtitle, category, age rating (answer the
+    questionnaire honestly; it's a trading simulator with no real money, so
+    expect 4+). Privacy Policy URL goes here too.
+  - **App Privacy:** use §3.
+  - **Pricing and Availability:** Free, countries.
+  - **App Store tab (iOS app, version 1.0):** promotional text, description,
+    keywords, screenshots, review notes (§4).
+  - **TestFlight:** the uploaded build appears here. Add yourself as an
+    internal tester and install from the TestFlight app on your phone.
+  - **Submit for Review** is on the version page once everything is filled in.
+- **Upload the build:** Xcode → Product → Archive → Distribute App → App Store
+  Connect → Upload.
+
+## 10. Privacy page on theorangerobot.com
+
+A draft is at `privacy.html` in the website folder. It isn't live until the
+repo is pushed to GitHub Pages. Fill in the date and contact line before you
+publish it.
