@@ -4,7 +4,17 @@
 // whether it is sandbox, and whether it wants price alerts. No accounts, no IP
 // addresses, no logs of tokens. Turning notifications off deletes the token.
 
-import { isValidToken, safeEqual, percentChange, priceAlert, buildPayload, checkMessage, clampThreshold } from "./logic.js";
+import {
+  isValidToken, safeEqual, percentChange, priceAlert, buildPayload, checkMessage, clampThreshold,
+  signSession, verifySession, getCookie,
+} from "./logic.js";
+
+const COOKIE = "sr_notify_admin";
+const SESSION_DAYS = 30;
+const sessionSecret = (env) => `notify-admin|${env.ADMIN_PASSWORD}`;
+async function signedIn(request, env) {
+  return verifySession(sessionSecret(env), getCookie(request.headers.get("cookie"), COOKIE), Math.floor(Date.now() / 1000));
+}
 import { makeProviderToken, sendPush } from "./apns.js";
 
 const JSON_HEADERS = { "content-type": "application/json", "cache-control": "no-store" };
@@ -92,7 +102,8 @@ async function sendToAll(env, payload, wants = () => true) {
 async function adminSend(request, env) {
   let body;
   try { body = await readJson(request, 4096); } catch { return json({ error: "bad request" }, 400); }
-  if (!safeEqual(body.password, env.ADMIN_PASSWORD)) return json({ error: "wrong password" }, 403);
+  const allowed = (await signedIn(request, env)) || safeEqual(body.password, env.ADMIN_PASSWORD);
+  if (!allowed) return json({ error: "signed out" }, 403);
   const message = { title: body.title, body: body.body, url: body.url || undefined };
   const problem = checkMessage(message);
   if (problem) return json({ error: problem }, 400);
@@ -139,7 +150,7 @@ const ADMIN_HTML = `<!doctype html>
 </style></head><body>
 <h1>Send a message to players</h1>
 <p class="note">Goes to everyone who turned notifications on in the game. Nothing is sent automatically. Check the text before you send.</p>
-<label for="pw">Admin password</label><input id="pw" type="password" autocomplete="off">
+<form method="post" action="/admin/logout" style="margin:0 0 6px"><button type="submit" style="width:auto;margin:0;padding:8px 14px;background:#222;color:#ccc;font-weight:600">Sign out</button></form>
 <label for="t">Title (under 80 characters)</label><input id="t" maxlength="80">
 <label for="b">Message (under 240 characters)</label><textarea id="b" maxlength="240"></textarea>
 <label for="u">Optional link (https only)</label><input id="u" type="url" placeholder="https://">
@@ -153,12 +164,12 @@ document.getElementById('send').addEventListener('click', async () => {
   const res = await fetch('/admin/send', {
     method: 'POST', headers: {'content-type': 'application/json'},
     body: JSON.stringify({
-      password: document.getElementById('pw').value,
       title: document.getElementById('t').value,
       body: document.getElementById('b').value,
       url: document.getElementById('u').value,
     }),
   });
+  if (res.status === 403) { location.href = '/admin'; return; }
   const data = await res.json().catch(() => ({}));
   out.textContent = res.ok
     ? 'Sent: ' + data.sent + ' · failed: ' + data.failed + ' · removed (no longer valid): ' + data.removed
@@ -166,13 +177,61 @@ document.getElementById('send').addEventListener('click', async () => {
 });
 </script></body></html>`;
 
+function loginPage(error) {
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in</title>
+<style>
+ body{font:16px -apple-system,system-ui,sans-serif;background:#0b0b0b;color:#eee;margin:0;padding:28px;max-width:380px}
+ h1{font-size:20px;color:#f7821a;margin:0 0 6px} p{color:#888;font-size:13px;margin:0 0 18px}
+ input{width:100%;box-sizing:border-box;padding:12px;margin:0 0 12px;border-radius:8px;border:1px solid #333;background:#171717;color:#eee;font:inherit}
+ button{width:100%;padding:13px;border:0;border-radius:8px;background:#f7821a;color:#000;font:inherit;font-weight:800}
+ .err{color:#ff6b5e;font-size:14px;margin:0 0 12px}
+</style></head><body>
+<h1>Game messages</h1>
+<p>Sign in to send a message to players. Your device can remember you for ${SESSION_DAYS} days.</p>
+${error ? '<div class="err">That password isn\'t right.</div>' : ''}
+<form method="post" action="/admin/login" autocomplete="on">
+ <input type="text" name="username" value="game-messages" autocomplete="username" readonly>
+ <input type="password" name="password" autocomplete="current-password" placeholder="Password" required autofocus>
+ <button type="submit">Sign in</button>
+</form>
+</body></html>`;
+  return new Response(html, { status: error ? 401 : 200, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+}
+
+function cookieHeader(value, maxAge) {
+  return `${COOKIE}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+}
+
+async function login(request, env) {
+  let password = "";
+  try {
+    password = new URLSearchParams(await request.text()).get("password") || "";
+  } catch { /* falls through to the error page */ }
+  if (!safeEqual(password, env.ADMIN_PASSWORD)) return loginPage(true);
+  const exp = Math.floor(Date.now() / 1000) + SESSION_DAYS * 86400;
+  const token = await signSession(sessionSecret(env), exp);
+  return new Response(null, {
+    status: 303,
+    headers: { location: "/admin", "set-cookie": cookieHeader(token, SESSION_DAYS * 86400), "cache-control": "no-store" },
+  });
+}
+
+function logout() {
+  return new Response(null, { status: 303, headers: { location: "/admin", "set-cookie": cookieHeader("", 0) } });
+}
+
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
     if (request.method === "POST" && pathname === "/device") return registerDevice(request, env);
     if (request.method === "POST" && pathname === "/device/remove") return removeDevice(request, env);
     if (request.method === "POST" && pathname === "/admin/send") return adminSend(request, env);
+    if (request.method === "POST" && pathname === "/admin/login") return login(request, env);
+    if (request.method === "POST" && pathname === "/admin/logout") return logout();
     if (request.method === "GET" && pathname === "/admin") {
+      if (!(await signedIn(request, env))) return loginPage(false);
       return new Response(ADMIN_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     }
     return json({ error: "not found" }, 404);

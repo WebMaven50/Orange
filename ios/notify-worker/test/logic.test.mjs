@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { isValidToken, safeEqual, percentChange, priceAlert, buildPayload, checkMessage, clampThreshold } from "../src/logic.js";
+import { isValidToken, safeEqual, percentChange, priceAlert, buildPayload, checkMessage, clampThreshold, signSession, verifySession, getCookie } from "../src/logic.js";
 
 test("tokens must be 64 lowercase hex characters", () => {
   assert.ok(isValidToken("a".repeat(64)));
@@ -53,4 +53,19 @@ test("a per-phone threshold changes which moves alert", () => {
   assert.notEqual(priceAlert(2.5, 2), null);
   assert.equal(priceAlert(2.5, 3), null);
   assert.match(priceAlert(-2.5, 2).title, /down/);
+});
+
+test("sign-in sessions are genuine, expire, and can't be forged", async () => {
+  const token = await signSession("secret", 2_000_000_000);
+  assert.ok(await verifySession("secret", token, 1_999_999_999));
+  assert.ok(!(await verifySession("secret", token, 2_000_000_001)));
+  assert.ok(!(await verifySession("other", token, 1)));
+  const [, sig] = token.split(".");
+  assert.ok(!(await verifySession("secret", "9999999999." + sig, 1)));
+  assert.ok(!(await verifySession("secret", "garbage", 1)));
+});
+
+test("cookies are read by name", () => {
+  assert.equal(getCookie("a=1; sr_notify_admin=tok.en", "sr_notify_admin"), "tok.en");
+  assert.equal(getCookie(undefined, "sr_notify_admin"), "");
 });

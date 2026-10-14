@@ -78,14 +78,67 @@ test("the admin send refuses a wrong password and sends nothing", async () => {
   assert.equal(res.status, 403);
 });
 
-test("the admin page is served and sends are checked", async () => {
-  const env = { DEVICES: memoryKV(), ADMIN_PASSWORD: "right" }; 
-  const page = await worker.fetch(new Request("https://x.test/admin"), env);
-  assert.equal(page.status, 200);
-  assert.match(await page.text(), /Send to everyone who opted in/);
+test("sends are checked for a valid message", async () => {
+  const env = { DEVICES: memoryKV(), ADMIN_PASSWORD: "right" };
   const bad = await worker.fetch(req("/admin/send", { password: "right", title: "t", body: "b", url: "http://insecure" }), env);
   assert.equal(bad.status, 400);
 });
+
+const formPost = (path, body, cookie) => new Request(`https://x.test${path}`, {
+  method: "POST",
+  headers: { "content-type": "application/x-www-form-urlencoded", ...(cookie ? { cookie } : {}) },
+  body,
+});
+
+test("the message page needs a sign-in, and the sign-in page works with password managers", async () => {
+  const env = { DEVICES: memoryKV(), ADMIN_PASSWORD: "right" };
+  const page = await worker.fetch(new Request("https://x.test/admin"), env);
+  const html = await page.text();
+  assert.match(html, /autocomplete="username"/);
+  assert.match(html, /autocomplete="current-password"/);
+  assert.ok(!/Send to everyone who opted in/.test(html), "the send form is not shown when signed out");
+  const wrong = await worker.fetch(formPost("/admin/login", "password=nope"), env);
+  assert.equal(wrong.status, 401);
+  assert.equal(wrong.headers.get("set-cookie"), null);
+});
+
+test("signing in sets a 30-day cookie that opens the page and allows sending", async () => {
+  const env = { DEVICES: memoryKV(), ADMIN_PASSWORD: "right" };
+  const res = await worker.fetch(formPost("/admin/login", "username=game-messages&password=right"), env);
+  assert.equal(res.status, 303);
+  const cookie = res.headers.get("set-cookie");
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /Secure/);
+  assert.match(cookie, /SameSite=Strict/);
+  assert.match(cookie, /Max-Age=2592000/);
+  const pair = cookie.split(";")[0];
+  const page = await worker.fetch(new Request("https://x.test/admin", { headers: { cookie: pair } }), env);
+  assert.match(await page.text(), /Send to everyone who opted in/);
+  // A valid session lets a message through the checks (this one fails only on its bad link).
+  const send = await worker.fetch(new Request("https://x.test/admin/send", {
+    method: "POST", headers: { cookie: pair, "content-type": "application/json" },
+    body: JSON.stringify({ title: "t", body: "b", url: "http://insecure" }),
+  }), env);
+  assert.equal(send.status, 400);
+  const noSession = await worker.fetch(new Request("https://x.test/admin/send", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ title: "t", body: "b" }),
+  }), env);
+  assert.equal(noSession.status, 403);
+});
+
+test("a changed password or a forged cookie does not open the message page", async () => {
+  const env = { DEVICES: memoryKV(), ADMIN_PASSWORD: "right" };
+  const login = await worker.fetch(formPost("/admin/login", "password=right"), env);
+  const pair = login.headers.get("set-cookie").split(";")[0];
+  const changed = await worker.fetch(new Request("https://x.test/admin", { headers: { cookie: pair } }), { ...env, ADMIN_PASSWORD: "new" });
+  assert.match(await changed.text(), /Sign in/);
+  const forged = await worker.fetch(new Request("https://x.test/admin", { headers: { cookie: "sr_notify_admin=9999999999.AAAA" } }), env);
+  assert.match(await forged.text(), /Sign in/);
+  const out = await worker.fetch(formPost("/admin/logout", ""), env);
+  assert.match(out.headers.get("set-cookie"), /Max-Age=0/);
+});
+
 
 test("unknown paths are not found", async () => {
   const res = await worker.fetch(new Request("https://x.test/nope"), { DEVICES: memoryKV() });

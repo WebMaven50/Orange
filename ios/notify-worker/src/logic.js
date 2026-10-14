@@ -62,3 +62,44 @@ export function checkMessage({ title, body, url }) {
   }
   return null;
 }
+
+// --- Sign-in sessions -------------------------------------------------------------------
+// After the password is accepted, the browser gets a signed, expiring token in a cookie, so the
+// page doesn't need the password again on that device. The token holds nothing but its expiry.
+
+function b64url(bytes) {
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+async function hmac(secret, data) {
+  const key = await crypto.subtle.importKey(
+    "raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(data)));
+}
+
+/** A token that is valid until `expSeconds` (unix time). */
+export async function signSession(secret, expSeconds) {
+  const payload = String(expSeconds);
+  return payload + "." + b64url(await hmac(secret, payload));
+}
+
+/** True when the token is genuine and has not expired. */
+export async function verifySession(secret, token, nowSeconds) {
+  if (typeof token !== "string" || !secret) return false;
+  const [payload, sig] = token.split(".");
+  if (!payload || !sig || !/^\d+$/.test(payload)) return false;
+  if (Number(payload) < nowSeconds) return false;
+  return safeEqual(sig, b64url(await hmac(secret, payload)));
+}
+
+/** One cookie's value from a Cookie header, or "". */
+export function getCookie(header, name) {
+  if (typeof header !== "string") return "";
+  for (const part of header.split(";")) {
+    const i = part.indexOf("=");
+    if (i > 0 && part.slice(0, i).trim() === name) return part.slice(i + 1).trim();
+  }
+  return "";
+}
