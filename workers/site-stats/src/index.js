@@ -6,7 +6,7 @@
 // the console count unique visitors.
 
 import {
-  classifyReferrer, cleanPath, cleanReferrerUrl, cleanClickTarget, clip, isBot, visitorHash, safeEqual, allowedOrigin,
+  classifyReferrer, cleanPath, cleanReferrerUrl, cleanClickTarget, clip, isBot, visitorHash, safeEqual, allowedOrigin, parseDevice,
 } from "./logic.js";
 
 const SITE_HOST = "theorangerobot.com";
@@ -43,15 +43,17 @@ async function recordHit(request, env) {
   const ip = request.headers.get("cf-connecting-ip") || "";
   const visitor = await visitorHash(env.SALT, day, ip, ua);   // the IP is not kept
   const geo = request.cf || {};
+  const { device, os, browser } = parseDevice(ua);   // broad categories only; the user agent is not kept
 
   await env.DB.prepare(
-    "INSERT INTO hits (ts, day, type, path, ref_host, ref_url, country, region, city, visitor, target) " +
-    "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)"
+    "INSERT INTO hits (ts, day, type, path, ref_host, ref_url, country, region, city, visitor, target, device, os, browser) " +
+    "VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)"
   ).bind(
     Math.floor(now.getTime() / 1000), day, type, cleanPath(body.p),
     classifyReferrer(body.r, SITE_HOST), cleanReferrerUrl(body.r),
     clip(geo.country, 2), clip(geo.region, 80), clip(geo.city, 80),
     visitor, type === "click" ? cleanClickTarget(body.c) : null,
+    device, os, browser,
   ).run();
 
   return new Response(null, { status: 204, headers: cors(origin) });
@@ -66,7 +68,7 @@ async function stats(request, env) {
   const since = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
   const q = async (sql) => (await env.DB.prepare(sql).bind(since).all()).results;
 
-  const [totals, byDay, referrers, countries, cities, pages, clicks, recent] = await Promise.all([
+  const [totals, byDay, referrers, countries, cities, pages, clicks, recent, devices, systems, browsers] = await Promise.all([
     q("SELECT COUNT(*) AS views, COUNT(DISTINCT day || visitor) AS visitors FROM hits WHERE type='view' AND day >= ?1"),
     q("SELECT day, COUNT(*) AS views, COUNT(DISTINCT visitor) AS visitors FROM hits WHERE type='view' AND day >= ?1 GROUP BY day ORDER BY day DESC"),
     q("SELECT ref_host AS name, COUNT(*) AS views, COUNT(DISTINCT day || visitor) AS visitors FROM hits WHERE type='view' AND day >= ?1 GROUP BY ref_host ORDER BY views DESC LIMIT 20"),
@@ -74,9 +76,12 @@ async function stats(request, env) {
     q("SELECT city || ', ' || region || ' ' || country AS name, COUNT(*) AS views, COUNT(DISTINCT day || visitor) AS visitors FROM hits WHERE type='view' AND day >= ?1 AND city != '' GROUP BY city, region, country ORDER BY visitors DESC LIMIT 20"),
     q("SELECT path AS name, COUNT(*) AS views, COUNT(DISTINCT day || visitor) AS visitors FROM hits WHERE type='view' AND day >= ?1 GROUP BY path ORDER BY views DESC LIMIT 20"),
     q("SELECT target AS name, path, COUNT(*) AS clicks FROM hits WHERE type='click' AND day >= ?1 GROUP BY target, path ORDER BY clicks DESC LIMIT 25"),
-    q("SELECT ts, type, path, ref_host, country, region, city, target FROM hits WHERE day >= ?1 ORDER BY ts DESC LIMIT 50"),
+    q("SELECT ts, type, path, ref_host, country, region, city, target, device, os, browser FROM hits WHERE day >= ?1 ORDER BY ts DESC LIMIT 50"),
+    q("SELECT COALESCE(device, 'unknown') AS name, COUNT(*) AS views, COUNT(DISTINCT day || visitor) AS visitors FROM hits WHERE type='view' AND day >= ?1 GROUP BY device ORDER BY visitors DESC"),
+    q("SELECT COALESCE(os, 'unknown') AS name, COUNT(*) AS views, COUNT(DISTINCT day || visitor) AS visitors FROM hits WHERE type='view' AND day >= ?1 GROUP BY os ORDER BY visitors DESC"),
+    q("SELECT COALESCE(browser, 'unknown') AS name, COUNT(*) AS views, COUNT(DISTINCT day || visitor) AS visitors FROM hits WHERE type='view' AND day >= ?1 GROUP BY browser ORDER BY visitors DESC"),
   ]);
-  return json({ days, since, totals: totals[0] ?? { views: 0, visitors: 0 }, byDay, referrers, countries, cities, pages, clicks, recent });
+  return json({ days, since, totals: totals[0] ?? { views: 0, visitors: 0 }, byDay, referrers, countries, cities, pages, clicks, recent, devices, systems, browsers });
 }
 
 const ADMIN_HTML = `<!doctype html>
@@ -128,9 +133,12 @@ document.getElementById('go').addEventListener('click', async () => {
   out.append(table('Where visitors came from', [{h:'Referrer',k:'name'},{h:'Views',k:'views',n:1},{h:'Visitors',k:'visitors',n:1}], d.referrers));
   out.append(table('Countries', [{h:'Country',k:'name'},{h:'Views',k:'views',n:1},{h:'Visitors',k:'visitors',n:1}], d.countries));
   out.append(table('Cities', [{h:'City',k:'name'},{h:'Views',k:'views',n:1},{h:'Visitors',k:'visitors',n:1}], d.cities));
+  out.append(table('Device type', [{h:'Device',k:'name'},{h:'Views',k:'views',n:1},{h:'Visitors',k:'visitors',n:1}], d.devices));
+  out.append(table('Operating system', [{h:'System',k:'name'},{h:'Views',k:'views',n:1},{h:'Visitors',k:'visitors',n:1}], d.systems));
+  out.append(table('Browser', [{h:'Browser',k:'name'},{h:'Views',k:'views',n:1},{h:'Visitors',k:'visitors',n:1}], d.browsers));
   out.append(table('Pages', [{h:'Page',k:'name'},{h:'Views',k:'views',n:1},{h:'Visitors',k:'visitors',n:1}], d.pages));
   out.append(table('What they clicked', [{h:'Click',k:'name'},{h:'On page',k:'path'},{h:'Times',k:'clicks',n:1}], d.clicks));
-  out.append(table('Recent activity', [{h:'Type',k:'type'},{h:'Page',k:'path'},{h:'From',k:'ref_host'},{h:'Country',k:'country'},{h:'City',k:'city'},{h:'Click',k:'target'}], d.recent));
+  out.append(table('Recent activity', [{h:'Type',k:'type'},{h:'Page',k:'path'},{h:'From',k:'ref_host'},{h:'Country',k:'country'},{h:'City',k:'city'},{h:'Device',k:'device'},{h:'Click',k:'target'}], d.recent));
 });
 </script></body></html>`;
 

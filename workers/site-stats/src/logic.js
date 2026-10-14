@@ -64,6 +64,32 @@ export async function visitorHash(secret, day, ip, userAgent) {
   return [...new Uint8Array(digest)].slice(0, 8).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/**
+ * Broad device categories from the user agent: phone, tablet or desktop, a general operating
+ * system, and a browser family. The full user agent is never stored.
+ */
+export function parseDevice(ua) {
+  const s = typeof ua === "string" ? ua : "";
+  let device = "desktop";
+  if (/iPad|Tablet/i.test(s) || (/Android/i.test(s) && !/Mobile/i.test(s))) device = "tablet";
+  else if (/iPhone|iPod|Android.*Mobile|Mobile/i.test(s)) device = "phone";
+
+  let os = "Other";
+  if (/iPhone|iPad|iPod/i.test(s)) os = "iOS";
+  else if (/Android/i.test(s)) os = "Android";
+  else if (/Windows/i.test(s)) os = "Windows";
+  else if (/Mac OS X|Macintosh/i.test(s)) os = "macOS";
+  else if (/Linux|X11/i.test(s)) os = "Linux";
+
+  let browser = "Other";
+  if (/Edg\//.test(s) || /EdgiOS/.test(s)) browser = "Edge";
+  else if (/OPR\/|Opera/.test(s)) browser = "Opera";
+  else if (/Firefox\/|FxiOS/.test(s)) browser = "Firefox";
+  else if (/Chrome\/|CriOS/.test(s)) browser = "Chrome";
+  else if (/Safari\//.test(s)) browser = "Safari";
+  return { device, os, browser };
+}
+
 /** Constant-time string comparison for the admin password. */
 export function safeEqual(a, b) {
   if (typeof a !== "string" || typeof b !== "string") return false;

@@ -11,7 +11,10 @@ CREATE TABLE IF NOT EXISTS hits (
   region TEXT,
   city TEXT,
   visitor TEXT NOT NULL,      -- daily one-way hash, cannot be reversed to an IP
-  target TEXT                 -- clicks: what was clicked and where it went
+  target TEXT,                -- clicks: what was clicked and where it went
+  device TEXT,                -- phone, tablet or desktop (broad category only)
+  os TEXT,                    -- iOS, Android, macOS, Windows, Linux, Other
+  browser TEXT                -- Safari, Chrome, Firefox, Edge, Opera, Other
 );
 CREATE INDEX IF NOT EXISTS idx_hits_day ON hits(day);
 CREATE INDEX IF NOT EXISTS idx_hits_type_day ON hits(type, day);

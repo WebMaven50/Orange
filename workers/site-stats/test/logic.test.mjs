@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  hostOf, classifyReferrer, cleanPath, cleanReferrerUrl, cleanClickTarget, isBot, visitorHash, safeEqual, allowedOrigin,
+  hostOf, classifyReferrer, cleanPath, cleanReferrerUrl, cleanClickTarget, isBot, visitorHash, safeEqual, allowedOrigin, parseDevice,
 } from "../src/logic.js";
 
 test("referrers are classified as direct, internal, or the outside host", () => {
@@ -51,4 +51,22 @@ test("admin password comparison", () => {
   assert.ok(safeEqual("pw", "pw"));
   assert.ok(!safeEqual("pw", "pW"));
   assert.ok(!safeEqual(undefined, "pw"));
+});
+
+test("devices are reduced to broad categories", () => {
+  const iphone = "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  assert.deepEqual(parseDevice(iphone), { device: "phone", os: "iOS", browser: "Safari" });
+  const ipad = "Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1";
+  assert.deepEqual(parseDevice(ipad), { device: "tablet", os: "iOS", browser: "Safari" });
+  const chromeWin = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+  assert.deepEqual(parseDevice(chromeWin), { device: "desktop", os: "Windows", browser: "Chrome" });
+  const edge = chromeWin + " Edg/130.0.0.0";
+  assert.equal(parseDevice(edge).browser, "Edge");
+  const androidPhone = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36";
+  assert.deepEqual(parseDevice(androidPhone), { device: "phone", os: "Android", browser: "Chrome" });
+  const macSafari = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15";
+  assert.deepEqual(parseDevice(macSafari), { device: "desktop", os: "macOS", browser: "Safari" });
+  const firefox = "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0";
+  assert.deepEqual(parseDevice(firefox), { device: "desktop", os: "Linux", browser: "Firefox" });
+  assert.deepEqual(parseDevice(undefined), { device: "desktop", os: "Other", browser: "Other" });
 });

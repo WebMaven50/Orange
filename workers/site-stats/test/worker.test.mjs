@@ -37,7 +37,9 @@ test("a page view is stored with referrer, location and a hashed visitor, never 
   assert.equal(res.status, 204);
   assert.equal(res.headers.get("access-control-allow-origin"), "https://theorangerobot.com");
   const { args } = DB.runs[0];
-  const [, day, type, path, refHost, refUrl, country, region, city, visitor, target] = args;
+  const [, day, type, path, refHost, refUrl, country, region, city, visitor, target, device, os, browser] = args;
+  assert.deepEqual([device, os, browser], ["phone", "iOS", "Safari"]);
+  assert.ok(!JSON.stringify(args).includes("AppleWebKit"), "the full user agent is not stored");
   assert.equal(type, "view");
   assert.equal(path, "/games/index.html");
   assert.equal(refHost, "google.com");
