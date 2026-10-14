@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  hostOf, classifyReferrer, cleanPath, cleanReferrerUrl, cleanClickTarget, isBot, visitorHash, safeEqual, allowedOrigin, parseDevice,
+  hostOf, classifyReferrer, cleanPath, cleanReferrerUrl, cleanClickTarget, isBot, visitorHash, safeEqual, allowedOrigin, parseDevice, signSession, verifySession, getCookie,
 } from "../src/logic.js";
 
 test("referrers are classified as direct, internal, or the outside host", () => {
@@ -69,4 +69,21 @@ test("devices are reduced to broad categories", () => {
   const firefox = "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0";
   assert.deepEqual(parseDevice(firefox), { device: "desktop", os: "Linux", browser: "Firefox" });
   assert.deepEqual(parseDevice(undefined), { device: "desktop", os: "Other", browser: "Other" });
+});
+
+test("sign-in sessions are genuine, expire, and can't be forged", async () => {
+  const token = await signSession("secret", 2_000_000_000);
+  assert.ok(await verifySession("secret", token, 1_999_999_999));
+  assert.ok(!(await verifySession("secret", token, 2_000_000_001)), "expired");
+  assert.ok(!(await verifySession("other-secret", token, 1)), "wrong key");
+  const [, sig] = token.split(".");
+  assert.ok(!(await verifySession("secret", "9999999999." + sig, 1)), "tampered expiry");
+  assert.ok(!(await verifySession("secret", "garbage", 1)));
+  assert.ok(!(await verifySession("secret", undefined, 1)));
+});
+
+test("cookies are read by name", () => {
+  assert.equal(getCookie("a=1; sr_admin=tok.en; b=2", "sr_admin"), "tok.en");
+  assert.equal(getCookie("a=1", "sr_admin"), "");
+  assert.equal(getCookie(undefined, "sr_admin"), "");
 });

@@ -7,7 +7,15 @@
 
 import {
   classifyReferrer, cleanPath, cleanReferrerUrl, cleanClickTarget, clip, isBot, visitorHash, safeEqual, allowedOrigin, parseDevice,
+  signSession, verifySession, getCookie,
 } from "./logic.js";
+
+const COOKIE = "sr_admin";
+const SESSION_DAYS = 30;
+const sessionSecret = (env) => `${env.ADMIN_PASSWORD}|${env.SALT}`;
+async function signedIn(request, env) {
+  return verifySession(sessionSecret(env), getCookie(request.headers.get("cookie"), COOKIE), Math.floor(Date.now() / 1000));
+}
 
 const SITE_HOST = "theorangerobot.com";
 const JSON_HEADERS = { "content-type": "application/json", "cache-control": "no-store" };
@@ -63,9 +71,10 @@ async function recordHit(request, env) {
 }
 
 async function stats(request, env) {
-  let body;
-  try { body = JSON.parse(await request.text()); } catch { return json({ error: "bad request" }, 400); }
-  if (!safeEqual(body.password, env.ADMIN_PASSWORD)) return json({ error: "wrong password" }, 403);
+  let body = {};
+  try { body = JSON.parse((await request.text()) || "{}"); } catch { return json({ error: "bad request" }, 400); }
+  const allowed = (await signedIn(request, env)) || safeEqual(body.password, env.ADMIN_PASSWORD);
+  if (!allowed) return json({ error: "signed out" }, 403);
 
   const days = Math.min(Math.max(parseInt(body.days, 10) || 7, 1), 90);
   const since = new Date(Date.now() - (days - 1) * 86400000).toISOString().slice(0, 10);
@@ -132,7 +141,7 @@ const ADMIN_HTML = `<!doctype html>
 <h1>Website activity</h1>
 <p class="note">Page views, referrers, approximate location, devices and clicks. IP addresses are not stored. The visitor code is a one-way hash that changes every day and when someone's network changes.</p>
 <div class="row">
- <input id="pw" type="password" placeholder="Admin password" autocomplete="off">
+ <form method="post" action="/admin/logout" style="margin:0"><button type="submit" style="background:#222;color:#ccc">Sign out</button></form>
  <select id="days"><option value="1">Today</option><option value="7" selected>Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select>
  <button id="go">Show</button>
 </div>
@@ -157,8 +166,9 @@ function table(title, cols, rows) {
 document.getElementById('go').addEventListener('click', async () => {
   msg.textContent = 'Loading…'; out.textContent = '';
   const res = await fetch('/admin/stats', { method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ password: document.getElementById('pw').value, days: document.getElementById('days').value }) });
+    body: JSON.stringify({ days: document.getElementById('days').value }) });
   const d = await res.json().catch(() => ({}));
+  if (res.status === 403) { location.href = '/admin'; return; }
   if (!res.ok) { msg.textContent = d.error || 'Something went wrong.'; return; }
   msg.textContent = 'Since ' + d.since + ' (UTC)';
   const cards = el('div', undefined, 'cards');
@@ -188,6 +198,52 @@ document.getElementById('go').addEventListener('click', async () => {
 });
 </script></body></html>`;
 
+function loginPage(error) {
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in</title>
+<style>
+ body{font:16px -apple-system,system-ui,sans-serif;background:#0b0b0b;color:#eee;margin:0;padding:28px;max-width:380px}
+ h1{font-size:20px;color:#f7821a;margin:0 0 6px} p{color:#888;font-size:13px;margin:0 0 18px}
+ input{width:100%;box-sizing:border-box;padding:12px;margin:0 0 12px;border-radius:8px;border:1px solid #333;background:#171717;color:#eee;font:inherit}
+ button{width:100%;padding:13px;border:0;border-radius:8px;background:#f7821a;color:#000;font:inherit;font-weight:800}
+ .err{color:#ff6b5e;font-size:14px;margin:0 0 12px}
+</style></head><body>
+<h1>Website activity</h1>
+<p>Sign in to see the console. Your device can remember you for ${SESSION_DAYS} days.</p>
+${error ? '<div class="err">That password isn\'t right.</div>' : ''}
+<form method="post" action="/admin/login" autocomplete="on">
+ <input type="text" name="username" value="site-activity" autocomplete="username" readonly>
+ <input type="password" name="password" autocomplete="current-password" placeholder="Password" required autofocus>
+ <button type="submit">Sign in</button>
+</form>
+</body></html>`;
+  return new Response(html, { status: error ? 401 : 200, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+}
+
+function cookieHeader(value, maxAge) {
+  return `${COOKIE}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+}
+
+async function login(request, env) {
+  let password = "";
+  try {
+    const form = new URLSearchParams(await request.text());
+    password = form.get("password") || "";
+  } catch { /* falls through to the error page */ }
+  if (!safeEqual(password, env.ADMIN_PASSWORD)) return loginPage(true);
+  const exp = Math.floor(Date.now() / 1000) + SESSION_DAYS * 86400;
+  const token = await signSession(sessionSecret(env), exp);
+  return new Response(null, {
+    status: 303,
+    headers: { location: "/admin", "set-cookie": cookieHeader(token, SESSION_DAYS * 86400), "cache-control": "no-store" },
+  });
+}
+
+function logout() {
+  return new Response(null, { status: 303, headers: { location: "/admin", "set-cookie": cookieHeader("", 0) } });
+}
+
 export default {
   async fetch(request, env) {
     const { pathname } = new URL(request.url);
@@ -197,7 +253,10 @@ export default {
     }
     if (request.method === "POST" && pathname === "/hit") return recordHit(request, env);
     if (request.method === "POST" && pathname === "/admin/stats") return stats(request, env);
+    if (request.method === "POST" && pathname === "/admin/login") return login(request, env);
+    if (request.method === "POST" && pathname === "/admin/logout") return logout();
     if (request.method === "GET" && pathname === "/admin") {
+      if (!(await signedIn(request, env))) return loginPage(false);
       return new Response(ADMIN_HTML, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     }
     return json({ error: "not found" }, 404);

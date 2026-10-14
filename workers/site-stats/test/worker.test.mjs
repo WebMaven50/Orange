@@ -92,24 +92,103 @@ test("oversized or malformed reports are refused", async () => {
   assert.equal((await worker.fetch(bad, env)).status, 400);
 });
 
-test("the console needs the password", async () => {
+test("the console needs a sign-in, and a wrong password is refused", async () => {
   const env = { DB: fakeDB(), SALT: "s", ADMIN_PASSWORD: "right" };
-  const wrong = await worker.fetch(new Request("https://stats.test/admin/stats", {
-    method: "POST", body: JSON.stringify({ password: "nope", days: 7 }),
+  const noCookie = await worker.fetch(new Request("https://stats.test/admin/stats", { method: "POST", body: "{}" }), env);
+  assert.equal(noCookie.status, 403);
+  const wrong = await worker.fetch(new Request("https://stats.test/admin/login", {
+    method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "password=nope",
   }), env);
-  assert.equal(wrong.status, 403);
-  const ok = await worker.fetch(new Request("https://stats.test/admin/stats", {
-    method: "POST", body: JSON.stringify({ password: "right", days: 7 }),
-  }), env);
-  assert.equal(ok.status, 200);
-  const data = await ok.json();
-  assert.equal(data.days, 7);
+  assert.equal(wrong.status, 401);
+  assert.equal(wrong.headers.get("set-cookie"), null);
 });
 
-test("the admin page is served", async () => {
-  const res = await worker.fetch(new Request("https://stats.test/admin"), { DB: fakeDB() });
-  assert.equal(res.status, 200);
-  assert.match(await res.text(), /Website activity/);
+test("signing in sets a 30-day cookie that opens the console and the stats", async () => {
+  const env = { DB: fakeDB(), SALT: "s", ADMIN_PASSWORD: "right" };
+  const res = await worker.fetch(new Request("https://stats.test/admin/login", {
+    method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "username=site-activity&password=right",
+  }), env);
+  assert.equal(res.status, 303);
+  const cookie = res.headers.get("set-cookie");
+  assert.match(cookie, /^sr_admin=\d+\./);
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /Secure/);
+  assert.match(cookie, /SameSite=Strict/);
+  assert.match(cookie, /Max-Age=2592000/);
+  const pair = cookie.split(";")[0];
+  const page = await worker.fetch(new Request("https://stats.test/admin", { headers: { cookie: pair } }), env);
+  assert.match(await page.text(), /Website activity/);
+  const stats = await worker.fetch(new Request("https://stats.test/admin/stats", {
+    method: "POST", headers: { cookie: pair }, body: JSON.stringify({ days: 7 }),
+  }), env);
+  assert.equal(stats.status, 200);
+  assert.equal((await stats.json()).days, 7);
+});
+
+test("a forged or password-changed cookie does not open the console", async () => {
+  const env = { DB: fakeDB(), SALT: "s", ADMIN_PASSWORD: "right" };
+  const login = await worker.fetch(new Request("https://stats.test/admin/login", {
+    method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: "password=right",
+  }), env);
+  const pair = login.headers.get("set-cookie").split(";")[0];
+  const changed = { ...env, ADMIN_PASSWORD: "new-password" };
+  const res = await worker.fetch(new Request("https://stats.test/admin", { headers: { cookie: pair } }), changed);
+  assert.match(await res.text(), /Sign in/, "the old cookie stops working when the password changes");
+  const forged = await worker.fetch(new Request("https://stats.test/admin", { headers: { cookie: "sr_admin=9999999999.AAAA" } }), env);
+  assert.match(await forged.text(), /Sign in/);
+});
+
+test("the sign-in page works with password managers and sign-out clears the cookie", async () => {
+  const env = { DB: fakeDB(), SALT: "s", ADMIN_PASSWORD: "right" };
+  const page = await worker.fetch(new Request("https://stats.test/admin"), env);
+  const html = await page.text();
+  assert.match(html, /autocomplete="username"/);
+  assert.match(html, /autocomplete="current-password"/);
+  assert.match(html, /<form method="post" action="\/admin\/login"/);
+  const out = await worker.fetch(new Request("https://stats.test/admin/logout", { method: "POST" }), env);
+  assert.match(out.headers.get("set-cookie"), /Max-Age=0/);
+});
+
+test("time on page is stored as seconds and capped, and zero-second reports are dropped", async () => {
+  const DB = fakeDB();
+  const env = { DB, SALT: "s" };
+  await worker.fetch(hit({ t: "time", p: "/games/index.html?x=1", s: 42.4 }), env);
+  await worker.fetch(hit({ t: "time", p: "/", s: 999999 }), env);
+  await worker.fetch(hit({ t: "time", p: "/", s: 0 }), env);
+  assert.equal(DB.runs.length, 2, "the zero-second report is not stored");
+  const first = DB.runs[0].args, second = DB.runs[1].args;
+  assert.equal(first[2], "time");
+  assert.equal(first[3], "/games/index.html");
+  assert.equal(first[14], 42);
+  assert.equal(second[14], 1800, "a forgotten tab is capped at 30 minutes");
+});
+
+test("a direct visit is recorded as direct, and a click keeps what was clicked", async () => {
+  const DB = fakeDB();
+  const env = { DB, SALT: "s" };
+  await worker.fetch(hit({ t: "click", p: "/", r: "", c: "Buy the book → https://theorangerobot.com/store/buy.html?x=1" }), env);
+  const [, , type, , refHost, , , , , , target] = DB.runs[0].args;
+  assert.equal(type, "click");
+  assert.equal(refHost, "(direct)");
+  assert.equal(target, "Buy the book → https://theorangerobot.com/store/buy.html");
+});
+
+test("other sites cannot report, and crawlers are not recorded", async () => {
+  const DB = fakeDB();
+  const env = { DB, SALT: "s" };
+  const foreign = await worker.fetch(hit({ t: "view", p: "/" }, { origin: "https://evil.example" }), env);
+  assert.equal(foreign.status, 403);
+  const bot = await worker.fetch(hit({ t: "view", p: "/" }, { ua: "Mozilla/5.0 (compatible; Googlebot/2.1)" }), env);
+  assert.equal(bot.status, 204);
+  assert.equal(DB.runs.length, 0);
+});
+
+test("oversized or malformed reports are refused", async () => {
+  const env = { DB: fakeDB(), SALT: "s" };
+  const bad = new Request("https://stats.test/hit", {
+    method: "POST", headers: { origin: "https://theorangerobot.com", "user-agent": UA }, body: "{not json",
+  });
+  assert.equal((await worker.fetch(bad, env)).status, 400);
 });
 
 test("the console groups each visitor's page views into a route, oldest first", async () => {
