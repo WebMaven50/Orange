@@ -1,0 +1,13 @@
+{
+  // Website activity monitor. Deploy from this folder with: wrangler deploy -c wrangler.jsonc
+  "name": "orange-robot-site-stats",
+  "main": "src/index.js",
+  "compatibility_date": "2026-01-01",
+  "d1_databases": [
+    // Create with: wrangler d1 create orange-robot-site-stats  — then paste the id here.
+    { "binding": "DB", "database_name": "orange-robot-site-stats", "database_id": "9e6977ad-5521-4cf0-9db6-28cf9f5144c8" }
+  ],
+  // Daily cleanup of rows older than 90 days.
+  "triggers": { "crons": ["17 3 * * *"] }
+  // Secrets (never committed): ADMIN_PASSWORD, SALT
+}
