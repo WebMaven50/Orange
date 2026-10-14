@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS hits (
   target TEXT,                -- clicks: what was clicked and where it went
   device TEXT,                -- phone, tablet or desktop (broad category only)
   os TEXT,                    -- iOS, Android, macOS, Windows, Linux, Other
-  browser TEXT                -- Safari, Chrome, Firefox, Edge, Opera, Other
+  browser TEXT,               -- Safari, Chrome, Firefox, Edge, Opera, Other
+  seconds INTEGER             -- 'time' rows: seconds the page was visible (capped at 30 minutes)
 );
 CREATE INDEX IF NOT EXISTS idx_hits_day ON hits(day);
 CREATE INDEX IF NOT EXISTS idx_hits_type_day ON hits(type, day);

@@ -50,6 +50,20 @@ test("a page view is stored with referrer, location and a hashed visitor, never 
   assert.ok(!JSON.stringify(args).includes("203.0.113.7"), "the IP address is not stored anywhere");
 });
 
+test("time on page is stored as seconds and capped, and zero-second reports are dropped", async () => {
+  const DB = fakeDB();
+  const env = { DB, SALT: "s" };
+  await worker.fetch(hit({ t: "time", p: "/games/index.html?x=1", s: 42.4 }), env);
+  await worker.fetch(hit({ t: "time", p: "/", s: 999999 }), env);
+  await worker.fetch(hit({ t: "time", p: "/", s: 0 }), env);
+  assert.equal(DB.runs.length, 2, "the zero-second report is not stored");
+  const first = DB.runs[0].args, second = DB.runs[1].args;
+  assert.equal(first[2], "time");
+  assert.equal(first[3], "/games/index.html");
+  assert.equal(first[14], 42);
+  assert.equal(second[14], 1800, "a forgotten tab is capped at 30 minutes");
+});
+
 test("a direct visit is recorded as direct, and a click keeps what was clicked", async () => {
   const DB = fakeDB();
   const env = { DB, SALT: "s" };
