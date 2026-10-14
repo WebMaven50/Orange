@@ -111,3 +111,27 @@ test("the admin page is served", async () => {
   assert.equal(res.status, 200);
   assert.match(await res.text(), /Website activity/);
 });
+
+test("the console groups each visitor's page views into a route, oldest first", async () => {
+  const rows = [
+    { visitor: "aaaaaaaa11111111", ts: 300, path: "/store/buy.html", country: "IT", city: "Milan", device: "phone", os: "iOS", browser: "Safari" },
+    { visitor: "bbbbbbbb22222222", ts: 250, path: "/", country: "US", city: "Austin", device: "desktop", os: "macOS", browser: "Chrome" },
+    { visitor: "aaaaaaaa11111111", ts: 100, path: "/", country: "IT", city: "Milan", device: "phone", os: "iOS", browser: "Safari" },
+    { visitor: "aaaaaaaa11111111", ts: 200, path: "/games/index.html", country: "IT", city: "Milan", device: "phone", os: "iOS", browser: "Safari" },
+  ];
+  const DB = {
+    prepare(sql) {
+      return { bind() { return { async all() { return { results: sql.includes("LIMIT 600") ? rows : [] }; }, async run() { return {}; } }; } };
+    },
+  };
+  const res = await worker.fetch(new Request("https://stats.test/admin/stats", {
+    method: "POST", body: JSON.stringify({ password: "right", days: 7 }),
+  }), { DB, ADMIN_PASSWORD: "right" });
+  const { journeys } = await res.json();
+  const a = journeys.find((j) => j.visitor === "aaaaaaaa");
+  assert.equal(a.pages, 3);
+  assert.equal(a.route, "/  →  /games/index.html  →  /store/buy.html");
+  assert.equal(a.where, "Milan, IT");
+  assert.equal(a.device, "phone · iOS · Safari");
+  assert.equal(journeys[0].visitor, "aaaaaaaa", "most recently active visitor first");
+});
