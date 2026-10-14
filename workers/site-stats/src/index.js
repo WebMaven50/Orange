@@ -83,13 +83,12 @@ async function stats(request, env) {
     q("SELECT COALESCE(device, 'unknown') AS name, COUNT(*) AS views, COUNT(DISTINCT day || visitor) AS visitors FROM hits WHERE type='view' AND day >= ?1 GROUP BY device ORDER BY visitors DESC"),
     q("SELECT COALESCE(os, 'unknown') AS name, COUNT(*) AS views, COUNT(DISTINCT day || visitor) AS visitors FROM hits WHERE type='view' AND day >= ?1 GROUP BY os ORDER BY visitors DESC"),
     q("SELECT COALESCE(browser, 'unknown') AS name, COUNT(*) AS views, COUNT(DISTINCT day || visitor) AS visitors FROM hits WHERE type='view' AND day >= ?1 GROUP BY browser ORDER BY visitors DESC"),
-    q("SELECT t.path AS name, SUM(t.seconds) AS seconds, " +
-      "(SELECT COUNT(*) FROM hits v WHERE v.type='view' AND v.day >= ?1 AND v.path = t.path) AS views " +
-      "FROM hits t WHERE t.type='time' AND t.day >= ?1 GROUP BY t.path ORDER BY seconds DESC LIMIT 20"),
+    q("SELECT path AS name, COUNT(*) AS reports, SUM(seconds) AS seconds FROM hits " +
+      "WHERE type='time' AND day >= ?1 GROUP BY path ORDER BY seconds DESC LIMIT 20"),
   ]);
-  // Average time per page view, from the reported visible time.
+  // Average over the visits that reported a time (quick bounces and blocked browsers don't report).
   const timed = timeOnPage.map((r) => ({
-    name: r.name, views: r.views, avg: r.views > 0 ? Math.round(r.seconds / r.views) : Math.round(r.seconds),
+    name: r.name, views: r.reports, avg: r.reports > 0 ? Math.round(r.seconds / r.reports) : 0,
   }));
   return json({ days, since, totals: totals[0] ?? { views: 0, visitors: 0 }, byDay, referrers, countries, cities, pages, clicks, recent, devices, systems, browsers, timed });
 }
@@ -146,7 +145,7 @@ document.getElementById('go').addEventListener('click', async () => {
   out.append(table('Device type', [{h:'Device',k:'name'},{h:'Views',k:'views',n:1},{h:'Visitors',k:'visitors',n:1}], d.devices));
   out.append(table('Operating system', [{h:'System',k:'name'},{h:'Views',k:'views',n:1},{h:'Visitors',k:'visitors',n:1}], d.systems));
   out.append(table('Browser', [{h:'Browser',k:'name'},{h:'Views',k:'views',n:1},{h:'Visitors',k:'visitors',n:1}], d.browsers));
-  out.append(table('Average time on page', [{h:'Page',k:'name'},{h:'Views',k:'views',n:1},{h:'Average',k:'avgText',n:1}],
+  out.append(table('Average time on page (visits that reported a time)', [{h:'Page',k:'name'},{h:'Visits',k:'views',n:1},{h:'Average',k:'avgText',n:1}],
     d.timed.map(r => ({ name: r.name, views: r.views, avgText: Math.floor(r.avg / 60) + 'm ' + String(r.avg % 60).padStart(2, '0') + 's' }))));
   out.append(table('Pages', [{h:'Page',k:'name'},{h:'Views',k:'views',n:1},{h:'Visitors',k:'visitors',n:1}], d.pages));
   out.append(table('What they clicked', [{h:'Click',k:'name'},{h:'On page',k:'path'},{h:'Times',k:'clicks',n:1}], d.clicks));
